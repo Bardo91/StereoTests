@@ -35,12 +35,14 @@ GroupSources(code)
 if(CMAKE_COMPILER_IS_GNUCXX)
     add_definitions(-std=c++11)
 endif()
-set(CMAKE_MODULE_PATH $ENV{CMAKE_MODULE_PATH} /usr/lib/cmake /usr/local/lib/cmake)
+
 # Loading 3rd party libraries.
 find_package(OpenCV REQUIRED)
 include_directories(${OPENCV_INCLUDE_DIR})
 include_directories(${OPENCV_LIB_DIR})
 
+MESSAGE(STATUS ${OPENCV_LIB_DIR})
+MESSAGE(STATUS ${OPENCV_INCLUDE_DIR})
 # Add Executable
 add_executable(calibrationTest ${BAR_TASK_SOURCE_FILES})
 
