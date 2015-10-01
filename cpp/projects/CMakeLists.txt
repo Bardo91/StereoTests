@@ -3,3 +3,4 @@ project(StereoTests)
 
 # Projects
 add_subdirectory(calibrationTest)
+add_subdirectory(disparityTest)
