@@ -30,10 +30,11 @@ endif()
 # Loading 3rd party libraries.
 find_package(OpenCV REQUIRED)
 set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE)
+LINK_DIRECTORIES(${OpenCV_LIB_DIR})
 # Add Executable
 add_executable(calibrationTest ${BAR_TASK_SOURCE_FILES})
 
 target_include_directories(calibrationTest PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(calibrationTest PUBLIC ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(calibrationTest LINK_PUBLIC ${OPENCV_LIBS})
+target_link_libraries(calibrationTest LINK_PUBLIC ${OpenCV_LIBS})
 
