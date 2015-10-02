@@ -1,7 +1,7 @@
 load calibrationparameters.mat
 
-I1 = undistortImage( imread('testImages/img_cam1_5.jpg'),stereoParams.CameraParameters1);
-I2 = undistortImage( imread('testImages/img_cam2_5.jpg'),stereoParams.CameraParameters2);
+I1 = undistortImage( imread('C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/testImages/img_cam1_5.jpg'),stereoParams.CameraParameters1);
+I2 = undistortImage( imread('C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/testImages/img_cam2_5.jpg'),stereoParams.CameraParameters2);
 
 % Rectify the images.
 %[J1, J2] = rectifyStereoImages(I1, I2, stereoParams);
@@ -9,8 +9,8 @@ I2 = undistortImage( imread('testImages/img_cam2_5.jpg'),stereoParams.CameraPara
 grayI1 =  rgb2gray(I1);
 grayI2 =  rgb2gray(I2);
 
-features1 = detectSURFFeatures(grayI1, 'MetricThreshold', 200);
-features2 = detectSURFFeatures(grayI2, 'MetricThreshold', 200);
+features1 = sift(grayI1);
+features2 = sift(grayI2);
 
 [ft1,validPts1]  = extractFeatures(grayI1,features1);
 [ft2,validPts2] = extractFeatures(grayI2,features2);

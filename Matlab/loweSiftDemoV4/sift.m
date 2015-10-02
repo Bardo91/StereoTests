@@ -19,7 +19,7 @@
 function [image, descriptors, locs] = sift(imageFile)
 
 % Load image
-image = imread(imageFile);
+image = imageFile;
 
 % If you have the Image Processing Toolbox, you can uncomment the following
 %   lines to allow input of color images, which will be converted to grayscale.

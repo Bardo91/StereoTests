@@ -8,7 +8,7 @@
 %
 % Example: match('scene.pgm','book.pgm');
 
-function num = match(image1, image2)
+function [match, loc1, loc2] = match(image1, image2)
 
 % Find SIFT keypoints for each image
 [im1, des1, loc1] = sift(image1);
@@ -21,7 +21,7 @@ function num = match(image1, image2)
 %
 % distRatio: Only keep matches in which the ratio of vector angles from the
 %   nearest to second nearest neighbor is less than distRatio.
-distRatio = 0.6;   
+distRatio = 0.85;   
 
 % For each descriptor in the first image, select its match to second image.
 des2t = des2';                          % Precompute matrix transpose
