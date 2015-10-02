@@ -32,9 +32,9 @@ find_package(OpenCV REQUIRED)
 set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE)
 LINK_DIRECTORIES(${OpenCV_LIB_DIR})
 # Add Executable
-add_executable(DisparityTest ${BAR_TASK_SOURCE_FILES})
+add_executable(StereoAcquisition ${BAR_TASK_SOURCE_FILES})
 
-target_include_directories(DisparityTest PUBLIC ${PROJECT_SOURCE_DIR}/src)
-target_include_directories(DisparityTest PUBLIC ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(DisparityTest LINK_PUBLIC ${OpenCV_LIBS})
+target_include_directories(StereoAcquisition PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_include_directories(StereoAcquisition PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(StereoAcquisition LINK_PUBLIC ${OpenCV_LIBS})
 

@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
-project(bar_task)
+project(StereoTests)
 
 # Collect all sources
 file(GLOB_RECURSE BAR_TASK_SOURCE_FILES "src/*.cpp" "src/*.h" "src/*.inl")
