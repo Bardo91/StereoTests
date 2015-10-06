@@ -26,13 +26,24 @@ void StereoCameras::calibrate(const vector<Mat> &_calibrationImages1, const vect
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void StereoCameras::frames(Mat & _frame1, Mat & _frame2, bool _undistort) {
+void StereoCameras::frames(Mat & _frame1, Mat & _frame2, bool _undistortAndRectificate) {
 	_frame1 = mCamera1.frame();
 	_frame2 = mCamera2.frame();
 
-	if (_undistort && mCalibrated) {
-		undistort(_frame1, _frame1, mCamera1.matrix(), mCamera1.distCoeffs());
-		undistort(_frame2, _frame2, mCamera2.matrix(), mCamera2.distCoeffs());
+	if (_undistortAndRectificate && mCalibrated) {
+		Size imageSize = Size(_frame1.rows, _frame1.cols);
+		Mat R1, R2, P1, P2, Q;
+		Rect validRoi[2];
+		stereoRectify(mCamera1.matrix(), mCamera1.distCoeffs(), mCamera2.matrix(), mCamera2.distCoeffs(), imageSize, mR, mT, R1, R2, P1, P2, Q, CALIB_ZERO_DISPARITY, 1, imageSize, &validRoi[0], &validRoi[1]);
+
+		Mat rmap[2][2];
+
+		initUndistortRectifyMap(mCamera1.matrix(), mCamera1.distCoeffs(), R1, P1, imageSize, CV_16SC2, rmap[0][0], rmap[0][1]);
+		initUndistortRectifyMap(mCamera1.matrix(), mCamera2.distCoeffs(), R2, P2, imageSize, CV_16SC2, rmap[1][0], rmap[1][1]);
+
+		Mat rectifiedFrame1, rectifiedFrame2;
+		remap(_frame1, _frame1, rmap[0][0], rmap[0][1], INTER_LINEAR);
+		remap(_frame2, _frame2, rmap[1][0], rmap[1][1], INTER_LINEAR);
 	}
 }
 
