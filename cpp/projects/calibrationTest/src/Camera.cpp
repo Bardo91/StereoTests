@@ -6,7 +6,7 @@ using namespace std;
 Camera::Camera(unsigned _camIndex) {
 }
 
-bool Camera::calibrate(vector<Mat> _arrayFrames, Size _boardSize, double _squareSize) {
+bool Camera::calibrate(const vector<Mat> &_arrayFrames, Size _boardSize, float _squareSize) {
 	vector<vector<Point2f>> imagePoints;
 	for (Mat frame : _arrayFrames) {
 		vector<Point2f> pointBuf;
@@ -28,6 +28,8 @@ bool Camera::calibrate(vector<Mat> _arrayFrames, Size _boardSize, double _square
 	else {
 		return false;
 	}
+
+	return true;
 }
 
 void Camera::params(cv::Mat _matrix, cv::Mat _distCoefs, cv::Mat _rotVectors, cv::Mat _transVectors) {
@@ -35,22 +37,54 @@ void Camera::params(cv::Mat _matrix, cv::Mat _distCoefs, cv::Mat _rotVectors, cv
 }
 
 void Camera::params(std::string _paramFile) {
+	FileStorage fs(_paramFile + ".yml", FileStorage::READ);
+	fs["Matrix"] >> mMatrix;
+	fs["DistCoeffs"] >> mDistCoeffs;
 
+	int nRotVectors;
+	fs["nRotVectors"] >> nRotVectors;
+	mRotVectors.resize(nRotVectors);
+	for (int i = 0; i < (int) nRotVectors; i++) {
+		fs["RotVector" +to_string(i)] >> mRotVectors[i];
+	}
+
+	int nTransVectors;
+	fs["nTransVectors"] >> nTransVectors;
+	mRotVectors.resize(nRotVectors);
+	for (int i = 0; i < (int) nTransVectors; i++) {
+		fs["TransVector" +to_string(i)] >> mTransVectors[i];
+	}
 }
 
-Mat Camera::matrix() {
+void Camera::saveParams(std::string _paramFile) {
+	FileStorage fs(_paramFile + ".yml", FileStorage::WRITE);
+	fs << "Matrix" << mMatrix;
+	fs << "DistCoeffs" << mDistCoeffs;
+
+	fs << "nRotVectors" << (int) mRotVectors.size();
+	for (int i = 0; i < (int) mRotVectors.size(); i++) {
+		fs << "RotVector" +to_string(i) << mRotVectors[i];
+	}
+
+	fs << "nTransVectors" << (int) mTransVectors.size();
+	for (int i = 0; i < (int) mTransVectors.size(); i++) {
+		fs << "TransVector" + to_string(i) << mTransVectors[i];
+	}
+}
+
+Mat Camera::matrix() const {
 	return mMatrix;
 }
 
-Mat Camera::distCoeffs() {
+Mat Camera::distCoeffs() const {
 	return mDistCoeffs;
 }
 
-Mat Camera::rotVectors() {
+vector<Mat> Camera::rotVectors() const {
 	return mRotVectors;
 }
 
-Mat Camera::transVectors() {
+vector<Mat> Camera::transVectors() const {
 	return mTransVectors;
 }
 
@@ -60,22 +94,20 @@ Mat Camera::frame() {
 	return frame;
 }
 
-void Camera::calcParams(vector<vector<Point2f>> _imagePoints, Size _imageSize, Size _boardSize, float _squareSize) {
+void Camera::calcParams(const vector<vector<Point2f>> &_imagePoints, Size _imageSize, Size _boardSize, float _squareSize) {
 	mMatrix = Mat::eye(3, 3, CV_64F);
 
 	mDistCoeffs = Mat::zeros(8, 1, CV_64F);
 
-	vector<vector<Point3f> > objectPoints(1);
-	
 	vector<Point3f> corners;
-	vector<vector<Point3f> > objectPoints(1);
+	vector<vector<Point3f> > objectPoints;
 	for (int i = 0; i < _boardSize.height; i++) {
 		for (int j = 0; j < _boardSize.width; j++) {
 			corners.push_back(Point3f(float(j*_squareSize), float(i*_squareSize), 0));
 		}
 	}
 
-	objectPoints.resize(_imagePoints.size(), objectPoints[0]);
+	objectPoints.resize(_imagePoints.size(), corners);
 	double rms = calibrateCamera(objectPoints, _imagePoints, _imageSize, mMatrix, mDistCoeffs, mRotVectors, mTransVectors, CALIB_FIX_K4|CALIB_FIX_K5);
 
 }
