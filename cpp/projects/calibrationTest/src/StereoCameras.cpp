@@ -22,12 +22,18 @@ void StereoCameras::calibrate(const vector<Mat> &_calibrationImages1, const vect
 	mCamera2.calibrate(_calibrationImages2, _boardSize, _squareSize, imagePoints2);
 
 	calibrateStereo(imagePoints1, imagePoints2, Size(_calibrationImages1[0].rows, _calibrationImages1[0].cols), _boardSize, _squareSize);
+	mCalibrated = true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void StereoCameras::frames(Mat & _frame1, Mat & _frame2) {
+void StereoCameras::frames(Mat & _frame1, Mat & _frame2,, bool _undistort) {
 	_frame1 = mCamera1.frame();
 	_frame2 = mCamera2.frame();
+
+	if (_undistort && mCalibrated) {
+		undistort(_frame1, _frame1, mCamera1.matrix(), mCamera1.distCoeffs());
+		undistort(_frame2, _frame2, mCamera2.matrix(), mCamera2.distCoeffs());
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------

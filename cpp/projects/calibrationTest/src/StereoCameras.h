@@ -14,7 +14,7 @@ public:
 	StereoCameras(unsigned _indexCamera1, unsigned _indexCamera2);
 	void calibrate(const std::vector<cv::Mat> &_calibrationImages1, const std::vector<cv::Mat> &_calibrationImages2, cv::Size _boardSize, float _squareSize);
 
-	void frames(cv::Mat &_frame1, cv::Mat &_frame2);
+	void frames(cv::Mat &_frame1, cv::Mat &_frame2, bool _undistort = false);
 
 	Camera & camera(unsigned _index);
 
@@ -24,4 +24,6 @@ private:
 private:
 	Camera mCamera1, mCamera2;
 	cv::Mat mR, mT, mE, mF;
+
+	bool mCalibrated = false;
 };
