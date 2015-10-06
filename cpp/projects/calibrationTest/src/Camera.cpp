@@ -3,9 +3,11 @@
 using namespace cv;
 using namespace std;
 
+//---------------------------------------------------------------------------------------------------------------------
 Camera::Camera(unsigned _camIndex) {
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 bool Camera::calibrate(const vector<Mat> &_arrayFrames, Size _boardSize, float _squareSize, vector<vector<Point2f>> &_imagePoints) {
 	_imagePoints.resize(0);
 
@@ -33,11 +35,13 @@ bool Camera::calibrate(const vector<Mat> &_arrayFrames, Size _boardSize, float _
 	return true;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 void Camera::params(cv::Mat _matrix, cv::Mat _distCoefs) {
 	mMatrix = _matrix;
-	mDistCoeffs = _distCoefs
+	mDistCoeffs = _distCoefs;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 void Camera::params(std::string _paramFile) {
 	FileStorage fs(_paramFile + ".yml", FileStorage::READ);
 	fs["Matrix"] >> mMatrix;
@@ -58,6 +62,7 @@ void Camera::params(std::string _paramFile) {
 	}
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 void Camera::saveParams(std::string _paramFile) {
 	FileStorage fs(_paramFile + ".yml", FileStorage::WRITE);
 	fs << "Matrix" << mMatrix;
@@ -74,28 +79,34 @@ void Camera::saveParams(std::string _paramFile) {
 	}
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 Mat Camera::matrix() const {
 	return mMatrix;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 Mat Camera::distCoeffs() const {
 	return mDistCoeffs;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 vector<Mat> Camera::rotVectors() const {
 	return mRotVectors;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 vector<Mat> Camera::transVectors() const {
 	return mTransVectors;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 Mat Camera::frame() {
 	Mat frame;
 	mDriver >> frame;
 	return frame;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 void Camera::calcParams(const vector<vector<Point2f>> &_imagePoints, Size _imageSize, Size _boardSize, float _squareSize) {
 	mMatrix = Mat::eye(3, 3, CV_64F);
 
