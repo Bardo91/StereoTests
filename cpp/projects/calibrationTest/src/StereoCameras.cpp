@@ -26,7 +26,7 @@ void StereoCameras::calibrate(const vector<Mat> &_calibrationImages1, const vect
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void StereoCameras::frames(Mat & _frame1, Mat & _frame2,, bool _undistort) {
+void StereoCameras::frames(Mat & _frame1, Mat & _frame2, bool _undistort) {
 	_frame1 = mCamera1.frame();
 	_frame2 = mCamera2.frame();
 
