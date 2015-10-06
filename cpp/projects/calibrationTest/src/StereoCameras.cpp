@@ -66,6 +66,12 @@ Mat StereoCameras::disparity(const Mat & _frame1, const Mat & _frame2, unsigned 
 	return disparity;
 }
 
+vector<Point3f> StereoCameras::triangulate(vector<Point2i> _points1, vector<Point2i> _points2) {
+	vector<Point3f> points3d;
+	triangulatePoints(mCamera1.matrix(), mCamera2.matrix(), _points1, _points2, points3d);
+	return points3d;
+}
+
 //---------------------------------------------------------------------------------------------------------------------
 Camera & StereoCameras::camera(unsigned _index) {
 	assert(_index < 2);
