@@ -14,6 +14,9 @@ StereoCameras::StereoCameras(unsigned _indexCamera1, unsigned _indexCamera2): mC
 
 }
 
+StereoCameras::StereoCameras(std::string _pattern1, std::string _pattern2): mCamera1(_pattern1), mCamera2(_pattern2) {
+}
+
 //---------------------------------------------------------------------------------------------------------------------
 void StereoCameras::calibrate(const vector<Mat> &_calibrationImages1, const vector<Mat> &_calibrationImages2, Size _boardSize, float _squareSize) {
 	vector<vector<Point2f>> imagePoints1, imagePoints2;
@@ -29,6 +32,8 @@ void StereoCameras::calibrate(const vector<Mat> &_calibrationImages1, const vect
 void StereoCameras::frames(Mat & _frame1, Mat & _frame2, bool _undistortAndRectificate) {
 	_frame1 = mCamera1.frame();
 	_frame2 = mCamera2.frame();
+	if(_frame1.rows == 0 || _frame2.rows == 0)
+		return;
 
 	if (_undistortAndRectificate && mCalibrated) {
 		Size imageSize = Size(_frame1.rows, _frame1.cols);
@@ -39,7 +44,7 @@ void StereoCameras::frames(Mat & _frame1, Mat & _frame2, bool _undistortAndRecti
 		Mat rmap[2][2];
 
 		initUndistortRectifyMap(mCamera1.matrix(), mCamera1.distCoeffs(), R1, P1, imageSize, CV_16SC2, rmap[0][0], rmap[0][1]);
-		initUndistortRectifyMap(mCamera1.matrix(), mCamera2.distCoeffs(), R2, P2, imageSize, CV_16SC2, rmap[1][0], rmap[1][1]);
+		initUndistortRectifyMap(mCamera2.matrix(), mCamera2.distCoeffs(), R2, P2, imageSize, CV_16SC2, rmap[1][0], rmap[1][1]);
 
 		Mat rectifiedFrame1, rectifiedFrame2;
 		remap(_frame1, _frame1, rmap[0][0], rmap[0][1], INTER_LINEAR);

@@ -12,6 +12,8 @@
 class StereoCameras {
 public:
 	StereoCameras(unsigned _indexCamera1, unsigned _indexCamera2);
+	StereoCameras(std::string _pattern1, std::string _pattern2);
+
 	void calibrate(const std::vector<cv::Mat> &_calibrationImages1, const std::vector<cv::Mat> &_calibrationImages2, cv::Size _boardSize, float _squareSize);
 
 	void frames(cv::Mat &_frame1, cv::Mat &_frame2, bool _undistortAndRectificate = false);

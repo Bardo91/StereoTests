@@ -13,6 +13,10 @@ public:
 	/// \params _camIndex: index of the camera on the current OS.
 	Camera(unsigned _camIndex);
 
+	/// Create a intance of fake cameras that takes images from a pattern
+	/// \params _pattern: Example ---> "/home/user/Desktop/images/img_%d.jpg"
+	Camera(std::string _pattern);
+
 	/// Calculate intrinsic parameters of the camera
 	/// \params _arrayFrames: Array of frames that will be used for calibration.
 	/// \params _boardSize:	Number of corners in the board

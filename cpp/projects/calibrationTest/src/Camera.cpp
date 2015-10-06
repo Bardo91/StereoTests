@@ -4,7 +4,10 @@ using namespace cv;
 using namespace std;
 
 //---------------------------------------------------------------------------------------------------------------------
-Camera::Camera(unsigned _camIndex) {
+Camera::Camera(unsigned _camIndex): mDriver(_camIndex){
+}
+
+Camera::Camera(std::string _pattern): mDriver(_pattern) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -26,8 +26,18 @@ int main(int _argc, char** _argv){
 		calibrationFrames2.push_back(frame2);
 	}
 
-	StereoCameras stereoCameras(0,1);
+	StereoCameras stereoCameras("C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/CalibrationImagesQuad (Cal_C)/cam2/img_cam2_%d.jpg","C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/CalibrationImagesQuad (Cal_C)/cam2/img_cam2_%d.jpg");
 	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(8,6),108);
 
-	system("PAUSE");
+	Mat frame1, frame2;
+
+	for (;;) {
+		stereoCameras.frames(frame1, frame2, true);
+		if(frame1.rows == 0)
+			break;
+
+		hconcat(frame1, frame2, frame1);
+		imshow("display", frame1);
+		waitKey();
+	}
 }
