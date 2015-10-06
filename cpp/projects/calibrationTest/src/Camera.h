@@ -46,7 +46,7 @@ public:
 	std::vector<cv::Mat> transVectors()	const;
 
 	/// Get a new frame from the camera
-	cv::Mat frame();
+	cv::Mat frame(bool _undistort = false);
 
 private:
 	void calcParams(const std::vector<std::vector<cv::Point2f>> &_imagePoints, cv::Size _imageSize, cv::Size _boardSize, float _squareSize);
@@ -55,5 +55,7 @@ private:
 	cv::VideoCapture mDriver;
 	cv::Mat mMatrix, mDistCoeffs;
 	std::vector<cv::Mat> mRotVectors, mTransVectors;
+
+	bool mCalibrated = false;
 
 };

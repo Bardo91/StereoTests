@@ -31,7 +31,7 @@ bool Camera::calibrate(const vector<Mat> &_arrayFrames, Size _boardSize, float _
 	else {
 		return false;
 	}
-
+	mCalibrated = true;
 	return true;
 }
 
@@ -39,6 +39,7 @@ bool Camera::calibrate(const vector<Mat> &_arrayFrames, Size _boardSize, float _
 void Camera::params(cv::Mat _matrix, cv::Mat _distCoefs) {
 	mMatrix = _matrix;
 	mDistCoeffs = _distCoefs;
+	mCalibrated = true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -60,6 +61,7 @@ void Camera::params(std::string _paramFile) {
 	for (int i = 0; i < (int) nTransVectors; i++) {
 		fs["TransVector" +to_string(i)] >> mTransVectors[i];
 	}
+	mCalibrated = true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -100,9 +102,14 @@ vector<Mat> Camera::transVectors() const {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Mat Camera::frame() {
+Mat Camera::frame(bool _undistort) {
 	Mat frame;
 	mDriver >> frame;
+
+	if (_undistort && mCalibrated) {
+		undistort(frame, frame, mMatrix, mDistCoeffs);
+	}
+
 	return frame;
 }
 
