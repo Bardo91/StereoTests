@@ -1,34 +1,43 @@
 load calibrationparameters.mat
 
 % Read in the stereo pair of images.
-I1 = imread('testImages/img_cam1_6.jpg');
-I2 = imread('testImages/img_cam2_6.jpg');
+I1 = imread('testImages/img_cam1_4.jpg');
+I2 = imread('testImages/img_cam2_4.jpg');
 
 % Rectify the images.
 [J1, J2] = rectifyStereoImages(I1, I2, stereoParams);
+J = stereoAnaglyph(J1,J2)
 
-% Display the images before rectification.
-figure; imshow(cat(3, J1(:,:,1), J2(:,:,2:3)), 'InitialMagnification', 50);
+% Display the images before and after rectification.
+figure('name' ,'Overlayed stereo images before rectification')
+imshow(cat(3, I1(:,:,1), I2(:,:,2:3)), 'InitialMagnification', 50, 'Border','tight');
 
-disparityMap = disparity(rgb2gray(J1), rgb2gray(J2));
-figure; imshow(disparityMap, [0, 64], 'InitialMagnification', 50);
+figure('name', 'Overlayed stereo images after rectification')
+imshow(J, 'InitialMagnification', 50, 'Border','tight');
 
-pointCloud = reconstructScene(disparityMap, stereoParams);
+% Calculate disparity map
+disparityMap = disparity(rgb2gray(J1),rgb2gray(J2),...
+    'BlockSize', 15,'DisparityRange', [-16*12 0], 'Method','SemiGlobal')
 
-z = pointCloud(:,:,3);
-z(z < -8000) = NaN;
-x = pointCloud(:,:,1);
-x(x < -3000 | x > 3000) = NaN;
-pointCloud(:,:,3) = z;
-pointCloud(:,:,1) = x;
+% change undefined values in map
+marker_idx = (disparityMap == -realmax('single'));
+      disparityMap(marker_idx) = max(disparityMap(~marker_idx));
 
-figure
-showPointCloud(pointCloud);
-title('Point Cloud Visualization')
-xlabel('x axis');
-ylabel('y axis');
-zlabel('z axis');
-% set axis properties
+% Show map and point cloud
+figure('name', 'Disparity map')
+imshow(mat2gray(disparityMap),'Border','tight')
+colormap jet
+
+point3D = reconstructScene(disparityMap, stereoParams);
+% Limit the Z-range for display in mm.
+z = point3D(:,:,3);
+z(z < 0 | z > 3000) = NaN;
+point3D(:,:,3) = z;
+
+figure('name','Point cloud');
+showPointCloud(point3D, J1, 'VerticalAxis', 'Y', 'VerticalAxisDir', 'Down');
+xlabel('X (mm)');
+ylabel('Y (mm)');
+zlabel('Z (mm)');
 %axis([0 4000 -4000 4000 -4000 4000]);
-view([-79.5000   50.0000]);
 grid on;

@@ -1,16 +1,20 @@
 load calibrationparameters.mat
 
-I1 = undistortImage( imread('testImages/img_cam1_5.jpg'),stereoParams.CameraParameters1);
-I2 = undistortImage( imread('testImages/img_cam2_5.jpg'),stereoParams.CameraParameters2);
+I1 = imread('testImages/img_cam1_5.jpg');
+I2 = imread('testImages/img_cam2_5.jpg');
 
-% Rectify the images.
-%[J1, J2] = rectifyStereoImages(I1, I2, stereoParams);
+I1undistorted = undistortImage( I1,stereoParams.CameraParameters1);
+I2undistorted = undistortImage( I2,stereoParams.CameraParameters2);
 
-grayI1 =  rgb2gray(I1);
-grayI2 =  rgb2gray(I2);
+%Rectify the images.
+[J1, J2] = rectifyStereoImages(I1, I2, stereoParams);
+
+grayI1 =  rgb2gray(J1);
+grayI2 =  rgb2gray(J2);
 
 features1 = detectSURFFeatures(grayI1, 'MetricThreshold', 200);
 features2 = detectSURFFeatures(grayI2, 'MetricThreshold', 200);
+featuresHarris = detectHarrisFeatures(grayI1);
 
 [ft1,validPts1]  = extractFeatures(grayI1,features1);
 [ft2,validPts2] = extractFeatures(grayI2,features2);
@@ -21,13 +25,13 @@ indexPairs = matchFeatures(ft1,ft2,'MatchThreshold', 10);
 matched1  = validPts1(indexPairs(:,1));
 matched2 = validPts2(indexPairs(:,2));
 
-showMatchedFeatures(I1, I2, matched1, matched2, 'montage');
+showMatchedFeatures(I1undistorted, I2undistorted, matched1, matched2, 'montage');
 title('Putatively Matched Points (Including Outliers)');
 
 [tform, inlierBoxPoints, inlierScenePoints] = estimateGeometricTransform(matched1, matched2, 'affine', 'Confidence', 80);
 
 figure;
-showMatchedFeatures(I1, I2, inlierBoxPoints, inlierScenePoints, 'montage');
+showMatchedFeatures(I1undistorted, I2undistorted, inlierBoxPoints, inlierScenePoints, 'montage');
 title('Matched Points (Inliers Only)');
 
 
