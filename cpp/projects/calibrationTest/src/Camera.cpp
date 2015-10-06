@@ -6,8 +6,9 @@ using namespace std;
 Camera::Camera(unsigned _camIndex) {
 }
 
-bool Camera::calibrate(const vector<Mat> &_arrayFrames, Size _boardSize, float _squareSize) {
-	vector<vector<Point2f>> imagePoints;
+bool Camera::calibrate(const vector<Mat> &_arrayFrames, Size _boardSize, float _squareSize, vector<vector<Point2f>> &_imagePoints) {
+	_imagePoints.resize(0);
+
 	for (Mat frame : _arrayFrames) {
 		vector<Point2f> pointBuf;
 		Mat frameGray;
@@ -15,15 +16,15 @@ bool Camera::calibrate(const vector<Mat> &_arrayFrames, Size _boardSize, float _
 		bool found = findChessboardCorners( frame, _boardSize, pointBuf, CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_FAST_CHECK | CALIB_CB_NORMALIZE_IMAGE);
 		if (found) {
 			cornerSubPix(frameGray, pointBuf, Size(11, 11), Size(-1, -1), TermCriteria(TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1));
-			imagePoints.push_back(pointBuf);
+			_imagePoints.push_back(pointBuf);
 		}
 		else {
 			continue;
 		}
 	}
 
-	if (imagePoints.size() != 0) {
-		calcParams(imagePoints, Size(_arrayFrames[0].rows, _arrayFrames[0].cols),_boardSize, _squareSize);
+	if (_imagePoints.size() != 0) {
+		calcParams(_imagePoints, Size(_arrayFrames[0].rows, _arrayFrames[0].cols),_boardSize, _squareSize);
 	}
 	else {
 		return false;
@@ -32,8 +33,9 @@ bool Camera::calibrate(const vector<Mat> &_arrayFrames, Size _boardSize, float _
 	return true;
 }
 
-void Camera::params(cv::Mat _matrix, cv::Mat _distCoefs, cv::Mat _rotVectors, cv::Mat _transVectors) {
-
+void Camera::params(cv::Mat _matrix, cv::Mat _distCoefs) {
+	mMatrix = _matrix;
+	mDistCoeffs = _distCoefs
 }
 
 void Camera::params(std::string _paramFile) {
