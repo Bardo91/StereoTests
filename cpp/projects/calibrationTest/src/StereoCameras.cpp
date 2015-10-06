@@ -52,6 +52,20 @@ void StereoCameras::frames(Mat & _frame1, Mat & _frame2, bool _undistortAndRecti
 	}
 }
 
+Mat StereoCameras::disparity(const Mat & _frame1, const Mat & _frame2, unsigned _disparityRange, unsigned _blockSize) {
+	Ptr<StereoSGBM> disparityMaker = StereoSGBM::create(0, _disparityRange, _blockSize);
+
+	Mat disparity;
+	disparityMaker->compute(_frame1, _frame2, disparity);
+
+	double minVal,maxVal;
+
+	minMaxLoc( disparity, &minVal, &maxVal );
+	disparity.convertTo(disparity, CV_8UC1, 255/(maxVal - minVal));
+
+	return disparity;
+}
+
 //---------------------------------------------------------------------------------------------------------------------
 Camera & StereoCameras::camera(unsigned _index) {
 	assert(_index < 2);
@@ -64,13 +78,25 @@ Camera & StereoCameras::camera(unsigned _index) {
 
 //---------------------------------------------------------------------------------------------------------------------
 void StereoCameras::calibrateStereo(const vector<vector<Point2f>> &_imagePoints1, const vector<vector<Point2f>> &_imagePoints2, Size _imageSize, Size _boardSize, float _squareSize) {
+	vector<vector<Point2f>> filteredPoints1 = _imagePoints1;
+	vector<vector<Point2f>> filteredPoints2 = _imagePoints2;
+
+	for (unsigned i = 0; i < filteredPoints1.size(); i++) {
+		if (filteredPoints1[i].size() ==  0 || filteredPoints2[i].size() ==  0) {
+			filteredPoints1.erase(filteredPoints1.begin() + i);
+			filteredPoints2.erase(filteredPoints2.begin() + i);
+			i--;
+		}
+	}
+	
+	
 	vector<vector<Point3f> > objectPoints(1);
 	for (int i = 0; i < _boardSize.height; i++) {
 		for (int j = 0; j < _boardSize.width; j++) {
 			objectPoints[0].push_back(Point3f(float(j*_squareSize), float(i*_squareSize), 0));
 		}
 	}
-	objectPoints.resize(_imagePoints1.size(),objectPoints[0]);
+	objectPoints.resize(filteredPoints1.size(),objectPoints[0]);
 
-	stereoCalibrate(objectPoints, _imagePoints1, _imagePoints2, mCamera1.matrix(), mCamera1.distCoeffs(), mCamera2.matrix(), mCamera2.distCoeffs(),_imageSize, mR, mT, mE, mF);
+	stereoCalibrate(objectPoints, filteredPoints1, filteredPoints2, mCamera1.matrix(), mCamera1.distCoeffs(), mCamera2.matrix(), mCamera2.distCoeffs(),_imageSize, mR, mT, mE, mF);
 }

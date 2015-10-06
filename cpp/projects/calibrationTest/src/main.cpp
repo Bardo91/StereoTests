@@ -16,8 +16,8 @@ int main(int _argc, char** _argv){
 	vector<Mat> calibrationFrames1, calibrationFrames2;
 	for (unsigned i = 0; i < 21; i++) {
 		// Load image
-		Mat frame1 = imread("C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/CalibrationImagesQuad (Cal_C)/cam1/img_cam1_" + to_string(i) + ".jpg");
-		Mat frame2 = imread("C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/CalibrationImagesQuad (Cal_C)/cam2/img_cam2_" + to_string(i) + ".jpg");
+		Mat frame1 = imread("C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/CalibrationImages (Cal_A)/cam1/img_cam1_" + to_string(i) + ".jpg");
+		Mat frame2 = imread("C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/CalibrationImages (Cal_A)/cam2/img_cam2_" + to_string(i) + ".jpg");
 		if(frame1.rows == 0 ||frame2.rows == 0)
 			break;
 
@@ -26,7 +26,8 @@ int main(int _argc, char** _argv){
 		calibrationFrames2.push_back(frame2);
 	}
 
-	StereoCameras stereoCameras("C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/CalibrationImagesQuad (Cal_C)/cam2/img_cam2_%d.jpg","C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/CalibrationImagesQuad (Cal_C)/cam2/img_cam2_%d.jpg");
+	StereoCameras stereoCameras("C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/testImages (Cal_A)/img_cam1_%d.jpg",
+								"C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/testImages (Cal_A)/img_cam2_%d.jpg");
 	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(8,6),108);
 
 	Mat frame1, frame2;
@@ -36,8 +37,16 @@ int main(int _argc, char** _argv){
 		if(frame1.rows == 0)
 			break;
 
-		hconcat(frame1, frame2, frame1);
-		imshow("display", frame1);
+		cvtColor(frame1, frame1, CV_BGR2GRAY);
+		cvtColor(frame2, frame2, CV_BGR2GRAY);
+
+		Mat disparity = stereoCameras.disparity(frame2, frame1, 16*12, 21);
+		imshow("disparity", disparity);
+		
+		Mat display;
+		hconcat(frame1, frame2, display);
+		imshow("display", display);
+		
 		waitKey();
 	}
 }

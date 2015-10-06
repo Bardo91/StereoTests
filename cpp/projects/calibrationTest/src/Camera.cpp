@@ -24,6 +24,7 @@ bool Camera::calibrate(const vector<Mat> &_arrayFrames, Size _boardSize, float _
 			_imagePoints.push_back(pointBuf);
 		}
 		else {
+			_imagePoints.push_back(pointBuf);
 			continue;
 		}
 	}
@@ -122,6 +123,15 @@ void Camera::calcParams(const vector<vector<Point2f>> &_imagePoints, Size _image
 
 	mDistCoeffs = Mat::zeros(8, 1, CV_64F);
 
+	// Filter good points.
+	vector<vector<Point2f>> filteredPoints = _imagePoints;
+	for (unsigned i = 0; i < filteredPoints.size(); i++) {
+		if (filteredPoints[i].size() ==  0) {
+			filteredPoints.erase(filteredPoints.begin() + i);
+			i--;
+		}
+	}
+
 	vector<vector<Point3f> > objectPoints(1);
 	for (int i = 0; i < _boardSize.height; i++) {
 		for (int j = 0; j < _boardSize.width; j++) {
@@ -129,8 +139,8 @@ void Camera::calcParams(const vector<vector<Point2f>> &_imagePoints, Size _image
 		}
 	}
 
-	objectPoints.resize(_imagePoints.size(), objectPoints[0]);
-	double rms = calibrateCamera(objectPoints, _imagePoints, _imageSize, mMatrix, mDistCoeffs, mRotVectors, mTransVectors, CALIB_FIX_K4|CALIB_FIX_K5);
+	objectPoints.resize(filteredPoints.size(), objectPoints[0]);
+	double rms = calibrateCamera(objectPoints, filteredPoints, _imageSize, mMatrix, mDistCoeffs, mRotVectors, mTransVectors, CALIB_FIX_K4|CALIB_FIX_K5);
 
 }
 
