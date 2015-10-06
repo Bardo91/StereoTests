@@ -112,15 +112,14 @@ void Camera::calcParams(const vector<vector<Point2f>> &_imagePoints, Size _image
 
 	mDistCoeffs = Mat::zeros(8, 1, CV_64F);
 
-	vector<Point3f> corners;
-	vector<vector<Point3f> > objectPoints;
+	vector<vector<Point3f> > objectPoints(1);
 	for (int i = 0; i < _boardSize.height; i++) {
 		for (int j = 0; j < _boardSize.width; j++) {
-			corners.push_back(Point3f(float(j*_squareSize), float(i*_squareSize), 0));
+			objectPoints[0].push_back(Point3f(float(j*_squareSize), float(i*_squareSize), 0));
 		}
 	}
 
-	objectPoints.resize(_imagePoints.size(), corners);
+	objectPoints.resize(_imagePoints.size(), objectPoints[0]);
 	double rms = calibrateCamera(objectPoints, _imagePoints, _imageSize, mMatrix, mDistCoeffs, mRotVectors, mTransVectors, CALIB_FIX_K4|CALIB_FIX_K5);
 
 }
