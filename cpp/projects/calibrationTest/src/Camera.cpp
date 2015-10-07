@@ -30,7 +30,7 @@ bool Camera::calibrate(const vector<Mat> &_arrayFrames, Size _boardSize, float _
 	}
 
 	if (_imagePoints.size() != 0) {
-		calcParams(_imagePoints, Size(_arrayFrames[0].rows, _arrayFrames[0].cols),_boardSize, _squareSize);
+		calcParams(_imagePoints, _arrayFrames[0].size(),_boardSize, _squareSize);
 	}
 	else {
 		return false;

@@ -33,7 +33,7 @@ int main(int _argc, char** _argv){
 	Mat frame1, frame2;
 
 	for (;;) {
-		stereoCameras.frames(frame1, frame2);
+		stereoCameras.frames(frame1, frame2, true);
 		if(frame1.rows == 0)
 			break;
 
@@ -56,7 +56,7 @@ int main(int _argc, char** _argv){
 		}
 
 
-		vector<Point3f> points3d = stereoCameras.triangulate(points2d1, points2d2);
+		//vector<Point3f> points3d = stereoCameras.triangulate(points2d1, points2d2);
 
 		Mat display;
 		hconcat(frame1, frame2, display);

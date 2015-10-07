@@ -24,7 +24,7 @@ void StereoCameras::calibrate(const vector<Mat> &_calibrationImages1, const vect
 	mCamera1.calibrate(_calibrationImages1, _boardSize, _squareSize, imagePoints1);
 	mCamera2.calibrate(_calibrationImages2, _boardSize, _squareSize, imagePoints2);
 
-	calibrateStereo(imagePoints1, imagePoints2, Size(_calibrationImages1[0].rows, _calibrationImages1[0].cols), _boardSize, _squareSize);
+	calibrateStereo(imagePoints1, imagePoints2, _calibrationImages1[0].size(), _boardSize, _squareSize);
 	mCalibrated = true;
 }
 
@@ -36,7 +36,7 @@ void StereoCameras::frames(Mat & _frame1, Mat & _frame2, bool _undistortAndRecti
 		return;
 
 	if (_undistortAndRectificate && mCalibrated) {
-		Size imageSize = Size(_frame1.rows, _frame1.cols);
+		Size imageSize = _frame1.size();
 		Mat R1, R2, P1, P2, Q;
 		Rect validRoi[2];
 		stereoRectify(mCamera1.matrix(), mCamera1.distCoeffs(), mCamera2.matrix(), mCamera2.distCoeffs(), imageSize, mR, mT, R1, R2, P1, P2, Q, CALIB_ZERO_DISPARITY, 1, imageSize, &validRoi[0], &validRoi[1]);
