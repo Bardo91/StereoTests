@@ -29,6 +29,8 @@ int main(int _argc, char** _argv){
 	StereoCameras stereoCameras("C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/testImages (Cal_A)/img_cam1_%d.jpg",
 								"C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/testImages (Cal_A)/img_cam2_%d.jpg");
 	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(8,6),108);
+	stereoCameras.save("stereo_A");
+
 
 	std::cout << "Calibration Parameters" << std::endl;
 	std::cout << stereoCameras.camera(0).matrix() << std::endl;
