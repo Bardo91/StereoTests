@@ -6,11 +6,14 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/xfeatures2d.hpp>
 
 #include "StereoCameras.h"
 
 using namespace std;
 using namespace cv;
+
+void computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2, vector< DMatch > &_matches);
 
 int main(int _argc, char** _argv){
 	vector<Mat> calibrationFrames1, calibrationFrames2;
@@ -51,25 +54,36 @@ int main(int _argc, char** _argv){
 		Mat disparity = stereoCameras.disparity(frame2, frame1, 16*12, 21);
 		imshow("disparity", disparity);
 		
-		vector<KeyPoint> keypoints1, keypoints2;
-		FAST(frame1, keypoints1, 9);
-		FAST(frame2, keypoints2, 9);
-
-		vector<Point2i> points2d1, points2d2;
-		for (KeyPoint kp : keypoints1) {
-			points2d1.push_back(kp.pt);
-		}
-		for (KeyPoint kp : keypoints2) {
-			points2d2.push_back(kp.pt);
-		}
-
-
-		//vector<Point3f> points3d = stereoCameras.triangulate(points2d1, points2d2);
-
+		vector< DMatch > matches;
+		computeFeaturesAndMatches(frame1, frame2, matches);
+		
 		Mat display;
 		hconcat(frame1, frame2, display);
 		imshow("display", display);
 		
 		waitKey();
 	}
+}
+
+void computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2, vector< DMatch > &_matches) {
+	vector<KeyPoint> keypoints1, keypoints2;
+	Mat descriptors1, descriptors2;
+	Ptr<xfeatures2d::SURF> detector = xfeatures2d::SURF::create();
+	detector->detectAndCompute(_frame1, Mat(), keypoints1, descriptors1);
+	detector->detectAndCompute(_frame2, Mat(), keypoints2, descriptors2);
+	FlannBasedMatcher matcher;
+	matcher.match(descriptors1, descriptors2, _matches);
+
+	double max_dist = 0; double min_dist = 100;
+	
+	//-- Draw only "good" matches
+	Mat img_matches;
+	drawMatches( _frame1, keypoints1, _frame2, keypoints2, _matches, img_matches, Scalar::all(-1), Scalar::all(-1), vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+	
+	//-- Show detected matches
+	imshow( "Good Matches", img_matches );
+	for( int i = 0; i < (int)_matches.size(); i++ )	{ 
+		printf( "-- Good Match [%d] Keypoint 1: %d  -- Keypoint 2: %d  \n", i, _matches[i].queryIdx, _matches[i].trainIdx ); 
+	}
+
 }
