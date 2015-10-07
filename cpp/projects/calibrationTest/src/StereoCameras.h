@@ -52,6 +52,9 @@ public:
 	/// \return reference to one of the cameras.
 	Camera & camera(unsigned _index);
 
+	/// Return true if everything is calibrated.
+	bool isCalibrated() const;
+
 private:
 	void calibrateStereo(const std::vector<std::vector<cv::Point2f>> &_imagePoints1, const std::vector<std::vector<cv::Point2f>> &_imagePoints2, cv::Size _imageSize, cv::Size _boardSize, float _squareSize);
 

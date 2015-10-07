@@ -52,6 +52,9 @@ public:
 	/// Get a new frame from the camera
 	cv::Mat frame(bool _undistort = false);
 
+	/// Return true if camera is calibrated.
+	bool isCalibrated() const;
+
 private:
 	void calcParams(const std::vector<std::vector<cv::Point2f>> &_imagePoints, cv::Size _imageSize, cv::Size _boardSize, float _squareSize);
 

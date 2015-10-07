@@ -118,6 +118,11 @@ Mat Camera::frame(bool _undistort) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+bool Camera::isCalibrated() const {
+	return mCalibrated;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 void Camera::calcParams(const vector<vector<Point2f>> &_imagePoints, Size _imageSize, Size _boardSize, float _squareSize) {
 	mMatrix = Mat::eye(3, 3, CV_64F);
 

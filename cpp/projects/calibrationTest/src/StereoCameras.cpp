@@ -83,6 +83,11 @@ Camera & StereoCameras::camera(unsigned _index) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+bool StereoCameras::isCalibrated() const {
+	return mCalibrated;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 void StereoCameras::calibrateStereo(const vector<vector<Point2f>> &_imagePoints1, const vector<vector<Point2f>> &_imagePoints2, Size _imageSize, Size _boardSize, float _squareSize) {
 	vector<vector<Point2f>> filteredPoints1 = _imagePoints1;
 	vector<vector<Point2f>> filteredPoints2 = _imagePoints2;
