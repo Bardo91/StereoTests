@@ -61,7 +61,7 @@ void Camera::params(std::string _paramFile) {
 
 	int nTransVectors;
 	fs["nTransVectors"] >> nTransVectors;
-	mRotVectors.resize(nRotVectors);
+	mTransVectors.resize(nTransVectors);
 	for (int i = 0; i < (int) nTransVectors; i++) {
 		fs["TransVector" +to_string(i)] >> mTransVectors[i];
 	}
