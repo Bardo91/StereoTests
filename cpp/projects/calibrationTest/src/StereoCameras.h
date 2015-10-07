@@ -45,7 +45,7 @@ public:
 	/// \params _points1: projection of points on first image.
 	/// \params _points2: projection of points on second image.
 	/// \return array of 3d points
-	std::vector<cv::Point3f> triangulate(std::vector<cv::Point2i> _points1, std::vector<cv::Point2i> _points2);
+	std::vector<cv::Point3f> triangulate(const std::vector<cv::Point2i> &_points1, const std::vector<cv::Point2i> &_points2);
 
 	/// Get one of the cameras
 	/// \params _index: 0 for first camera; 1 for the second one.
