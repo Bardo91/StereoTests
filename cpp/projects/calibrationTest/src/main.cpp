@@ -30,6 +30,12 @@ int main(int _argc, char** _argv){
 								"C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/testImages (Cal_A)/img_cam2_%d.jpg");
 	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(8,6),108);
 
+	std::cout << "Calibration Parameters" << std::endl;
+	std::cout << stereoCameras.camera(0).matrix() << std::endl;
+	std::cout << stereoCameras.camera(0).distCoeffs() << std::endl;
+	std::cout << stereoCameras.camera(1).matrix() << std::endl;
+	std::cout << stereoCameras.camera(1).distCoeffs() << std::endl;
+
 	Mat frame1, frame2;
 
 	for (;;) {
