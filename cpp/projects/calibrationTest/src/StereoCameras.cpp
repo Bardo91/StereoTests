@@ -79,14 +79,18 @@ vector<Point3f> StereoCameras::triangulate(const vector<Point2i> &_points1, cons
 	}
 
 	Mat I = Mat::eye(3,4, CV_64F);
-	triangulatePoints(mCamera1.matrix()*I, mCamera2.matrix()*I, cam1pnts, cam2pnts, pnts3D);
+	Mat extrinsicMatrix(3,4, CV_64F);
+	mR.copyTo(extrinsicMatrix.rowRange(0,3).colRange(0,3));
+	mT.copyTo(extrinsicMatrix.rowRange(0,3).col(3));
+
+	triangulatePoints(mCamera1.matrix()*I, mCamera2.matrix()*extrinsicMatrix, cam1pnts, cam2pnts, pnts3D);
 
 	vector<Point3f> points3d;
 	for (unsigned i = 0 ; i < pnts3D.cols ; i++) {
-		float w = (float) pnts3D.at<double>(3,0);
-		float x = (float) pnts3D.at<double>(0,0)/w;
-		float y = (float) pnts3D.at<double>(1,0)/w;
-		float z = (float) pnts3D.at<double>(2,0)/w;
+		float w = (float) pnts3D.at<double>(3,i);
+		float x = (float) pnts3D.at<double>(0,i)/w;
+		float y = (float) pnts3D.at<double>(1,i)/w;
+		float z = (float) pnts3D.at<double>(2,i)/w;
 		points3d.push_back(Point3f(x,y,z));
 	}
 
