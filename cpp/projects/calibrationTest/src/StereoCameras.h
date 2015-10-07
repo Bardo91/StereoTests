@@ -55,6 +55,14 @@ public:
 	/// Return true if everything is calibrated.
 	bool isCalibrated() const;
 
+	/// Save CameraParameters
+	/// \params _filePath: path of the file
+	void save(std::string _filePath);
+
+	/// Load Camera parameters
+	/// \params _filePath: path of the file
+	void load(std::string _filePath);
+
 private:
 	void calibrateStereo(const std::vector<std::vector<cv::Point2f>> &_imagePoints1, const std::vector<std::vector<cv::Point2f>> &_imagePoints2, cv::Size _imageSize, cv::Size _boardSize, float _squareSize);
 

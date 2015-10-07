@@ -87,6 +87,28 @@ bool StereoCameras::isCalibrated() const {
 	return mCalibrated;
 }
 
+void StereoCameras::save(std::string _filePath) {
+	mCamera1.saveParams(_filePath + "_cam1");
+	mCamera2.saveParams(_filePath + "_cam2");
+	
+	FileStorage fs(_filePath + "_stero.yml", FileStorage::WRITE);
+	fs << "mR" << mR;
+	fs << "mT" << mT;
+	fs << "mE" << mE;
+	fs << "mF" << mF;
+}
+
+void StereoCameras::load(std::string _filePath) {
+	mCamera1.params(_filePath + "_cam1");
+	mCamera2.params(_filePath + "_cam2");
+
+	FileStorage fs(_filePath + "_stero.yml", FileStorage::READ);
+	fs["mR"] >> mR;
+	fs["mT"] >> mT;
+	fs["mE"] >> mE;
+	fs["mF"] >> mF;
+}
+
 //---------------------------------------------------------------------------------------------------------------------
 void StereoCameras::calibrateStereo(const vector<vector<Point2f>> &_imagePoints1, const vector<vector<Point2f>> &_imagePoints2, Size _imageSize, Size _boardSize, float _squareSize) {
 	vector<vector<Point2f>> filteredPoints1 = _imagePoints1;
