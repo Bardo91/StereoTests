@@ -8,13 +8,13 @@ I2 = imread('testImages/img_cam2_4.jpg');
 figure(1)
 imshow([I1,I2])
 
-maxReprojectionError = 1;
-harrisMinQuality = 0.001;
-harrisFilterSize = 3;
-mserThresholdDelta = 1;
+maxReprojectionError = 3; %1 is good for harris
+harrisMinQuality = 0.000001; %going lower gives many more features, they are usefull
+harrisFilterSize = 3; %3 is minimum and gives the most features
+mserThresholdDelta = 1; %(0 100] intensity step size between regions in %. Less gives more regions
 mserRegionAreaRange = [5 5000];
-mserMaxAreaVariation = 0.25;
-matchingThreshold = 30; %more gives more matches but worse
+mserMaxAreaVariation = 0.4; %(0 1] maximum variation at different intensities. Hiher number gives more regions, but more unstable
+matchingThreshold = 30; % percentwise distance from ideal match. More gives more matches but worse
 matchingMaxRatio = 0.9; % [0 1] less give fewer matches but better
 minDistanceFromCam = 0;
 maxDistanceFromCam = 3000; % in mm
@@ -57,7 +57,7 @@ fprintf('We found %d Harris feature matches. \n', (length(matchedHarris1)+length
 
 figure(20)
 showMatchedFeatures(grayI1, grayI2, matchedHarris1, matchedHarris2, 'montage');
-title('Putatively Matched Points (Including Outliers)');
+title('Putatively Matched Harris Points (Including Outliers)');
 
 
 [ft1,validPts1]  = extractFeatures(grayI1,featuresMSERLeft);
@@ -73,7 +73,7 @@ fprintf('We found %d MSER feature matches. \n', (length(matchedMSER1)+length(mat
 
 figure(21)
 showMatchedFeatures(grayI1, grayI2, matchedMSER1, matchedMSER2, 'montage');
-title('Putatively Matched Points (Including Outliers)')
+title('Putatively Matched MSER Points (Including Outliers)')
 
 
 points3D = [];
@@ -89,7 +89,7 @@ validPoints2 = matchedHarris2(validIdx, :);
 
 figure;
 showMatchedFeatures(I1, I2, validPoints1,validPoints2);
-title('Matched Features After Removing Noisy Matches');
+title('Matched Harris Features After Removing Noisy Matches');
 
 fprintf('After filtering %d Harris features are left. \n', (length(validPoints1)+length(validPoints2))/2);
 
@@ -107,7 +107,7 @@ validPoints2 = matchedMSER2(validIdx, :);
 
 figure;
 showMatchedFeatures(I1, I2, validPoints1,validPoints2);
-title('Matched Features After Removing Noisy Matches');
+title('Matched MSER Features After Removing Noisy Matches');
 
 fprintf('After filtering %d MSER features are left. \n', (length(validPoints1)+length(validPoints2))/2);
 
