@@ -30,12 +30,17 @@ void StereoCameras::calibrate(const vector<Mat> &_calibrationImages1, const vect
 
 //---------------------------------------------------------------------------------------------------------------------
 void StereoCameras::frames(Mat & _frame1, Mat & _frame2, bool _undistortAndRectificate) {
+	// Get image from cameras
 	_frame1 = mCamera1.frame();
 	_frame2 = mCamera2.frame();
+
+	// Check if images are fine
 	if(_frame1.rows == 0 || _frame2.rows == 0)
 		return;
 
+	// If want to undistort and rectificate images
 	if (_undistortAndRectificate && mCalibrated) {
+		// Get params for properly undistort and rectify images
 		Size imageSize = _frame1.size();
 		Mat R1, R2, P1, P2, Q;
 		Rect validRoi[2];
@@ -43,9 +48,11 @@ void StereoCameras::frames(Mat & _frame1, Mat & _frame2, bool _undistortAndRecti
 
 		Mat rmap[2][2];
 
+		// Calculate remap functions
 		initUndistortRectifyMap(mCamera1.matrix(), mCamera1.distCoeffs(), R1, P1, imageSize, CV_16SC2, rmap[0][0], rmap[0][1]);
 		initUndistortRectifyMap(mCamera2.matrix(), mCamera2.distCoeffs(), R2, P2, imageSize, CV_16SC2, rmap[1][0], rmap[1][1]);
 
+		// Undirstort and rectify images
 		Mat rectifiedFrame1, rectifiedFrame2;
 		remap(_frame1, _frame1, rmap[0][0], rmap[0][1], INTER_LINEAR);
 		remap(_frame2, _frame2, rmap[1][0], rmap[1][1], INTER_LINEAR);
