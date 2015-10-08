@@ -7,13 +7,13 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/xfeatures2d.hpp>
-
+#include <fstream>
 #include "StereoCameras.h"
 
 using namespace std;
 using namespace cv;
 
-void computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2, vector<Point2i> &_points1, vector<Point2i> &_points2);
+vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2, StereoCameras &_cameras, double _maxReprojectionError = 1);
 
 int main(int _argc, char** _argv){
 	vector<Mat> calibrationFrames1, calibrationFrames2;
@@ -56,19 +56,23 @@ int main(int _argc, char** _argv){
 		imshow("disparity", disparity);
 		
 		vector<Point2i> points1, points2;
-		computeFeaturesAndMatches(frame1, frame2, points1, points2);
-		
-		stereoCameras.triangulate(points1, points2);
-		
+		vector<Point3f> points3d = computeFeaturesAndMatches(frame1, frame2, stereoCameras, 20);
 		Mat display;
 		hconcat(frame1, frame2, display);
 		imshow("display", display);
 		
+		ofstream pointCloud("pointcloud.txt");
+
+		for (Point3f point : points3d) {
+			pointCloud << point.x << "\t" << point.y << "\t" << point.z << std::endl;
+		}
+
+
 		waitKey();
 	}
 }
 
-void computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2, vector<Point2i> &_points1, vector<Point2i> &_points2) {
+vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2, StereoCameras &_cameras, double _maxReprojectionError) {
 	vector<KeyPoint> keypoints1, keypoints2;
 	Mat descriptors1, descriptors2;
 	Ptr<xfeatures2d::SURF> detector = xfeatures2d::SURF::create();
@@ -79,20 +83,36 @@ void computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2, vector<Po
 	matcher.match(descriptors1, descriptors2, matches);
 
 	double max_dist = 0; double min_dist = 100;
-	
+	vector<Point2i> points2, points1;
 	for (unsigned i = 0; i < matches.size(); i++) {
-		_points1.push_back(keypoints1[matches[i].queryIdx].pt);
-		_points2.push_back(keypoints2[matches[i].trainIdx].pt);
+		points1.push_back(keypoints1[matches[i].queryIdx].pt);
+		points2.push_back(keypoints2[matches[i].trainIdx].pt);
+	}
+
+	vector<Point3f> points3d = _cameras.triangulate(points1, points2);
+
+	vector<Point2f> reprojection1, reprojection2;
+	projectPoints(points3d, Mat::eye(3,3, CV_64F), Mat::zeros(3,1,CV_64F), _cameras.camera(0).matrix(), _cameras.camera(0).distCoeffs(), reprojection1);
+	projectPoints(points3d, Mat::eye(3,3, CV_64F), Mat::zeros(3,1,CV_64F), _cameras.camera(1).matrix(), _cameras.camera(1).distCoeffs(), reprojection2);
+
+	vector<Point3f> filteredPoints3d;
+	vector<DMatch> fileredMatches;
+	for (unsigned i = 0; i < points3d.size(); i++) {
+		double rError1 = sqrt(pow(reprojection1[i].x - points1[i].x,2) + pow(reprojection1[i].y - points1[i].y,2));
+		double rError2 = sqrt(pow(reprojection2[i].x - points2[i].x,2) + pow(reprojection2[i].y - points2[i].y,2));
+
+		if (rError1 < _maxReprojectionError && rError2 < _maxReprojectionError) {
+			filteredPoints3d.push_back(points3d[i]);
+			fileredMatches.push_back(matches[i]);
+		}
 	}
 
 	//-- Draw only "good" matches
 	Mat img_matches;
-	drawMatches( _frame1, keypoints1, _frame2, keypoints2, matches, img_matches, Scalar::all(-1), Scalar::all(-1), vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-	
+	drawMatches( _frame1, keypoints1, _frame2, keypoints2, fileredMatches, img_matches, Scalar::all(-1), Scalar::all(-1), vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+
 	//-- Show detected matches
 	imshow( "Good Matches", img_matches );
-	//for( int i = 0; i < (int)matches.size(); i++ )	{ 
-	//	printf( "-- Good Match [%d] Keypoint 1: %d  -- Keypoint 2: %d  \n", i, matches[i].queryIdx, matches[i].trainIdx ); 
-	//}
 
+	return filteredPoints3d;
 }
