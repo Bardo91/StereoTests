@@ -52,6 +52,10 @@ public:
 	/// \return reference to one of the cameras.
 	Camera & camera(unsigned _index);
 
+	cv::Mat rotation(unsigned _index);
+
+	cv::Mat traslation(unsigned _index);
+
 	/// Return true if everything is calibrated.
 	bool isCalibrated() const;
 

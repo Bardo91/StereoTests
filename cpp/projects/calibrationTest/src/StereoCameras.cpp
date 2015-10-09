@@ -115,6 +115,24 @@ Camera & StereoCameras::camera(unsigned _index) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+Mat StereoCameras::rotation(unsigned _index){
+	if(_index == 0){
+		return Mat::eye(3,3, CV_64F);
+	}else{
+		return mR;
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+Mat StereoCameras::traslation(unsigned _index){
+	if(_index == 0){
+		return Mat::zeros(3,1,CV_64F);
+	}else{
+		return mT;
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 bool StereoCameras::isCalibrated() const {
 	return mCalibrated;
 }
