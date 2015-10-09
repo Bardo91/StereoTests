@@ -47,6 +47,7 @@ int main(int _argc, char** _argv){
 	Mat frame1, frame2;
 
 	for (;;) {
+		std::cout << "Getting frames" << std::endl;
 		stereoCameras.frames(frame1, frame2, true);
 		if(frame1.rows == 0)
 			break;
@@ -54,15 +55,18 @@ int main(int _argc, char** _argv){
 		cvtColor(frame1, frame1, CV_BGR2GRAY);
 		cvtColor(frame2, frame2, CV_BGR2GRAY);
 
-		Mat disparity = stereoCameras.disparity(frame2, frame1, 16*12, 21);
-		imshow("disparity", disparity);
+		//std::cout << "Calculating disparity" << std::endl;
+		//Mat disparity = stereoCameras.disparity(frame2, frame1, 16*12, 21);
+		//imshow("disparity", disparity);
 
+		std::cout << "Computing new features and triangulating them" << std::endl;
 		vector<Point2i> points1, points2;
 		vector<Point3f> points3d = computeFeaturesAndMatches(frame1, frame2, stereoCameras, 4);
 		Mat display;
 		hconcat(frame1, frame2, display);
 		imshow("display", display);
 
+		std::cout << "Filling Point cloud" << std::endl;
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);  //fill the cloud.
 
 		//double temp_x , temp_y , temp_z;
@@ -81,8 +85,10 @@ int main(int _argc, char** _argv){
 		std::cout << "Point cloud size "  << cloud->size() << std::endl;
 		pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
 		viewer.showCloud (cloud);
+		std::cout << "Showing pointcloud" << std::endl;
 
 		waitKey();
+
 	}
 }
 
