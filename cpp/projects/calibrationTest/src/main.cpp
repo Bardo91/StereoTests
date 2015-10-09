@@ -9,6 +9,7 @@
 #include <opencv2/xfeatures2d.hpp>
 #include <fstream>
 #include "StereoCameras.h"
+#include <pcl-1.7/pcl/visualization/cloud_viewer.h>
 
 using namespace std;
 using namespace cv;
@@ -19,8 +20,8 @@ int main(int _argc, char** _argv){
 	vector<Mat> calibrationFrames1, calibrationFrames2;
 	for (unsigned i = 0; i < 21; i++) {
 		// Load image
-		Mat frame1 = imread("C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/CalibrationImages (Cal_A)/cam1/img_cam1_" + to_string(i) + ".jpg");
-		Mat frame2 = imread("C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/CalibrationImages (Cal_A)/cam2/img_cam2_" + to_string(i) + ".jpg");
+		Mat frame1 = imread("/home/bardo91/Desktop/CalibrationImages (Cal_A)/cam1/img_cam1_" + to_string(i) + ".jpg");
+		Mat frame2 = imread("/home/bardo91/Desktop/CalibrationImages (Cal_A)/cam2/img_cam2_" + to_string(i) + ".jpg");
 		if(frame1.rows == 0 ||frame2.rows == 0)
 			break;
 
@@ -29,12 +30,12 @@ int main(int _argc, char** _argv){
 		calibrationFrames2.push_back(frame2);
 	}
 
-	StereoCameras stereoCameras("C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/testImages (Cal_A)/img_cam1_%d.jpg",
-								"C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/testImages (Cal_A)/img_cam2_%d.jpg");
+	StereoCameras stereoCameras("/home/bardo91/Desktop/testImages/img_cam1_%d.jpg",
+								"/home/bardo91/Desktop/testImages/img_cam2_%d.jpg");
 	
-	//stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(8,6),108);
-	//stereoCameras.save("stereo_A");
-	stereoCameras.load("Stereo_A");
+	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(8,6),108);
+	stereoCameras.save("stereo_A");
+	//stereoCameras.load("Stereo_A");
 
 	std::cout << "Calibration Parameters" << std::endl;
 	std::cout << stereoCameras.camera(0).matrix() << std::endl;
@@ -54,19 +55,24 @@ int main(int _argc, char** _argv){
 
 		Mat disparity = stereoCameras.disparity(frame2, frame1, 16*12, 21);
 		imshow("disparity", disparity);
-		
+
 		vector<Point2i> points1, points2;
 		vector<Point3f> points3d = computeFeaturesAndMatches(frame1, frame2, stereoCameras, 20);
 		Mat display;
 		hconcat(frame1, frame2, display);
 		imshow("display", display);
-		
-		ofstream pointCloud("pointcloud.txt");
 
-		for (Point3f point : points3d) {
-			pointCloud << point.x << "\t" << point.y << "\t" << point.z << std::endl;
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);  //fill the cloud.
+
+		//double temp_x , temp_y , temp_z;
+		for (unsigned i = 0; i < points3d.size(); i++)  {
+			pcl::PointXYZ point(points3d[i].x, points3d[i].y, points3d[i].z);
+			cloud->push_back(point);
 		}
 
+		//... populate cloud
+		pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
+		viewer.showCloud (cloud);
 
 		waitKey();
 	}
@@ -76,8 +82,12 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 	vector<KeyPoint> keypoints1, keypoints2;
 	Mat descriptors1, descriptors2;
 	Ptr<xfeatures2d::SURF> detector = xfeatures2d::SURF::create();
-	detector->detectAndCompute(_frame1, Mat(), keypoints1, descriptors1);
-	detector->detectAndCompute(_frame2, Mat(), keypoints2, descriptors2);
+	FAST(_frame1, keypoints1, 9);
+	FAST(_frame2, keypoints2, 9);
+	//detector->detectAndCompute(_frame1, Mat(), keypoints1, descriptors1);
+	//detector->detectAndCompute(_frame2, Mat(), keypoints2, descriptors2);
+	detector->compute(_frame1, keypoints1, descriptors1);
+	detector->compute(_frame2, keypoints2, descriptors2);
 	FlannBasedMatcher matcher;
 	vector<DMatch> matches;
 	matcher.match(descriptors1, descriptors2, matches);

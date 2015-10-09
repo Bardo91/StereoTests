@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8 FATAL_ERROR)
 project(StereoTests)
 
 # Collect all sources
@@ -28,13 +28,20 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 # Loading 3rd party libraries.
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3 REQUIRED)
 set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE)
 LINK_DIRECTORIES(${OpenCV_LIB_DIR})
+
+find_package(PCL 1.2 REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
 # Add Executable
 add_executable(calibrationTest ${BAR_TASK_SOURCE_FILES})
 
 target_include_directories(calibrationTest PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(calibrationTest PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(calibrationTest LINK_PUBLIC ${OpenCV_LIBS})
+target_link_libraries(calibrationTest LINK_PUBLIC ${PCL_LIBRARIES})
 

@@ -22,7 +22,7 @@ public:
 	/// \params _boardSize:	Number of corners in the board
 	/// \params _squareSize: Size of each square in board
 	/// \params _imagePoints: If needed, output variable for using externally the detected matrix of points.
-	bool calibrate(const std::vector<cv::Mat> &_arrayFrames, cv::Size _boardSize, float _squareSize, std::vector<std::vector<cv::Point2f>> &_imagePoints = std::vector<std::vector<cv::Point2f>>());
+	bool calibrate(const std::vector<cv::Mat> &_arrayFrames, cv::Size _boardSize, float _squareSize, std::vector<std::vector<cv::Point2f>> &_imagePoints = mDummyVector);
 
 	/// Set intrinsic params of the camera
 	/// \params _matrix: 3x3 floating point camera matrix
@@ -65,4 +65,6 @@ private:
 
 	bool mCalibrated = false;
 
+	// Dummy intermedial variable to setting defautl argument to a reference variable.
+	static std::vector<std::vector<cv::Point2f>> mDummyVector;
 };
