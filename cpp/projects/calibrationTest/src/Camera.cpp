@@ -110,7 +110,7 @@ Mat Camera::frame(bool _undistort) {
 	Mat frame, undistorted;
 	mDriver >> frame;
 
-	if (_undistort && mCalibrated) {
+	if (frame.rows != 0 && _undistort && mCalibrated) {
 		undistort(frame, undistorted, mMatrix, mDistCoeffs);
 	}
 
