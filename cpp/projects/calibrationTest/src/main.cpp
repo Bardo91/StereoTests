@@ -33,7 +33,7 @@ int main(int _argc, char** _argv){
 
 	StereoCameras stereoCameras("/home/bardo91/Desktop/testImages/img_cam1_%d.jpg",
 								"/home/bardo91/Desktop/testImages/img_cam2_%d.jpg");
-	
+
 	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(8,6),108);
 	stereoCameras.save("stereo_A");
 	//stereoCameras.load("Stereo_A");
@@ -60,7 +60,6 @@ int main(int _argc, char** _argv){
 		//imshow("disparity", disparity);
 
 		std::cout << "Computing new features and triangulating them" << std::endl;
-		vector<Point2i> points1, points2;
 		vector<Point3f> points3d = computeFeaturesAndMatches(frame1, frame2, stereoCameras, 4);
 		Mat display;
 		hconcat(frame1, frame2, display);
@@ -116,9 +115,10 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 	vector<Point3f> points3d = _cameras.triangulate(points1, points2);
 
 	vector<Point2f> reprojection1, reprojection2;
-	projectPoints(points3d, _cameras.rotation(0), _cameras.traslation(0), _cameras.camera(0).matrix(), _cameras.camera(0).distCoeffs(), reprojection1);
-	projectPoints(points3d, _cameras.rotation(1), _cameras.traslation(1), _cameras.camera(1).matrix(), _cameras.camera(1).distCoeffs(), reprojection2);
+	projectPoints(points3d, Mat::eye(3,3,CV_64F), Mat::zeros(3,1,CV_64F), _cameras.camera(0).matrix(), _cameras.camera(0).distCoeffs(), reprojection1);
+	projectPoints(points3d, _cameras.rotation(), _cameras.translation(), _cameras.camera(1).matrix(), _cameras.camera(1).distCoeffs(), reprojection2);
 
+	vector<Point2f> filteredPoints1, filteredPoints2;
 	vector<Point3f> filteredPoints3d;
 	vector<DMatch> fileredMatches;
 	for (unsigned i = 0; i < points3d.size(); i++) {
@@ -128,6 +128,8 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 		if (rError1 < _maxReprojectionError && rError2 < _maxReprojectionError) {
 			filteredPoints3d.push_back(points3d[i]);
 			fileredMatches.push_back(matches[i]);
+			filteredPoints1.push_back(points1[i]);
+			filteredPoints2.push_back(points2[matches[i].trainIdx]);
 		}
 	}
 
@@ -136,6 +138,28 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 
 	//-- Show detected matches
 	imshow( "Good Matches", img_matches );
+
+	// Epi draw
+	Mat image_out;
+	_frame2.copyTo(image_out);
+	std::vector<cv::Vec3f> epilines1;
+
+	computeCorrespondEpilines(filteredPoints1, 1, _cameras.fundamentalMatrix() , epilines1);
+
+	for(Vec3f epi: epilines1){
+		std::cout <<epi.val[0] << ", " << epi.val[1] << ", " << epi.val[2] << std::endl;
+	}
+
+	for (std::vector<cv::Vec3f>::const_iterator it = epilines1.begin(); it != epilines1.end(); ++it) {
+		// Draw the line between first and last column
+		cv::line(image_out, cv::Point(0, -(*it)[2] / (*it)[1]),
+				cv::Point(_frame2.cols,
+						-((*it)[2] + (*it)[0] * _frame2.cols) / (*it)[1]),
+				cv::Scalar(255, 255, 255));
+	}
+
+	imshow("epi", image_out);
+	waitKey();
 
 	return filteredPoints3d;
 }
