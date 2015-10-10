@@ -123,22 +123,25 @@ Camera & StereoCameras::camera(unsigned _index) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Mat StereoCameras::rotation(unsigned _index){
-	if(_index == 0){
-		return Mat::eye(3,3, CV_64F);
-	}else{
-		return mR;
-	}
+Mat StereoCameras::rotation() const{
+	return mR;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Mat StereoCameras::translation(unsigned _index){
-	if(_index == 0){
-		return Mat::zeros(3,1,CV_64F);
-	}else{
-		return mT;
-	}
+Mat StereoCameras::translation() const{
+	return mT;
 }
+
+//---------------------------------------------------------------------------------------------------------------------
+cv::Mat StereoCameras::essentialMatrix() const{
+	return mE;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+cv::Mat StereoCameras::fundamentalMatrix() const{
+	return mF;
+}
+
 
 //---------------------------------------------------------------------------------------------------------------------
 bool StereoCameras::isCalibrated() const {

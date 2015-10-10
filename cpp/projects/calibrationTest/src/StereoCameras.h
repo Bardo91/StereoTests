@@ -56,13 +56,21 @@ public:
 
 	/// Give rotation matrix between first and second camera.
 	/// \return Rotation matrix between first and second camera.
-	cv::Mat rotation(unsigned _index);
+	cv::Mat rotation() const;
 
 	/// Give translation matrix between first and second camera.
 	/// \return Translation matrix between first and second camera.
-	cv::Mat translation(unsigned _index);
+	cv::Mat translation() const;
 
-	/// Method to check if cameras are calibrated
+	/// Get essential matrix.
+	/// \return essential matrix.
+	cv::Mat essentialMatrix() const;
+
+	/// Get fundamental matrix.
+	/// \return fundamental matrix.
+	cv::Mat fundamentalMatrix() const;
+
+	/// Method to check if cameras are calibrated.
 	/// \return True if all cameras and stereo parameters are calculated, false otherwise.
 	bool isCalibrated() const;
 
