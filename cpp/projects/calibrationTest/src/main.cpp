@@ -44,11 +44,11 @@ int main(int _argc, char** _argv){
 	std::cout << stereoCameras.camera(1).matrix() << std::endl;
 	std::cout << stereoCameras.camera(1).distCoeffs() << std::endl;
 
+	pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
 	Mat frame1, frame2;
-
 	for (;;) {
 		std::cout << "Getting frames" << std::endl;
-		stereoCameras.frames(frame1, frame2, StereoCameras::eFrameFixing::UndistortAndRectify);
+		stereoCameras.frames(frame1, frame2, StereoCameras::eFrameFixing::Undistort);
 		if(frame1.rows == 0)
 			break;
 
@@ -83,12 +83,10 @@ int main(int _argc, char** _argv){
 
 
 		std::cout << "Point cloud size "  << cloud->size() << std::endl;
-		pcl::visualization::CloudViewer viewer ("Simple Cloud Viewer");
 		viewer.showCloud (cloud);
 		std::cout << "Showing pointcloud" << std::endl;
 
 		waitKey();
-
 	}
 }
 
