@@ -69,7 +69,7 @@ int main(int _argc, char** _argv) {
 
 		std::cout << "Computing new features and triangulating them"
 				<< std::endl;
-		vector<Point3f> points3d = computeFeaturesAndMatches(frame1, frame2,stereoCameras, 4);
+		vector<Point3f> points3d = computeFeaturesAndMatches(frame1, frame2,stereoCameras, 20);
 		if(points3d.size() == 0)
 			continue;
 
@@ -159,7 +159,7 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 		Point max_loc;
 		minMaxLoc(corrVal, NULL, &max, NULL, &max_loc);
 
-		validPoints2.push_back(p1 + max_loc);
+		validPoints2.push_back(p1 + max_loc - Point2i(_squareSize/2, _squareSize/2));
 		validPoints1.push_back(points1[i]);
 
 		/*Mat displaySubMat = _frame2(Rect(p1, p2)).clone();
@@ -177,6 +177,24 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 		imshow("err", corrVal);
 		waitKey();*/
 	}
+
+	//------------ DRAW MATCHES
+	Mat matchesDisplay;
+	hconcat(_frame1, _frame2, matchesDisplay);
+	cvtColor(matchesDisplay, matchesDisplay, CV_GRAY2BGR);
+
+	for(unsigned i = 0; i < validPoints1.size(); i++){
+		Point2i p1 = validPoints1[i];
+		Point2i p2 = validPoints2[i] + Point2i(_frame1.cols, 0);
+		Scalar color = Scalar(double(rand())/RAND_MAX * 255, double(rand())/RAND_MAX * 255, double(rand())/RAND_MAX * 255);
+		circle(matchesDisplay, p1, 3, color);
+		circle(matchesDisplay, p2, 3, color);
+		line(matchesDisplay, p1, p2, color);
+
+	}
+
+	imshow("Matches", matchesDisplay);
+	//------------
 
 	std::cout << "Matched " << validPoints1.size() << " keypoints " << std::endl;
 	// Triangulate points
