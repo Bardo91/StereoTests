@@ -132,7 +132,7 @@ Mat StereoCameras::rotation(unsigned _index){
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Mat StereoCameras::traslation(unsigned _index){
+Mat StereoCameras::translation(unsigned _index){
 	if(_index == 0){
 		return Mat::zeros(3,1,CV_64F);
 	}else{

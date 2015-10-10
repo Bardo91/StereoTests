@@ -49,24 +49,29 @@ public:
 	/// \return array of 3d points
 	std::vector<cv::Point3f> triangulate(const std::vector<cv::Point2i> &_points1, const std::vector<cv::Point2i> &_points2);
 
-	/// Get one of the cameras
+	/// Get one of the cameras.
 	/// \params _index: 0 for first camera; 1 for the second one.
 	/// \return reference to one of the cameras.
 	Camera & camera(unsigned _index);
 
+	/// Give rotation matrix between first and second camera.
+	/// \return Rotation matrix between first and second camera.
 	cv::Mat rotation(unsigned _index);
 
-	cv::Mat traslation(unsigned _index);
+	/// Give translation matrix between first and second camera.
+	/// \return Translation matrix between first and second camera.
+	cv::Mat translation(unsigned _index);
 
-	/// Return true if everything is calibrated.
+	/// Method to check if cameras are calibrated
+	/// \return True if all cameras and stereo parameters are calculated, false otherwise.
 	bool isCalibrated() const;
 
-	/// Save CameraParameters
-	/// \params _filePath: path of the file
+	/// Save Camera parameters.
+	/// \params _filePath: path of the file.
 	void save(std::string _filePath);
 
-	/// Load Camera parameters
-	/// \params _filePath: path of the file
+	/// Load Camera parameters.
+	/// \params _filePath: path of the file.
 	void load(std::string _filePath);
 
 private:
