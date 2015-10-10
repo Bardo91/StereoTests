@@ -48,7 +48,7 @@ int main(int _argc, char** _argv){
 
 	for (;;) {
 		std::cout << "Getting frames" << std::endl;
-		stereoCameras.frames(frame1, frame2, true);
+		stereoCameras.frames(frame1, frame2, StereoCameras::eFrameFixing::UndistortAndRectify);
 		if(frame1.rows == 0)
 			break;
 

@@ -107,14 +107,14 @@ vector<Mat> Camera::transVectors() const {
 
 //---------------------------------------------------------------------------------------------------------------------
 Mat Camera::frame(bool _undistort) {
-	Mat frame;
+	Mat frame, undistorted;
 	mDriver >> frame;
 
 	if (_undistort && mCalibrated) {
-		undistort(frame, frame, mMatrix, mDistCoeffs);
+		undistort(frame, undistorted, mMatrix, mDistCoeffs);
 	}
 
-	return frame;
+	return undistorted;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

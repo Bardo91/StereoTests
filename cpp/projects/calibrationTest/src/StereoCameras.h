@@ -11,6 +11,8 @@
 
 class StereoCameras {
 public:
+	enum eFrameFixing {None, Undistort, UndistortAndRectify};
+
 	/// Create an instance of pairs of cameras using OS indexes.
 	/// \params _indexCamera1: index of first camera.
 	/// \params _indexCamera2: index of second camera.
@@ -32,7 +34,7 @@ public:
 	/// \param _frame1: Matrix were first image will be stored.
 	/// \param _frame2: Matrix were second image will be stored.
 	/// \param _undistortAndRectificate: 
-	void frames(cv::Mat &_frame1, cv::Mat &_frame2, bool _undistortAndRectificate = false);
+	void frames(cv::Mat &_frame1, cv::Mat &_frame2, eFrameFixing _fixes = eFrameFixing::None);
 	
 	/// Compute disparity map from given images
 	/// \params _frame1: first image.

@@ -29,18 +29,19 @@ void StereoCameras::calibrate(const vector<Mat> &_calibrationImages1, const vect
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void StereoCameras::frames(Mat & _frame1, Mat & _frame2, bool _undistortAndRectificate) {
-	// Get image from cameras
-	_frame1 = mCamera1.frame();
-	_frame2 = mCamera2.frame();
-
-	// Check if images are fine
-	if(_frame1.rows == 0 || _frame2.rows == 0)
-		return;
-
-	// If want to undistort and rectificate images
-	if (_undistortAndRectificate && mCalibrated) {
-		// Get params for properly undistort and rectify images
+void StereoCameras::frames(Mat & _frame1, Mat & _frame2,  eFrameFixing _fixes) {
+	switch(_fixes){
+	case eFrameFixing::None:
+		_frame1 = mCamera1.frame();
+		_frame2 = mCamera2.frame();
+		break;
+	case eFrameFixing::Undistort:
+		_frame1 = mCamera1.frame(true);
+		_frame2 = mCamera2.frame(true);
+		break;
+	case eFrameFixing::UndistortAndRectify:{
+		_frame1 = mCamera1.frame(true);
+		_frame2 = mCamera2.frame(true);
 		Size imageSize = _frame1.size();
 		Mat R1, R2, P1, P2, Q;
 		Rect validRoi[2];
@@ -54,8 +55,15 @@ void StereoCameras::frames(Mat & _frame1, Mat & _frame2, bool _undistortAndRecti
 
 		// Undirstort and rectify images
 		Mat rectifiedFrame1, rectifiedFrame2;
+		std::cout << rmap[0][0] << std::endl;
+		std::cout << rmap[0][1] << std::endl;
+		std::cout << rmap[1][0] << std::endl;
+		std::cout << rmap[1][1] << std::endl;
+
 		remap(_frame1, _frame1, rmap[0][0], rmap[0][1], INTER_LINEAR);
 		remap(_frame2, _frame2, rmap[1][0], rmap[1][1], INTER_LINEAR);
+		break;
+		}
 	}
 }
 
@@ -90,7 +98,17 @@ vector<Point3f> StereoCameras::triangulate(const vector<Point2i> &_points1, cons
 	mR.copyTo(extrinsicMatrix.rowRange(0,3).colRange(0,3));
 	mT.copyTo(extrinsicMatrix.rowRange(0,3).col(3));
 
-	triangulatePoints(mCamera1.matrix()*I, mCamera2.matrix()*extrinsicMatrix, cam1pnts, cam2pnts, pnts3D);
+	Size imageSize;
+	imageSize.width = 640;
+	imageSize.height = 480;
+	Mat R1, R2, P1, P2, Q;
+
+	stereoRectify(mCamera1.matrix(), mCamera1.distCoeffs(), mCamera2.matrix(), mCamera2.distCoeffs(), imageSize, mR, mT, R1, R2, P1, P2, Q, CALIB_ZERO_DISPARITY, -1, imageSize);
+
+	triangulatePoints(P1, P2, cam1pnts, cam2pnts, pnts3D);
+
+	std::cout << P1 << std::endl;
+	std::cout << P2 << std::endl;
 
 	vector<Point3f> points3d;
 	for (unsigned i = 0 ; i < pnts3D.cols ; i++) {
