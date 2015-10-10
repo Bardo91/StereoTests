@@ -228,7 +228,6 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 	drawKeypoints(_frame1,keypoints1, display);
 	rectangle(display, validRegion, Scalar(255));
 	imshow("displayKp", display);
-	waitKey();
 
 	return filteredPoints3d;
 }
