@@ -104,15 +104,17 @@ int main(int _argc, char** _argv) {
 vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2, StereoCameras &_cameras, double _maxReprojectionError, int _squareSize) {
 	assert(_squareSize % 2 == 1);	// Square size need to be odd.
 	// Detecting keypoints
-	vector<KeyPoint> keypoints1;
+	/*vector<KeyPoint> keypoints1;
 	Ptr<FastFeatureDetector> detector = cv::FastFeatureDetector::create(12);
 	detector->detect(_frame1, keypoints1);
-
-
 	vector<Point2i> points1;
 	for(KeyPoint kp:keypoints1){
 		points1.push_back(kp.pt);
-	}
+	}*/
+
+
+	vector<Point2i> points1;
+	goodFeaturesToTrack(_frame1, points1, 5000, 0.001,0.5);
 
 	std::cout << "Detected " << points1.size() << "Keypoints" << std::endl;
 
@@ -225,11 +227,6 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 	}
 
 	std::cout << "Filtered " << filteredPoints1.size() << "points using reprojection" << std::endl;
-
-	Mat display;
-	drawKeypoints(_frame1,keypoints1, display);
-	rectangle(display, validRegion, Scalar(255));
-	imshow("displayKp", display);
 
 	return filteredPoints3d;
 }
