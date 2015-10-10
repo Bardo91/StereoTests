@@ -105,14 +105,16 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 	assert(_squareSize % 2 == 1);	// Square size need to be odd.
 	// Detecting keypoints
 	vector<KeyPoint> keypoints1;
-	Ptr<FastFeatureDetector> detector = cv::FastFeatureDetector::create();
+	Ptr<FastFeatureDetector> detector = cv::FastFeatureDetector::create(12);
 	detector->detect(_frame1, keypoints1);
+
+
 	vector<Point2i> points1;
 	for(KeyPoint kp:keypoints1){
 		points1.push_back(kp.pt);
 	}
 
-	std::cout << "Detected " << keypoints1.size() << "Keypoints" << std::endl;
+	std::cout << "Detected " << points1.size() << "Keypoints" << std::endl;
 
 	// Get epipolar lines on first image.
 	vector<Vec3f> epilines;
@@ -123,10 +125,10 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 	vector<Point2i> validPoints1, validPoints2;
 	for (unsigned i = 0; i < epilines.size(); i++){
 		// Ignore keypoints on border
-		if(	keypoints1[i].pt.x < _squareSize /2 ||
-			keypoints1[i].pt.x > _frame1.cols - _squareSize /2 ||
-			keypoints1[i].pt.y < _squareSize /2 ||
-			keypoints1[i].pt.y > _frame1.rows - _squareSize /2 ){
+		if(	points1[i].x < _squareSize /2 ||
+			points1[i].x > _frame1.cols - _squareSize /2 ||
+			points1[i].y < _squareSize /2 ||
+			points1[i].y > _frame1.rows - _squareSize /2 ){
 			continue;
 		}
 		std::vector<cv::Vec3f>::const_iterator it = epilines.begin() + i;
@@ -148,8 +150,8 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 
 		// Compute Template Matching
 		Mat corrVal;
-		Rect tempRect = Rect(	Point2i(keypoints1[i].pt.x - _squareSize/2, keypoints1[i].pt.y - _squareSize/2),
-								Point2i(keypoints1[i].pt.x + _squareSize/2, keypoints1[i].pt.y + _squareSize/2));
+		Rect tempRect = Rect(	Point2i(points1[i].x - _squareSize/2, points1[i].y - _squareSize/2),
+								Point2i(points1[i].x + _squareSize/2, points1[i].y + _squareSize/2));
 		Mat imgTemplate = _frame1(tempRect);
 		Mat subImage = _frame2(Rect(p1, p2));
 		matchTemplate(subImage, imgTemplate, corrVal, TemplateMatchModes::TM_CCORR_NORMED);
