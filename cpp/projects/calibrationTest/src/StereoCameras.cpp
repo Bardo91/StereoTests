@@ -98,17 +98,7 @@ vector<Point3f> StereoCameras::triangulate(const vector<Point2i> &_points1, cons
 	mR.copyTo(extrinsicMatrix.rowRange(0,3).colRange(0,3));
 	mT.copyTo(extrinsicMatrix.rowRange(0,3).col(3));
 
-	Size imageSize;
-	imageSize.width = 640;
-	imageSize.height = 480;
-	Mat R1, R2, P1, P2, Q;
-
-	stereoRectify(mCamera1.matrix(), mCamera1.distCoeffs(), mCamera2.matrix(), mCamera2.distCoeffs(), imageSize, mR, mT, R1, R2, P1, P2, Q, CALIB_ZERO_DISPARITY, -1, imageSize);
-
-	triangulatePoints(P1, P2, cam1pnts, cam2pnts, pnts3D);
-
-	std::cout << P1 << std::endl;
-	std::cout << P2 << std::endl;
+	triangulatePoints(mCamera1.matrix()*I, mCamera2.matrix()*extrinsicMatrix, cam1pnts, cam2pnts, pnts3D);
 
 	vector<Point3f> points3d;
 	for (unsigned i = 0 ; i < pnts3D.cols ; i++) {
