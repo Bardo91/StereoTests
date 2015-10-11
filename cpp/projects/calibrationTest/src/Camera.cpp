@@ -61,7 +61,7 @@ void Camera::params(std::string _paramFile) {
 
 	int nTransVectors;
 	fs["nTransVectors"] >> nTransVectors;
-	mRotVectors.resize(nRotVectors);
+	mTransVectors.resize(nTransVectors);
 	for (int i = 0; i < (int) nTransVectors; i++) {
 		fs["TransVector" +to_string(i)] >> mTransVectors[i];
 	}
@@ -107,14 +107,19 @@ vector<Mat> Camera::transVectors() const {
 
 //---------------------------------------------------------------------------------------------------------------------
 Mat Camera::frame(bool _undistort) {
-	Mat frame;
+	Mat frame, undistorted;
 	mDriver >> frame;
 
-	if (_undistort && mCalibrated) {
-		undistort(frame, frame, mMatrix, mDistCoeffs);
+	if (frame.rows != 0 && _undistort && mCalibrated) {
+		undistort(frame, undistorted, mMatrix, mDistCoeffs);
 	}
 
-	return frame;
+	return undistorted;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+bool Camera::isCalibrated() const {
+	return mCalibrated;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

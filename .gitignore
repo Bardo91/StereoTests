@@ -1,1 +1,13 @@
+#########################################
+#		CPP			#
+#########################################
+
 /cpp/build
+
+###	CMake files	###
+*CMakeCache.txt
+*CMakeFiles*
+*cmake_install.cmake
+###	Eclipse files	###
+*.cproject
+*.project
