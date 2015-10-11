@@ -163,8 +163,14 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 		Point max_loc;
 		minMaxLoc(corrVal, NULL, &max, NULL, &max_loc);
 
-		validPoints2.push_back(p1 + max_loc - Point2i(_squareSize/2, _squareSize/2));
 		validPoints1.push_back(points1[i]);
+		Point2i absPoint;
+		if(p1.y < p2.y){
+			absPoint = p1 + Point2i(_squareSize/2 +1,_squareSize/2 + 1) + max_loc;
+		}else{
+			absPoint = p1 + Point2i(_squareSize/2 +1,-_squareSize/2 -1) + max_loc;
+		}
+		validPoints2.push_back(absPoint);
 
 		/*Mat displaySubMat = _frame2(Rect(p1, p2)).clone();
 		cvtColor(displaySubMat, displaySubMat, CV_GRAY2BGR);
