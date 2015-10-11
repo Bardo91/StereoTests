@@ -84,7 +84,7 @@ Mat StereoCameras::disparity(const Mat & _frame1, const Mat & _frame2, unsigned 
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2, int _squareSize = 11) {
+vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2) {
 	// Compute keypoint only on first image
 	vector<Point2i> keypoints;
 	computeFeatures(_frame1, keypoints);
@@ -94,22 +94,26 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 	computeEpipoarLines(keypoints, epilines);
 
 	// For each epipolar line calculate equivalent feature by template matching.
-	Rect validRegion(-1, _squareSize/2 + 1, _frame2.cols+2, _frame2.rows - _squareSize - 1);	// maybe... use ROIs computed in calibration?
+	Rect validRegion(30, 30, _frame2.cols -30*2, _frame2.rows - 30*2);	// 666 maybe... use ROIs computed in calibration?
 	vector<Point2i> points1, points2;
 	for (unsigned i = 0; i < epilines.size(); i++){
 		if(!validRegion.contains(keypoints[i]))	// Ignore keypoint if it is outside valid region.
 			continue;
 
 		// Calculate matching and add points
+		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i]);
+		if(matchedPoint.x < 0 || matchedPoint.y < 0)
+			continue;
+
 		points1.push_back(keypoints[i]);
-		points2.push_back(findMatch(_frame1, _frame2, keypoints[i], epilines[i]));
+		points2.push_back(matchedPoint);	// 666 in future implementation, work with cropped images to avoid black zone of images after undistorting images.
 
 	}
 	// Triangulate points using features in both images.
 	vector<Point3f> points3d = triangulate(points1, points2);
 
 	// Filter points using reprojection.
-	return filterPoints(_frame1, _frame2, points1, points2, points3d);
+	return filterPoints(_frame1, _frame2, points1, points2, points3d, 20);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -215,7 +219,38 @@ cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, con
 	Point2i p1(0, -_epiline[2] / _epiline[1]);
 	Point2i p2(_frame2.cols,-(_epiline[2] + _epiline[0] * _frame2.cols) / _epiline[1]);
 
-	return Point2i();
+	if(p1.y < _squareSize/2 || p2.y < _squareSize/2 || p1.y > _frame2.rows  - _squareSize/2|| p2.y > _frame2.rows - _squareSize/2)
+			return Point2i(-1,-1);
+
+	// Get subimage to search.
+	Point2i sp1 = p1, sp2 = p2;
+	if(sp1.y < sp2.y){
+		sp1.y -= _squareSize/2;
+		sp2.y += _squareSize/2;
+	}else{
+		sp1.y += _squareSize/2;
+		sp2.y -= _squareSize/2;
+	}
+	Mat subImage = _frame2(Rect(sp1, sp2));	// 666 CHECK
+
+	// Get template from first image.
+	Mat imgTemplate = _frame1(Rect(	Point2i(_point.x - _squareSize/2, _point.y - _squareSize/2),
+									Point2i(_point.x + _squareSize/2, _point.y + _squareSize/2)));
+	// Compute correlation score.
+	Mat corrVal;
+	matchTemplate(subImage, imgTemplate, corrVal, TemplateMatchModes::TM_CCORR_NORMED);
+
+	// Get maxlocation on score submatrix, add offset to get absolute position in second frame and return point.
+	Point max_loc;
+	minMaxLoc(corrVal, NULL, NULL, NULL, &max_loc);
+	Point2i absPoint;
+	if(p1.y < p2.y){		// 666 CHECK absolute position.
+		absPoint = p1 + Point2i(_squareSize/2 + 1,_squareSize/2 + 1) + max_loc;
+	}else{
+		absPoint = p1 + Point2i(_squareSize/2 + 1,-_squareSize/2 -1) + max_loc;
+	}
+
+	return absPoint;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -251,8 +286,24 @@ vector<Point3f> StereoCameras::triangulate(const vector<Point2i> &_points1, cons
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-vector<Point3f> StereoCameras::filterPoints(const Mat &_frame1, const Mat &_frame2, const vector<Point2i> &_points1, const vector<Point2i> &_points2, const vector<Point3f> &_points){
+vector<Point3f> StereoCameras::filterPoints(const Mat &_frame1, const Mat &_frame2, const vector<Point2i> &_points1, const vector<Point2i> &_points2, const vector<Point3f> &_points3d, int _maxReprojectionError){
+	vector<Point2f> reprojection1, reprojection2;
+	projectPoints(_points3d, Mat::eye(3, 3, CV_64F), Mat::zeros(3, 1, CV_64F), mCamera1.matrix(), mCamera1.distCoeffs(), reprojection1);
+	projectPoints(_points3d, rotation(), translation(), mCamera2.matrix(), mCamera2.distCoeffs(), reprojection2);
 
+	vector<Point3f> filteredPoints3d;
+	for (unsigned i = 0; i < _points3d.size(); i++) {
+		double rError1 = sqrt(pow(reprojection1[i].x - _points1[i].x, 2)
+							+ pow(reprojection1[i].y - _points1[i].y, 2));
+		double rError2 = sqrt(pow(reprojection2[i].x - _points2[i].x, 2)
+							+ pow(reprojection2[i].y - _points2[i].y, 2));
+
+		if (rError1 < _maxReprojectionError&& rError2 < _maxReprojectionError) {
+			filteredPoints3d.push_back(_points3d[i]);
+		}
+	}
+
+	return filteredPoints3d;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -55,8 +55,7 @@ int main(int _argc, char** _argv) {
 	Mat frame1, frame2;
 	for (;;) {
 		std::cout << "Getting frames" << std::endl;
-		stereoCameras.frames(frame1, frame2,
-				StereoCameras::eFrameFixing::Undistort);
+		stereoCameras.frames(frame1, frame2, StereoCameras::eFrameFixing::Undistort);
 		if (frame1.rows == 0)
 			break;
 
@@ -67,9 +66,8 @@ int main(int _argc, char** _argv) {
 		//Mat disparity = stereoCameras.disparity(frame2, frame1, 16*12, 21);
 		//imshow("disparity", disparity);
 
-		std::cout << "Computing new features and triangulating them"
-				<< std::endl;
-		vector<Point3f> points3d = computeFeaturesAndMatches(frame1, frame2,stereoCameras, 20);
+		std::cout << "Compute new features and triangulate them"<< std::endl;
+		vector<Point3f> points3d = stereoCameras.pointCloud(frame1, frame2);
 		if(points3d.size() == 0)
 			continue;
 
@@ -102,78 +100,8 @@ int main(int _argc, char** _argv) {
 }
 
 vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2, StereoCameras &_cameras, double _maxReprojectionError, int _squareSize) {
-	assert(_squareSize % 2 == 1);	// Square size need to be odd.
-	// Detecting keypoints
-	vector<KeyPoint> keypoints1;
-	Ptr<FastFeatureDetector> detector = cv::FastFeatureDetector::create(12);
-	detector->detect(_frame1, keypoints1);
-	vector<Point2i> points1;
-	for(KeyPoint kp:keypoints1){
-		points1.push_back(kp.pt);
-	}
 
-
-	vector<Point2i> points1;
-	goodFeaturesToTrack(_frame1, points1, 5000, 0.001,0.5);
-
-	std::cout << "Detected " << points1.size() << "Keypoints" << std::endl;
-
-	// Get epipolar lines on first image.
-	vector<Vec3f> epilines;
-	computeCorrespondEpilines(points1, 1, _cameras.fundamentalMatrix(), epilines);
-
-	// For each epipolar line, do template matching.
-	Rect validRegion(-1, _squareSize/2 + 1, _frame2.cols+2, _frame2.rows - _squareSize - 1);
-	vector<Point2i> validPoints1, validPoints2;
-	for (unsigned i = 0; i < epilines.size(); i++){
-		// Ignore keypoints on border
-		if(	points1[i].x < _squareSize /2 ||
-			points1[i].x > _frame1.cols - _squareSize /2 ||
-			points1[i].y < _squareSize /2 ||
-			points1[i].y > _frame1.rows - _squareSize /2 ){
-			continue;
-		}
-		std::vector<cv::Vec3f>::const_iterator it = epilines.begin() + i;
-		// Compute extremes of epipolar line projection in second image and add half of square size.
-		Point2i p1(0, -(*it)[2] / (*it)[1]);
-		Point2i p2(_frame2.cols,-((*it)[2] + (*it)[0] * _frame2.cols) / (*it)[1]);
-
-		if(validRegion.contains(p1) && validRegion.contains(p2)){
-			if(p1.y < p2.y){
-				p1.y -= _squareSize/2;
-				p2.y += _squareSize/2;
-			}else{
-				p1.y += _squareSize/2;
-				p2.y -= _squareSize/2;
-			}
-		}else{
-			continue;
-		}
-
-		// Compute Template Matching
-		Mat corrVal;
-		Rect tempRect = Rect(	Point2i(points1[i].x - _squareSize/2, points1[i].y - _squareSize/2),
-								Point2i(points1[i].x + _squareSize/2, points1[i].y + _squareSize/2));
-		Mat imgTemplate = _frame1(tempRect);
-		Mat subImage = _frame2(Rect(p1, p2));
-		matchTemplate(subImage, imgTemplate, corrVal, TemplateMatchModes::TM_CCORR_NORMED);
-
-		// GetMax value of correlation.
-		double max;
-		Point max_loc;
-		minMaxLoc(corrVal, NULL, &max, NULL, &max_loc);
-
-		validPoints1.push_back(points1[i]);
-		Point2i absPoint;
-		if(p1.y < p2.y){
-			absPoint = p1 + Point2i(_squareSize/2 +1,_squareSize/2 + 1) + max_loc;
-		}else{
-			absPoint = p1 + Point2i(_squareSize/2 +1,-_squareSize/2 -1) + max_loc;
-		}
-		validPoints2.push_back(absPoint);
-
-	}
-
+/*
 	//------------ DRAW MATCHES
 	Mat matchesDisplay;
 	hconcat(_frame1, _frame2, matchesDisplay);
@@ -190,35 +118,6 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 	}
 
 	imshow("Matches", matchesDisplay);
-	//------------
+	//------------*/
 
-	std::cout << "Matched " << validPoints1.size() << " keypoints " << std::endl;
-	// Triangulate points
-	vector<Point3f> points3d = _cameras.triangulate(validPoints1, validPoints2);
-
-	std::cout << "Triangulated " << points3d.size() << " points" << std::endl;
-
-	// Reproject points to filter results
-	vector<Point2f> reprojection1, reprojection2;
-	projectPoints(points3d, Mat::eye(3, 3, CV_64F), Mat::zeros(3, 1, CV_64F), _cameras.camera(0).matrix(), _cameras.camera(0).distCoeffs(), reprojection1);
-	projectPoints(points3d, _cameras.rotation(), _cameras.translation(), _cameras.camera(1).matrix(), _cameras.camera(1).distCoeffs(), reprojection2);
-
-	vector<Point2f> filteredPoints1, filteredPoints2;
-	vector<Point3f> filteredPoints3d;
-	for (unsigned i = 0; i < points3d.size(); i++) {
-		double rError1 = sqrt(pow(reprojection1[i].x - validPoints1[i].x, 2)
-							+ pow(reprojection1[i].y - validPoints1[i].y, 2));
-		double rError2 = sqrt(pow(reprojection2[i].x - validPoints2[i].x, 2)
-							+ pow(reprojection2[i].y - validPoints2[i].y, 2));
-
-		if (rError1 < _maxReprojectionError&& rError2 < _maxReprojectionError) {
-			filteredPoints3d.push_back(points3d[i]);
-			filteredPoints1.push_back(validPoints1[i]);
-			filteredPoints2.push_back(validPoints2[i]);
-		}
-	}
-
-	std::cout << "Filtered " << filteredPoints1.size() << "points using reprojection" << std::endl;
-
-	return filteredPoints3d;
 }

@@ -51,9 +51,8 @@ public:
 	/// Calculate 3d points from given projections on frames.
 	/// \param _frame1: first image of stereo pair
 	/// \param _frame2: second image of stereo pair
-	/// \param _squareSize: size of template for template matching (Matching algorithm).
 	/// \return array of 3d points
-	std::vector<cv::Point3f> pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2,int _squareSize);
+	std::vector<cv::Point3f> pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2);
 
 	/// Get one of the cameras.
 	/// \param _index: 0 for first camera; 1 for the second one.
@@ -98,7 +97,7 @@ private:
 
 	std::vector<cv::Point3f> triangulate(const std::vector<cv::Point2i> &_points1, const std::vector<cv::Point2i> &_points2);
 
-	std::vector<cv::Point3f> filterPoints(const cv::Mat &_frame1, const cv::Mat &_frame2, const std::vector<cv::Point2i> &_points1, const std::vector<cv::Point2i> &_points2, const std::vector<cv::Point3f> &_points);
+	std::vector<cv::Point3f> filterPoints(const cv::Mat &_frame1, const cv::Mat &_frame2, const std::vector<cv::Point2i> &_points1, const std::vector<cv::Point2i> &_points2, const std::vector<cv::Point3f> &_points3d, int _maxReprojectionError);
 private:
 	Camera mCamera1, mCamera2;
 	cv::Mat mR, mT, mE, mF;
