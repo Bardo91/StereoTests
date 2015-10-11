@@ -104,13 +104,13 @@ int main(int _argc, char** _argv) {
 vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2, StereoCameras &_cameras, double _maxReprojectionError, int _squareSize) {
 	assert(_squareSize % 2 == 1);	// Square size need to be odd.
 	// Detecting keypoints
-	/*vector<KeyPoint> keypoints1;
+	vector<KeyPoint> keypoints1;
 	Ptr<FastFeatureDetector> detector = cv::FastFeatureDetector::create(12);
 	detector->detect(_frame1, keypoints1);
 	vector<Point2i> points1;
 	for(KeyPoint kp:keypoints1){
 		points1.push_back(kp.pt);
-	}*/
+	}
 
 
 	vector<Point2i> points1;
@@ -172,20 +172,6 @@ vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2
 		}
 		validPoints2.push_back(absPoint);
 
-		/*Mat displaySubMat = _frame2(Rect(p1, p2)).clone();
-		cvtColor(displaySubMat, displaySubMat, CV_GRAY2BGR);
-		circle(displaySubMat, max_loc, 3, Scalar(0, 255, 0));
-
-		Mat displayGlobal;
-		_frame2.copyTo(displayGlobal);
-		cvtColor(displayGlobal, displayGlobal, CV_GRAY2BGR);
-		circle(displayGlobal,p1+ max_loc, 3, Scalar(0, 255, 0));
-
-		imshow("temp", _frame1(tempRect));
-		imshow("SubMat", displaySubMat);
-		imshow("Global", displayGlobal);
-		imshow("err", corrVal);
-		waitKey();*/
 	}
 
 	//------------ DRAW MATCHES
