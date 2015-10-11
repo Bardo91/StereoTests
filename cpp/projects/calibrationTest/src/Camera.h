@@ -4,6 +4,10 @@
 //
 //
 
+
+#ifndef CAMERAS_H_
+#define CAMERAS_H_
+
 #include <opencv2/opencv.hpp>
 #include <vector>
 
@@ -68,3 +72,5 @@ private:
 	// Dummy intermedial variable to setting defautl argument to a reference variable.
 	static std::vector<std::vector<cv::Point2f>> mDummyVector;
 };
+
+#endif	//	CAMERAS_H_

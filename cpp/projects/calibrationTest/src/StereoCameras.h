@@ -4,6 +4,10 @@
 //
 //
 
+
+#ifndef STEREOCAMERAS_H_
+#define STEREOCAMERAS_H_
+
 #include "Camera.h"
 
 #include <opencv2/opencv.hpp>
@@ -91,3 +95,6 @@ private:
 
 	bool mCalibrated = false;
 };
+
+
+#endif	//	STEREOCAMERAS_H_
