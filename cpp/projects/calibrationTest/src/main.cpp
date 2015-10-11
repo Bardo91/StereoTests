@@ -15,20 +15,12 @@
 using namespace std;
 using namespace cv;
 
-vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1,
-		const Mat &_frame2, StereoCameras &_cameras,
-		double _maxReprojectionError = 1, int _squareSize = 11);
-
 int main(int _argc, char** _argv) {
 	vector<Mat> calibrationFrames1, calibrationFrames2;
 	for (unsigned i = 0; i < 21; i++) {
 		// Load image
-		Mat frame1 = imread(
-				"/home/bardo91/Desktop/CalibrationImages (Cal_A)/cam1/img_cam1_"
-						+ to_string(i) + ".jpg");
-		Mat frame2 = imread(
-				"/home/bardo91/Desktop/CalibrationImages (Cal_A)/cam2/img_cam2_"
-						+ to_string(i) + ".jpg");
+		Mat frame1 = imread("/home/bardo91/Desktop/CalibrationImages (Cal_A)/cam1/img_cam1_" + to_string(i) + ".jpg");
+		Mat frame2 = imread("/home/bardo91/Desktop/CalibrationImages (Cal_A)/cam2/img_cam2_" + to_string(i) + ".jpg");
 		if (frame1.rows == 0 || frame2.rows == 0)
 			break;
 
@@ -37,19 +29,11 @@ int main(int _argc, char** _argv) {
 		calibrationFrames2.push_back(frame2);
 	}
 
-	StereoCameras stereoCameras(
-			"/home/bardo91/Desktop/testImages/img_cam1_%d.jpg",
-			"/home/bardo91/Desktop/testImages/img_cam2_%d.jpg");
+	StereoCameras stereoCameras("/home/bardo91/Desktop/testImages/img_cam1_%d.jpg", "/home/bardo91/Desktop/testImages/img_cam2_%d.jpg");
 
 	//stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(8, 6), 108);
 	//stereoCameras.save("stereo_A");
 	stereoCameras.load("stereo_A");
-
-	std::cout << "Calibration Parameters" << std::endl;
-	std::cout << stereoCameras.camera(0).matrix() << std::endl;
-	std::cout << stereoCameras.camera(0).distCoeffs() << std::endl;
-	std::cout << stereoCameras.camera(1).matrix() << std::endl;
-	std::cout << stereoCameras.camera(1).distCoeffs() << std::endl;
 
 	pcl::visualization::CloudViewer viewer("Simple Cloud Viewer");
 	Mat frame1, frame2;
@@ -62,18 +46,10 @@ int main(int _argc, char** _argv) {
 		cvtColor(frame1, frame1, CV_BGR2GRAY);
 		cvtColor(frame2, frame2, CV_BGR2GRAY);
 
-		//std::cout << "Calculating disparity" << std::endl;
-		//Mat disparity = stereoCameras.disparity(frame2, frame1, 16*12, 21);
-		//imshow("disparity", disparity);
-
 		std::cout << "Compute new features and triangulate them"<< std::endl;
 		vector<Point3f> points3d = stereoCameras.pointCloud(frame1, frame2);
 		if(points3d.size() == 0)
 			continue;
-
-		Mat display;
-		hconcat(frame1, frame2, display);
-		imshow("display", display);
 
 		std::cout << "Filling Point cloud" << std::endl;
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);  //fill the cloud.
@@ -83,41 +59,17 @@ int main(int _argc, char** _argv) {
 			if (points3d[i].x > -3000 && points3d[i].x < 3000) {
 				if (points3d[i].y > -3000 && points3d[i].y < 3000) {
 					if (points3d[i].z > 0 && points3d[i].z < 3000) {
-						pcl::PointXYZ point(points3d[i].x, points3d[i].y,
-								points3d[i].z);
+						pcl::PointXYZ point(points3d[i].x, points3d[i].y, points3d[i].z);
 						cloud->push_back(point);
 					}
 				}
 			}
 		}
 
-		std::cout << "Point cloud size " << cloud->size() << std::endl;
 		viewer.showCloud(cloud);
-		std::cout << "Showing pointcloud" << std::endl;
-
+		Mat display;
+		hconcat(frame1, frame2, display);
+		imshow("display", display);
 		waitKey();
 	}
-}
-
-vector<Point3f> computeFeaturesAndMatches(const Mat &_frame1, const Mat &_frame2, StereoCameras &_cameras, double _maxReprojectionError, int _squareSize) {
-
-/*
-	//------------ DRAW MATCHES
-	Mat matchesDisplay;
-	hconcat(_frame1, _frame2, matchesDisplay);
-	cvtColor(matchesDisplay, matchesDisplay, CV_GRAY2BGR);
-
-	for(unsigned i = 0; i < validPoints1.size(); i++){
-		Point2i p1 = validPoints1[i];
-		Point2i p2 = validPoints2[i] + Point2i(_frame1.cols, 0);
-		Scalar color = Scalar(double(rand())/RAND_MAX * 255, double(rand())/RAND_MAX * 255, double(rand())/RAND_MAX * 255);
-		circle(matchesDisplay, p1, 3, color);
-		circle(matchesDisplay, p2, 3, color);
-		line(matchesDisplay, p1, p2, color);
-
-	}
-
-	imshow("Matches", matchesDisplay);
-	//------------*/
-
 }
