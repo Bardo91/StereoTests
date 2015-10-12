@@ -91,7 +91,7 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 			templateMatching(_frame1, _frame2, points1, points2);
 			break;
 		case eMatchingMethod::EpilineMatching:
-
+			epilineMatching(_frame1, _frame2, points1, points2);
 			break;
 		default:
 			return vector<Point3f>();
@@ -199,7 +199,7 @@ void StereoCameras::templateMatching(const cv::Mat &_frame1, const cv::Mat &_fra
 
 	// Compute projection of epipolar lines into second image.
 	std::vector<cv::Vec3f> epilines;
-	computeEpipoarLines(keypoints, epilines);
+	computeEpipolarLines(keypoints, epilines);
 
 	// For each epipolar line calculate equivalent feature by template matching.
 	Rect validRegion(30, 30, _frame2.cols -30*2, _frame2.rows - 30*2);	// 666 maybe... use ROIs computed in calibration?
@@ -220,7 +220,15 @@ void StereoCameras::templateMatching(const cv::Mat &_frame1, const cv::Mat &_fra
 
 //---------------------------------------------------------------------------------------------------------------------
 void StereoCameras::epilineMatching(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point2i> &_points1, std::vector<cv::Point2i> &_points2){
+	// Compute keypoint only on first image
+	vector<Point2i> keypoints1, keypoints2;
+	computeFeatures(_frame1, keypoints1);
+	computeFeatures(_frame2, keypoints2);
 
+	// Compute projection of epipolar lines into second image.
+	std::vector<cv::Vec3f> epilines1, epilines2;
+	computeEpipolarLines(keypoints1, epilines2);
+	computeEpipolarLines(keypoints1, epilines2);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -229,7 +237,7 @@ void StereoCameras::computeFeatures(const Mat &_frame, vector<Point2i> &_feature
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void StereoCameras::computeEpipoarLines(const vector<Point2i> &_points, vector<Vec3f> &_epilines){
+void StereoCameras::computeEpipolarLines(const vector<Point2i> &_points, vector<Vec3f> &_epilines){
 	computeCorrespondEpilines(_points, 1, fundamentalMatrix(), _epilines);
 }
 

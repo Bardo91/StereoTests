@@ -94,7 +94,7 @@ private:
 	void epilineMatching(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point2i> &_points1, std::vector<cv::Point2i> &_points2);
 
 	void computeFeatures(const cv::Mat &_frame, std::vector<cv::Point2i> &_features);
-	void computeEpipoarLines(const std::vector<cv::Point2i> &_points, std::vector<cv::Vec3f> &_epilines);
+	void computeEpipolarLines(const std::vector<cv::Point2i> &_points, std::vector<cv::Vec3f> &_epilines);
 
 	cv::Point2i findMatch(const cv::Mat &_frame1, const cv::Mat &_frame2, const cv::Point2i &_point, const cv::Vec3f &_epiline, const int _squareSize = 11);
 
