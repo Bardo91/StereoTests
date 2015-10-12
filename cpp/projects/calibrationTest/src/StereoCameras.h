@@ -98,6 +98,8 @@ private:
 
 	cv::Point2i findMatch(const cv::Mat &_frame1, const cv::Mat &_frame2, const cv::Point2i &_point, const cv::Vec3f &_epiline, const int _squareSize = 11);
 
+	double minDist(const cv::Vec3f &_line1, const cv::Vec3f &_line2);
+
 	std::vector<cv::Point3f> triangulate(const std::vector<cv::Point2i> &_points1, const std::vector<cv::Point2i> &_points2);
 
 	std::vector<cv::Point3f> filterPoints(const cv::Mat &_frame1, const cv::Mat &_frame2, const std::vector<cv::Point2i> &_points1, const std::vector<cv::Point2i> &_points2, const std::vector<cv::Point3f> &_points3d, int _maxReprojectionError);

@@ -84,7 +84,7 @@ Mat StereoCameras::disparity(const Mat & _frame1, const Mat & _frame2, unsigned 
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2, eMatchingMethod _matchingMethod) {
+vector<Point3f> StereoCameras::pointCloud(const Mat &_frame1, const Mat &_frame2, eMatchingMethod _matchingMethod) {
 	vector<Point2i> points1, points2;
 	switch (_matchingMethod) {
 		case eMatchingMethod::TemplateMatching:
@@ -192,13 +192,13 @@ void StereoCameras::calibrateStereo(const vector<vector<Point2f>> &_imagePoints1
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void StereoCameras::templateMatching(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point2i> &_points1, std::vector<cv::Point2i> &_points2){
+void StereoCameras::templateMatching(const Mat &_frame1, const Mat &_frame2, vector<Point2i> &_points1, vector<Point2i> &_points2){
 	// Compute keypoint only on first image
 	vector<Point2i> keypoints;
 	computeFeatures(_frame1, keypoints);
 
 	// Compute projection of epipolar lines into second image.
-	std::vector<cv::Vec3f> epilines;
+	vector<Vec3f> epilines;
 	computeEpipolarLines(keypoints, epilines);
 
 	// For each epipolar line calculate equivalent feature by template matching.
@@ -219,16 +219,30 @@ void StereoCameras::templateMatching(const cv::Mat &_frame1, const cv::Mat &_fra
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void StereoCameras::epilineMatching(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point2i> &_points1, std::vector<cv::Point2i> &_points2){
+void StereoCameras::epilineMatching(const Mat &_frame1, const Mat &_frame2, vector<Point2i> &_points1, vector<Point2i> &_points2){
 	// Compute keypoint only on first image
 	vector<Point2i> keypoints1, keypoints2;
 	computeFeatures(_frame1, keypoints1);
 	computeFeatures(_frame2, keypoints2);
 
 	// Compute projection of epipolar lines into second image.
-	std::vector<cv::Vec3f> epilines1, epilines2;
+	vector<Vec3f> epilines1, epilines2;
+	computeEpipolarLines(keypoints1, epilines1);	// 666 bad! this method compute 2d projection of epipolar line....
 	computeEpipolarLines(keypoints1, epilines2);
-	computeEpipolarLines(keypoints1, epilines2);
+	for(unsigned i = 0; i < epilines1.size(); i++){
+		double minDis = 999999;
+		unsigned matchedEpiline;
+		for(unsigned j = 0; j < epilines2.size(); j++){
+			double auxDist;
+			if(minDis > (auxDist = minDist(epilines1[i], epilines2[j]))){
+				minDist = auxDist;
+				matchedEpiline = j;
+			}
+		}
+		_points1.push_back(keypoints1[i]);
+		_points2.push_back(keypoints2[matchedEpiline]);
+	}
+
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -242,7 +256,7 @@ void StereoCameras::computeEpipolarLines(const vector<Point2i> &_points, vector<
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, const Point2i &_point, const Vec3f &_epiline, const int _squareSize){
+Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, const Point2i &_point, const Vec3f &_epiline, const int _squareSize){
 	// Compute extremes of epipolar line projection in second image and add half of square size.
 	Point2i p1(0, -_epiline[2] / _epiline[1]);
 	Point2i p2(_frame2.cols,-(_epiline[2] + _epiline[0] * _frame2.cols) / _epiline[1]);
@@ -279,6 +293,13 @@ cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, con
 	}
 
 	return absPoint;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+double minDist(const cv::Vec3f &_line1, const cv::Vec3f &_line2){
+	double minDis; // = (p0 + q0) + ((b*e-c*d)*u - (a*e - b*d)*v)/(a*c  b*b);
+
+	return minDis;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
