@@ -47,12 +47,12 @@ public:
 	/// \param _blockSize: block size.
 	cv::Mat disparity(const cv::Mat &_frame1, const cv::Mat &_frame2, unsigned _disparityRange, unsigned _blockSize);
 
-
+	enum eMatchingMethod {TemplateMatching, EpilineMatching};
 	/// Calculate 3d points from given projections on frames.
 	/// \param _frame1: first image of stereo pair
 	/// \param _frame2: second image of stereo pair
 	/// \return array of 3d points
-	std::vector<cv::Point3f> pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2);
+	std::vector<cv::Point3f> pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2, eMatchingMethod _matchingMethod = eMatchingMethod::TemplateMatching);
 
 	/// Get one of the cameras.
 	/// \param _index: 0 for first camera; 1 for the second one.
@@ -89,6 +89,9 @@ public:
 
 private:
 	void calibrateStereo(const std::vector<std::vector<cv::Point2f>> &_imagePoints1, const std::vector<std::vector<cv::Point2f>> &_imagePoints2, cv::Size _imageSize, cv::Size _boardSize, float _squareSize);
+
+	void templateMatching(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point2i> &_points1, std::vector<cv::Point2i> &_points2);
+	void epilineMatching(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point2i> &_points1, std::vector<cv::Point2i> &_points2);
 
 	void computeFeatures(const cv::Mat &_frame, std::vector<cv::Point2i> &_features);
 	void computeEpipoarLines(const std::vector<cv::Point2i> &_points, std::vector<cv::Vec3f> &_epilines);

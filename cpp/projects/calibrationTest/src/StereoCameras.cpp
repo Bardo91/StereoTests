@@ -84,30 +84,18 @@ Mat StereoCameras::disparity(const Mat & _frame1, const Mat & _frame2, unsigned 
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2) {
-	// Compute keypoint only on first image
-	vector<Point2i> keypoints;
-	computeFeatures(_frame1, keypoints);
-
-	// Compute projection of epipolar lines into second image.
-	std::vector<cv::Vec3f> epilines;
-	computeEpipoarLines(keypoints, epilines);
-
-	// For each epipolar line calculate equivalent feature by template matching.
-	Rect validRegion(30, 30, _frame2.cols -30*2, _frame2.rows - 30*2);	// 666 maybe... use ROIs computed in calibration?
+vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2, eMatchingMethod _matchingMethod) {
 	vector<Point2i> points1, points2;
-	for (unsigned i = 0; i < epilines.size(); i++){
-		if(!validRegion.contains(keypoints[i]))	// Ignore keypoint if it is outside valid region.
-			continue;
+	switch (_matchingMethod) {
+		case eMatchingMethod::TemplateMatching:
+			templateMatching(_frame1, _frame2, points1, points2);
+			break;
+		case eMatchingMethod::EpilineMatching:
 
-		// Calculate matching and add points
-		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i]);
-		if(matchedPoint.x < 0 || matchedPoint.y < 0)
-			continue;
-
-		points1.push_back(keypoints[i]);
-		points2.push_back(matchedPoint);	// 666 in future implementation, work with cropped images to avoid black zone of images after undistorting images.
-
+			break;
+		default:
+			return vector<Point3f>();
+			break;
 	}
 	// Triangulate points using features in both images.
 	vector<Point3f> points3d = triangulate(points1, points2);
@@ -201,6 +189,38 @@ void StereoCameras::calibrateStereo(const vector<vector<Point2f>> &_imagePoints1
 	objectPoints.resize(filteredPoints1.size(),objectPoints[0]);
 
 	stereoCalibrate(objectPoints, filteredPoints1, filteredPoints2, mCamera1.matrix(), mCamera1.distCoeffs(), mCamera2.matrix(), mCamera2.distCoeffs(),_imageSize, mR, mT, mE, mF);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void StereoCameras::templateMatching(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point2i> &_points1, std::vector<cv::Point2i> &_points2){
+	// Compute keypoint only on first image
+	vector<Point2i> keypoints;
+	computeFeatures(_frame1, keypoints);
+
+	// Compute projection of epipolar lines into second image.
+	std::vector<cv::Vec3f> epilines;
+	computeEpipoarLines(keypoints, epilines);
+
+	// For each epipolar line calculate equivalent feature by template matching.
+	Rect validRegion(30, 30, _frame2.cols -30*2, _frame2.rows - 30*2);	// 666 maybe... use ROIs computed in calibration?
+	for (unsigned i = 0; i < epilines.size(); i++){
+		if(!validRegion.contains(keypoints[i]))	// Ignore keypoint if it is outside valid region.
+			continue;
+
+		// Calculate matching and add points
+		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i]);
+		if(matchedPoint.x < 0 || matchedPoint.y < 0)
+			continue;
+
+		_points1.push_back(keypoints[i]);
+		_points2.push_back(matchedPoint);	// 666 in future implementation, work with cropped images to avoid black zone of images after undistorting images.
+
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void StereoCameras::epilineMatching(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point2i> &_points1, std::vector<cv::Point2i> &_points2){
+
 }
 
 //---------------------------------------------------------------------------------------------------------------------
