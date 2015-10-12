@@ -32,10 +32,13 @@ find_package(OpenCV 3 REQUIRED)
 set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE)
 LINK_DIRECTORIES(${OpenCV_LIB_DIR})
 
-find_package(PCL 1.2 REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+find_package(PCL 1.2)
+if(${PCL_FOUND} AND ${VTK_FOUND} AND ${Boost_FOUND} AND ${eigen_FOUND} AND ${FLANN_FOUND})
+	add_definitions(-DENABLE_PCL)
+	include_directories(${PCL_INCLUDE_DIRS})
+	link_directories(${PCL_LIBRARY_DIRS})
+	add_definitions(${PCL_DEFINITIONS})
+endif()
 
 # Add Executable
 add_executable(calibrationTest ${BAR_TASK_SOURCE_FILES})
