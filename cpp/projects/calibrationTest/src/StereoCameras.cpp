@@ -215,42 +215,32 @@ void StereoCameras::computeEpipoarLines(const vector<Point2i> &_points, vector<V
 
 //---------------------------------------------------------------------------------------------------------------------
 cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, const Point2i &_point, const Vec3f &_epiline, const int _squareSize){
-	// Compute extremes of epipolar line projection in second image and add half of square size.
-	Point2i p1(0, -_epiline[2] / _epiline[1]);
-	Point2i p2(_frame2.cols,-(_epiline[2] + _epiline[0] * _frame2.cols) / _epiline[1]);
-
-	if(p1.y < _squareSize/2 || p2.y < _squareSize/2 || p1.y > _frame2.rows  - _squareSize/2|| p2.y > _frame2.rows - _squareSize/2)
-			return Point2i(-1,-1);
-
-	// Get subimage to search.
-	Point2i sp1 = p1, sp2 = p2;
-	if(sp1.y < sp2.y){
-		sp1.y -= _squareSize/2;
-		sp2.y += _squareSize/2;
-	}else{
-		sp1.y += _squareSize/2;
-		sp2.y -= _squareSize/2;
-	}
-	Mat subImage = _frame2(Rect(sp1, sp2));	// 666 CHECK
+	// Compute template matching over the epipolar line
 
 	// Get template from first image.
 	Mat imgTemplate = _frame1(Rect(	Point2i(_point.x - _squareSize/2, _point.y - _squareSize/2),
 									Point2i(_point.x + _squareSize/2, _point.y + _squareSize/2)));
-	// Compute correlation score.
-	Mat corrVal;
-	matchTemplate(subImage, imgTemplate, corrVal, TemplateMatchModes::TM_CCORR_NORMED);
 
-	// Get maxlocation on score submatrix, add offset to get absolute position in second frame and return point.
-	Point max_loc;
-	minMaxLoc(corrVal, NULL, NULL, NULL, &max_loc);
-	Point2i absPoint;
-	if(p1.y < p2.y){		// 666 CHECK absolute position.
-		absPoint = p1 + Point2i(_squareSize/2 + 1,_squareSize/2 + 1) + max_loc;
-	}else{
-		absPoint = p1 + Point2i(_squareSize/2 + 1,-_squareSize/2 -1) + max_loc;
+	double maxVal = 0.0;
+	Point2i maxLoc;
+	for(unsigned i = _squareSize/2 ; i < _frame2.cols - _squareSize/2;i++){
+		// Compute point over epiline
+		Point2i p1(i , -1*(_epiline[2] + _epiline[0] * i)/_epiline[1]);
+		Point2i sp1 = p1 - Point2i(_squareSize/2, _squareSize/2);
+		Point2i sp2 = p1 + Point2i(_squareSize/2, _squareSize/2);
+		// Get subimage from image 2;
+		Mat subImage = _frame2(Rect(sp1, sp2));
+
+		// Compute correlation
+		Mat corrVal;
+		matchTemplate(subImage, imgTemplate, corrVal, TemplateMatchModes::TM_CCORR_NORMED);
+		if(corrVal.at<double>(0,0) > maxVal){
+			maxVal = corrVal.at<double>(0,0);
+			maxLoc = p1;
+		}
 	}
 
-	return absPoint;
+	return maxLoc;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
