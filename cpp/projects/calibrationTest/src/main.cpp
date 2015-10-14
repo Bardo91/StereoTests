@@ -33,9 +33,9 @@ int main(int _argc, char** _argv) {
 
 	StereoCameras stereoCameras("/home/bardo91/Desktop/testImages/img_cam1_%d.jpg", "/home/bardo91/Desktop/testImages/img_cam2_%d.jpg");
 
-	//stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(8, 6), 108);
-	//stereoCameras.save("stereo_A");
-	stereoCameras.load("stereo_A");
+	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(8, 6), 108);
+	stereoCameras.save("stereo_A");
+	//stereoCameras.load("stereo_A");
 
 	#ifdef ENABLE_PCL
 		pcl::visualization::CloudViewer viewer("Simple Cloud Viewer");

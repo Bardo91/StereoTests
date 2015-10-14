@@ -184,7 +184,7 @@ void StereoCameras::calibrateStereo(const vector<vector<Point2f>> &_imagePoints1
 	vector<vector<Point2f>> filteredPoints2 = _imagePoints2;
 
 	for (unsigned i = 0; i < filteredPoints1.size(); i++) {
-		if (filteredPoints1[i].size() ==  0 || filteredPoints2[i].size() ==  0) {
+		if (filteredPoints1[i].size() !=   _boardSize.width*_boardSize.height || filteredPoints2[i].size() !=   _boardSize.width*_boardSize.height) {
 			filteredPoints1.erase(filteredPoints1.begin() + i);
 			filteredPoints2.erase(filteredPoints2.begin() + i);
 			i--;

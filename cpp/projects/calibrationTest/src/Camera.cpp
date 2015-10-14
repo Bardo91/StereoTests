@@ -131,7 +131,7 @@ void Camera::calcParams(const vector<vector<Point2f>> &_imagePoints, Size _image
 	// Filter good points.
 	vector<vector<Point2f>> filteredPoints = _imagePoints;
 	for (unsigned i = 0; i < filteredPoints.size(); i++) {
-		if (filteredPoints[i].size() ==  0) {
+		if (filteredPoints[i].size() !=  _boardSize.width*_boardSize.height) {
 			filteredPoints.erase(filteredPoints.begin() + i);
 			i--;
 		}
