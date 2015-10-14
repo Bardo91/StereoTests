@@ -19,10 +19,10 @@ using namespace cv;
 
 int main(int _argc, char** _argv) {
 	vector<Mat> calibrationFrames1, calibrationFrames2;
-	for (unsigned i = 0; i < 21; i++) {
+	for (unsigned i = 0; true; i++) {
 		// Load image
-		Mat frame1 = imread("/home/bardo91/Desktop/CalibrationImages (Cal_A)/cam1/img_cam1_" + to_string(i) + ".jpg");
-		Mat frame2 = imread("/home/bardo91/Desktop/CalibrationImages (Cal_A)/cam2/img_cam2_" + to_string(i) + ".jpg");
+		Mat frame1 = imread("C:/programming/Calibration D/Calibration D/SmallBoard/img_cam1_" + to_string(i) + ".jpg");
+		Mat frame2 = imread("C:/programming/Calibration D/Calibration D/SmallBoard/img_cam2_" + to_string(i) + ".jpg");
 		if (frame1.rows == 0 || frame2.rows == 0)
 			break;
 
@@ -31,11 +31,11 @@ int main(int _argc, char** _argv) {
 		calibrationFrames2.push_back(frame2);
 	}
 
-	StereoCameras stereoCameras("/home/bardo91/Desktop/testImages/img_cam1_%d.jpg", "/home/bardo91/Desktop/testImages/img_cam2_%d.jpg");
+	StereoCameras stereoCameras("C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
 
-	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(8, 6), 108);
-	stereoCameras.save("stereo_A");
-	//stereoCameras.load("stereo_A");
+	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(15, 10), 22.3);
+	stereoCameras.save("stereo_D");
+	//stereoCameras.load("stereo_D");
 
 	#ifdef ENABLE_PCL
 		pcl::visualization::CloudViewer viewer("Simple Cloud Viewer");
@@ -77,6 +77,6 @@ int main(int _argc, char** _argv) {
 		Mat display;
 		hconcat(frame1, frame2, display);
 		imshow("display", display);
-		waitKey();
+		waitKey(1);
 	}
 }

@@ -232,10 +232,10 @@ cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, con
 		Mat subImage = _frame2(Rect(sp1, sp2));
 
 		// Compute correlation
-		Mat corrVal;
-		matchTemplate(subImage, imgTemplate, corrVal, TemplateMatchModes::TM_CCORR_NORMED);
-		if(corrVal.at<double>(0,0) > maxVal){
-			maxVal = corrVal.at<double>(0,0);
+		Mat corr = subImage.mul(imgTemplate);
+		double val = sum(corr)[0];
+		if(val > maxVal){
+			maxVal = val;
 			maxLoc = p1;
 		}
 	}
