@@ -101,7 +101,7 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 			continue;
 
 		// Calculate matching and add points
-		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i]);
+		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i], 340);
 		if(matchedPoint.x < 0 || matchedPoint.y < 0)
 			continue;
 
@@ -214,30 +214,64 @@ void StereoCameras::computeEpipoarLines(const vector<Point2i> &_points, vector<V
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, const Point2i &_point, const Vec3f &_epiline, const int _squareSize){
+cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, const Point2i &_point, const Vec3f &_epiline, const int _maxDisparity, const int _squareSize){
 	// Compute template matching over the epipolar line
 
 	// Get template from first image.
 	Mat imgTemplate = _frame1(Rect(	Point2i(_point.x - _squareSize/2, _point.y - _squareSize/2),
 									Point2i(_point.x + _squareSize/2, _point.y + _squareSize/2)));
+	uchar * imgTemplateData = imgTemplate.data;
 
-	double maxVal = 0.0;
-	Point2i maxLoc;
-	for(unsigned i = _squareSize/2 ; i < _frame2.cols - _squareSize/2;i++){
+	double minVal = _squareSize*_squareSize*255*255;
+	Point2i maxLoc, p1, sp1, sp2;
+	Mat subImage;
+
+	//----------------------------------------
+	/*Mat dis1, dis2, dis22;
+	cvtColor(_frame1, dis1, CV_GRAY2BGR);
+	cvtColor(_frame2, dis2, CV_GRAY2BGR);
+	Point2i p1e(0, -_epiline[2] / _epiline[1]);
+	Point2i p2e(_frame2.cols,-(_epiline[2] + _epiline[0] * _frame2.cols) / _epiline[1]);
+	line(dis2, p1e, p2e, Scalar(0,0,255));
+	circle(dis1, _point, 3, Scalar(0,0,255));
+	rectangle(dis1, Rect(	Point2i(_point.x - _squareSize/2, _point.y - _squareSize/2), Point2i(_point.x + _squareSize/2, _point.y + _squareSize/2)), Scalar(255,0,0));
+	imshow("Frame1", dis1);
+	imshow("Frame2", dis2);
+	waitKey();*/
+
+	int minX = _point.x - _maxDisparity;
+	minX = minX < _squareSize/2 ? _squareSize/2 : minX;
+	int maxX = _point.x > (_frame2.cols - _squareSize/2 ) ? (_frame2.cols - _squareSize/2 -1 ):_point.x;
+	for(unsigned i = minX ; i < maxX ;i++){
 		// Compute point over epiline
-		Point2i p1(i , -1*(_epiline[2] + _epiline[0] * i)/_epiline[1]);
-		Point2i sp1 = p1 - Point2i(_squareSize/2, _squareSize/2);
-		Point2i sp2 = p1 + Point2i(_squareSize/2, _squareSize/2);
-		// Get subimage from image 2;
-		Mat subImage = _frame2(Rect(sp1, sp2));
+		p1.x = i;
+		p1.y = -1*(_epiline[2] + _epiline[0] * i)/_epiline[1];
+		sp1 = p1 - Point2i(_squareSize/2, _squareSize/2);
+		sp2 = p1 + Point2i(_squareSize/2, _squareSize/2);
 
+		/*dis2.copyTo(dis22);
+		circle(dis22, p1, 4, Scalar(0,255,0));
+		rectangle(dis22, sp1, sp2, Scalar(0,255,0));
+		imshow("dis22",dis22);*/
+
+
+		// Get subimage from image 2;
+		subImage = _frame2(Rect(sp1, sp2));
+		/*imshow("subimage2", subImage);*/
+		uchar * subImageData = subImage.data;
 		// Compute correlation
-		Mat corr = subImage.mul(imgTemplate);
-		double val = sum(corr)[0];
-		if(val > maxVal){
-			maxVal = val;
-			maxLoc = p1;
+
+		double val = 0;
+		for(unsigned j = 0; j < subImage.rows*subImage.cols;j++){
+			val += pow(subImageData[j] - imgTemplateData[j],2);
 		}
+		if(val < minVal){
+			minVal = val;
+			maxLoc = p1;
+			/*std::cout << "New minimum" << std::endl;*/
+		}
+		/*std::cout << "Current Max: " << minVal << ". Current Val: " << val <<std::endl;
+		waitKey();*/
 	}
 
 	return maxLoc;

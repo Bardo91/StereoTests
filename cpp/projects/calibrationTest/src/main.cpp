@@ -68,7 +68,7 @@ int main(int _argc, char** _argv) {
 			for (unsigned i = 0; i < points3d.size(); i++) {
 				if (points3d[i].x > -3000 && points3d[i].x < 3000) {
 					if (points3d[i].y > -3000 && points3d[i].y < 3000) {
-						if (points3d[i].z > 0 && points3d[i].z < 3000) {
+						if (points3d[i].z > 0 && points3d[i].z < 1000) {
 							pcl::PointXYZ point(points3d[i].x, points3d[i].y, points3d[i].z);
 							cloud->push_back(point);
 						}
