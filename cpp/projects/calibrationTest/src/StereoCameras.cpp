@@ -221,106 +221,37 @@ void StereoCameras::computeEpipoarLines(const vector<Point2i> &_points, vector<V
 //---------------------------------------------------------------------------------------------------------------------
 cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, const Point2i &_point, const Vec3f &_epiline, const int _maxDisparity, const int _squareSize){
 	// Compute template matching over the epipolar line
-
 	// Get template from first image.
 	Mat imgTemplate = _frame1(Rect(	Point2i(_point.x - _squareSize/2, _point.y - _squareSize/2),
 									Point2i(_point.x + _squareSize/2, _point.y + _squareSize/2)));
-	uchar * imgTemplateData = imgTemplate.data;
-
 	double minVal = _squareSize*_squareSize*255*255;
 	Point2i maxLoc, p1, sp1, sp2;
 	Mat subImage;
 
 	int minX = _point.x - _maxDisparity;
-	minX = minX < 50 ? 50 : minX;
-	int maxX = _point.x > (_frame2.cols - 50) ? (_frame2.cols -50 -1 ):_point.x;
-	std::vector<double> corrValues;
-
-	/*Mat dis1, dis2, dis22;
-	cvtColor(_frame1, dis1, CV_GRAY2BGR);
-	cvtColor(_frame2, dis2, CV_GRAY2BGR);
-	Point2i p1e(0, -_epiline[2] / _epiline[1]);
-	Point2i p2e(_frame2.cols,-(_epiline[2] + _epiline[0] * _frame2.cols) / _epiline[1]);
-	line(dis2, p1e, p2e, Scalar(0,0,255));
-	circle(dis1, _point, 3, Scalar(0,0,255));
-	rectangle(dis1, Rect(	Point2i(_point.x - _squareSize/2, _point.y - _squareSize/2), Point2i(_point.x + _squareSize/2, _point.y + _squareSize/2)), Scalar(255,0,0));
-	imshow("Frame1", dis1);
-	imshow("Frame2", dis2);
-	waitKey();
-
-	namedWindow("template", CV_WINDOW_FREERATIO);
-	namedWindow("subImage", CV_WINDOW_FREERATIO);
-	namedWindow("difference", CV_WINDOW_FREERATIO);*/
+	minX = minX < 30 ? 30 : minX;
+	int maxX = _point.x > (_frame2.cols - 30) ? (_frame2.cols -30 -1 ):_point.x;
 	for(unsigned i = minX ; i < maxX ;i++){
 		// Compute point over epiline
 		p1.x = i;
 		p1.y = -1*(_epiline[2] + _epiline[0] * i)/_epiline[1];
 		sp1 = p1 - Point2i(_squareSize/2, _squareSize/2);
 		sp2 = p1 + Point2i(_squareSize/2, _squareSize/2);
-
-		/*dis2.copyTo(dis22);
-		circle(dis22, p1, 4, Scalar(0,255,0));
-		rectangle(dis22, sp1, sp2, Scalar(0,255,0));
-		imshow("dis22",dis22);*/
-
 		// Get subimage from image 2;
 		subImage = _frame2(Rect(sp1, sp2));
-		uchar * subImageData = subImage.data;
 		// Compute correlation
-		/*imshow("subimage2", subImage);*/
 
-		Mat dif = imgTemplate.clone();
 		double val = 0;
 		for(unsigned row = 0; row < subImage.rows; row++){
 			for(unsigned col = 0; col < subImage.cols; col++){
-				double aux = abs(double(subImage.at<uchar>(row, col)) - double(imgTemplate.at<uchar>(row, col)));
-				val += aux;
-				dif.at<uchar>(row, col) = aux > 255 ? 255: aux;
+				val += pow(double(subImage.at<uchar>(row, col)) - double(imgTemplate.at<uchar>(row, col)),2);
 			}
 		}
-
-		corrValues.push_back(val);
-		/*std::cout << "Current Max: " << minVal << ". Current Val: " << val <<std::endl;*/
-
-		/*imshow("difference", dif);
-		imshow("template", imgTemplate);
-		imshow("subImage", subImage);*/
-
 		if(val < minVal){
 			minVal = val;
 			maxLoc = p1;
-			/*std::cout << "New minimum" << std::endl;*/
 		}
-
-		/*waitKey();*/
 	}
-
-
-
-	/*Mat matchDis;
-	hconcat(_frame1, _frame2, matchDis);
-	cvtColor(matchDis,matchDis, CV_GRAY2BGR);
-	circle(matchDis, _point, 3, Scalar(0,255,0));
-	circle(matchDis, maxLoc + Point2i(_frame2.cols,0), 3, Scalar(0,255,0));
-	//line(matchDis, _point, maxLoc+Point2i(_frame2.cols,0), Scalar(0,255,0));
-
-	Mat plot = Mat::zeros(300,corrValues.size(), CV_8UC1);
-	double maxVal = *std::max_element(corrValues.begin(), corrValues.end());
-	for(unsigned i = 0; i < corrValues.size(); i++){
-		plot.at<uchar>(unsigned(300*corrValues[i]/(maxVal)),i) = 255;
-	}
-
-	cvtColor(plot,plot,CV_GRAY2BGR);
-	line(plot, Point(0,0), Point(0,50), Scalar(0,0,255));
-	line(plot, Point(0,0), Point(50,0), Scalar(0,255,0));
-	imshow("plot", plot);
-
-
-	Point2i ep1(minX, -1*(_epiline[2] + _epiline[0] * minX)/_epiline[1]);
-	Point2i ep2(maxX, -1*(_epiline[2] + _epiline[0] * maxX)/_epiline[1]);
-	line(matchDis, ep1+ Point2i(_frame2.cols,0), ep2+ Point2i(_frame2.cols,0), Scalar(0,0,255));
-	imshow("matches", matchDis);
-	waitKey();*/
 
 	return maxLoc;
 }
