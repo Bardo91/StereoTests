@@ -103,7 +103,7 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 			continue;
 
 		// Calculate matching and add points
-		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i], 640);
+		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i], pair<int,int>(60,320));
 		if(!validRegion.contains(matchedPoint))
 			continue;
 
@@ -219,7 +219,7 @@ void StereoCameras::computeEpipoarLines(const vector<Point2i> &_points, vector<V
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, const Point2i &_point, const Vec3f &_epiline, const int _maxDisparity, const int _squareSize){
+cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, const Point2i &_point, const Vec3f &_epiline, const std::pair<int, int> _disparityRange, const int _squareSize){
 	// Compute template matching over the epipolar line
 	// Get template from first image.
 	Mat imgTemplate = _frame1(Rect(	Point2i(_point.x - _squareSize/2, _point.y - _squareSize/2),
@@ -228,9 +228,9 @@ cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, con
 	Point2i maxLoc, p1, sp1, sp2;
 	Mat subImage;
 
-	int minX = _point.x - _maxDisparity;
-	minX = minX < 30 ? 30 : minX;
-	int maxX = _point.x > (_frame2.cols - 30) ? (_frame2.cols -30 -1 ):_point.x;
+	int minX = _point.x - _disparityRange.second;
+	minX = minX < _disparityRange.first ? _disparityRange.first : minX;
+	int maxX = _point.x > (_frame2.cols - _squareSize/2) ? (_frame2.cols -_squareSize/2 -1 ):_point.x;
 	for(unsigned i = minX ; i < maxX ;i++){
 		// Compute point over epiline
 		p1.x = i;
