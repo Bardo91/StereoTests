@@ -85,9 +85,11 @@ Mat StereoCameras::disparity(const Mat & _frame1, const Mat & _frame2, unsigned 
 
 //---------------------------------------------------------------------------------------------------------------------
 vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2) {
-	// Compute keypoint only on first image
+	// Compute keypoint only in first image
 	vector<Point2i> keypoints;
 	computeFeatures(_frame1, keypoints);
+
+	std::cout << "Features computed in frame1: " << keypoints.size() << std::endl;
 
 	// Compute projection of epipolar lines into second image.
 	std::vector<cv::Vec3f> epilines;
@@ -101,19 +103,22 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 			continue;
 
 		// Calculate matching and add points
-		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i], 340);
-		if(matchedPoint.x < 0 || matchedPoint.y < 0)
+		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i], 640);
+		if(!validRegion.contains(matchedPoint))
 			continue;
 
 		points1.push_back(keypoints[i]);
-		points2.push_back(matchedPoint);	// 666 in future implementation, work with cropped images to avoid black zone of images after undistorting images.
-
+		points2.push_back(matchedPoint);
 	}
+	std::cout << "Features matched: " << points1.size() << std::endl;
 	// Triangulate points using features in both images.
 	vector<Point3f> points3d = triangulate(points1, points2);
-
+	std::cout << "Points triangulated: " << points3d.size() << std::endl;
 	// Filter points using reprojection.
-	return filterPoints(_frame1, _frame2, points1, points2, points3d, 20);
+	vector<Point3f> points3dFiltered = filterPoints(_frame1, _frame2, points1, points2, points3d, 3);
+	std::cout << "Points Filtered: " << points3dFiltered.size() << std::endl;
+
+	return points3dFiltered;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -226,7 +231,11 @@ cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, con
 	Point2i maxLoc, p1, sp1, sp2;
 	Mat subImage;
 
-	//----------------------------------------
+	int minX = _point.x - _maxDisparity;
+	minX = minX < 50 ? 50 : minX;
+	int maxX = _point.x > (_frame2.cols - 50) ? (_frame2.cols -50 -1 ):_point.x;
+	std::vector<double> corrValues;
+
 	/*Mat dis1, dis2, dis22;
 	cvtColor(_frame1, dis1, CV_GRAY2BGR);
 	cvtColor(_frame2, dis2, CV_GRAY2BGR);
@@ -237,11 +246,11 @@ cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, con
 	rectangle(dis1, Rect(	Point2i(_point.x - _squareSize/2, _point.y - _squareSize/2), Point2i(_point.x + _squareSize/2, _point.y + _squareSize/2)), Scalar(255,0,0));
 	imshow("Frame1", dis1);
 	imshow("Frame2", dis2);
-	waitKey();*/
+	waitKey();
 
-	int minX = _point.x - _maxDisparity;
-	minX = minX < _squareSize/2 ? _squareSize/2 : minX;
-	int maxX = _point.x > (_frame2.cols - _squareSize/2 ) ? (_frame2.cols - _squareSize/2 -1 ):_point.x;
+	namedWindow("template", CV_WINDOW_FREERATIO);
+	namedWindow("subImage", CV_WINDOW_FREERATIO);
+	namedWindow("difference", CV_WINDOW_FREERATIO);*/
 	for(unsigned i = minX ; i < maxX ;i++){
 		// Compute point over epiline
 		p1.x = i;
@@ -254,25 +263,64 @@ cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, con
 		rectangle(dis22, sp1, sp2, Scalar(0,255,0));
 		imshow("dis22",dis22);*/
 
-
 		// Get subimage from image 2;
 		subImage = _frame2(Rect(sp1, sp2));
-		/*imshow("subimage2", subImage);*/
 		uchar * subImageData = subImage.data;
 		// Compute correlation
+		/*imshow("subimage2", subImage);*/
 
+		Mat dif = imgTemplate.clone();
 		double val = 0;
-		for(unsigned j = 0; j < subImage.rows*subImage.cols;j++){
-			val += pow(subImageData[j] - imgTemplateData[j],2);
+		for(unsigned row = 0; row < subImage.rows; row++){
+			for(unsigned col = 0; col < subImage.cols; col++){
+				double aux = abs(double(subImage.at<uchar>(row, col)) - double(imgTemplate.at<uchar>(row, col)));
+				val += aux;
+				dif.at<uchar>(row, col) = aux > 255 ? 255: aux;
+			}
 		}
+
+		corrValues.push_back(val);
+		/*std::cout << "Current Max: " << minVal << ". Current Val: " << val <<std::endl;*/
+
+		/*imshow("difference", dif);
+		imshow("template", imgTemplate);
+		imshow("subImage", subImage);*/
+
 		if(val < minVal){
 			minVal = val;
 			maxLoc = p1;
 			/*std::cout << "New minimum" << std::endl;*/
 		}
-		/*std::cout << "Current Max: " << minVal << ". Current Val: " << val <<std::endl;
-		waitKey();*/
+
+		/*waitKey();*/
 	}
+
+
+
+	/*Mat matchDis;
+	hconcat(_frame1, _frame2, matchDis);
+	cvtColor(matchDis,matchDis, CV_GRAY2BGR);
+	circle(matchDis, _point, 3, Scalar(0,255,0));
+	circle(matchDis, maxLoc + Point2i(_frame2.cols,0), 3, Scalar(0,255,0));
+	//line(matchDis, _point, maxLoc+Point2i(_frame2.cols,0), Scalar(0,255,0));
+
+	Mat plot = Mat::zeros(300,corrValues.size(), CV_8UC1);
+	double maxVal = *std::max_element(corrValues.begin(), corrValues.end());
+	for(unsigned i = 0; i < corrValues.size(); i++){
+		plot.at<uchar>(unsigned(300*corrValues[i]/(maxVal)),i) = 255;
+	}
+
+	cvtColor(plot,plot,CV_GRAY2BGR);
+	line(plot, Point(0,0), Point(0,50), Scalar(0,0,255));
+	line(plot, Point(0,0), Point(50,0), Scalar(0,255,0));
+	imshow("plot", plot);
+
+
+	Point2i ep1(minX, -1*(_epiline[2] + _epiline[0] * minX)/_epiline[1]);
+	Point2i ep2(maxX, -1*(_epiline[2] + _epiline[0] * maxX)/_epiline[1]);
+	line(matchDis, ep1+ Point2i(_frame2.cols,0), ep2+ Point2i(_frame2.cols,0), Scalar(0,0,255));
+	imshow("matches", matchDis);
+	waitKey();*/
 
 	return maxLoc;
 }
@@ -322,9 +370,23 @@ vector<Point3f> StereoCameras::filterPoints(const Mat &_frame1, const Mat &_fram
 		double rError2 = sqrt(pow(reprojection2[i].x - _points2[i].x, 2)
 							+ pow(reprojection2[i].y - _points2[i].y, 2));
 
-		if (rError1 < _maxReprojectionError&& rError2 < _maxReprojectionError) {
+		if (rError1 < _maxReprojectionError && rError2 < _maxReprojectionError) {
 			filteredPoints3d.push_back(_points3d[i]);
 		}
+
+		/*Mat matchDis;
+		hconcat(_frame1, _frame2, matchDis);
+		cvtColor(matchDis,matchDis, CV_GRAY2BGR);
+		circle(matchDis, _points1[i], 3, Scalar(0,255,0));
+		circle(matchDis, _points2[i]+ Point2i(_frame2.cols,0), 3, Scalar(0,255,0));
+		line(matchDis, _points1[i], _points2[i]+Point2i(_frame2.cols,0), Scalar(0,255,0));
+
+		circle(matchDis, reprojection1[i], 3, Scalar(0,0,255));
+		circle(matchDis, Point2i(reprojection2[i].x, reprojection2[i].y) + Point2i(_frame2.cols,0), 3, Scalar(0,0,255));
+
+		imshow("matches", matchDis);
+		waitKey();*/
+
 	}
 
 	return filteredPoints3d;

@@ -19,7 +19,7 @@ using namespace std;
 using namespace cv;
 
 int main(int _argc, char** _argv) {
-	vector<Mat> calibrationFrames1, calibrationFrames2;
+	/*vector<Mat> calibrationFrames1, calibrationFrames2;
 	for (unsigned i = 0; true; i++) {
 		// Load image
 		Mat frame1 = imread("/home/bardo91/programming/Datasets/Calibration_D/Calibration_D/SmallBoard/img_cam1_" + to_string(i) + ".jpg");
@@ -32,11 +32,12 @@ int main(int _argc, char** _argv) {
 		calibrationFrames2.push_back(frame2);
 	}
 
-	StereoCameras stereoCameras("/home/bardo91/programming/Datasets/Calibration_D/Calibration_D/LargeRandom_highFPS/img_cam1_%d.jpg", "/home/bardo91/programming/Datasets/Calibration_D/Calibration_D/LargeRandom_highFPS/img_cam2_%d.jpg");
+
 
 	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(15, 10), 22.3);
-	stereoCameras.save("stereo_D");
-	//stereoCameras.load("stereo_D");
+	stereoCameras.save("stereo_D");*/
+	StereoCameras stereoCameras("/home/bardo91/programming/Datasets/Calibration_D/Calibration_D/LargeRandom_highFPS/img_cam1_%d.jpg", "/home/bardo91/programming/Datasets/Calibration_D/Calibration_D/LargeRandom_highFPS/img_cam2_%d.jpg");
+	stereoCameras.load("stereo_D");
 
 	#ifdef ENABLE_PCL
 		pcl::visualization::CloudViewer viewer("Simple Cloud Viewer");
@@ -68,7 +69,7 @@ int main(int _argc, char** _argv) {
 			for (unsigned i = 0; i < points3d.size(); i++) {
 				if (points3d[i].x > -3000 && points3d[i].x < 3000) {
 					if (points3d[i].y > -3000 && points3d[i].y < 3000) {
-						if (points3d[i].z > 0 && points3d[i].z < 1000) {
+						if (points3d[i].z > 0 && points3d[i].z < 1500) {
 							pcl::PointXYZ point(points3d[i].x, points3d[i].y, points3d[i].z);
 							cloud->push_back(point);
 						}
@@ -82,6 +83,6 @@ int main(int _argc, char** _argv) {
 		Mat display;
 		hconcat(frame1, frame2, display);
 		imshow("display", display);
-		waitKey(1);
+		waitKey();
 	}
 }
