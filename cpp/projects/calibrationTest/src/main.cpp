@@ -14,7 +14,9 @@
 #ifdef ENABLE_PCL
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl\common\transforms.h>
+#include <pcl/common/transforms.h>
+#include <pcl/filters/approximate_voxel_grid.h>
+//#include <pcl/segmentation/sac_segmentation.h>
 #endif
 
 using namespace std;
@@ -47,9 +49,35 @@ int main(int _argc, char** _argv) {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);  //fill the cloud.
 	pcl::PointCloud<pcl::PointXYZ>::Ptr filteredCloud(new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr negativePoints(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr voxelPoints(new pcl::PointCloud<pcl::PointXYZ>);
 	sor.setInputCloud(cloud);
-	sor.setMeanK(20);
-	sor.setStddevMulThresh(0.01);
+	sor.setMeanK(10);
+	sor.setStddevMulThresh(0.1);
+	pcl::ApproximateVoxelGrid<pcl::PointXYZ> avg;
+	avg.setLeafSize(30, 30, 30);
+	avg.setInputCloud(filteredCloud);
+	//for finding plane
+	//pcl::SACSegmentation<pcl::PointXYZ> seg;
+	//pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+	//pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+	//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>());
+	//seg.setOptimizeCoefficients(true);
+	//seg.setModelType(pcl::SACMODEL_PLANE);
+	//seg.setMethodType(pcl::SAC_RANSAC);
+	//seg.setMaxIterations(100);
+	//seg.setDistanceThreshold(0.02);
+
+	//pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+	//tree->setInputCloud(cloud_filtered);
+
+	//std::vector<pcl::PointIndices> cluster_indices;
+	//pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+	//ec.setClusterTolerance(0.02); // 2cm
+	//ec.setMinClusterSize(100);
+	//ec.setMaxClusterSize(25000);
+	//ec.setSearchMethod(tree);
+	//ec.setInputCloud(cloud_filtered);
+	//ec.extract(cluster_indices);
 #endif
 	Mat frame1, frame2;
 	BOViL::STime *timer = BOViL::STime::get();
@@ -90,7 +118,7 @@ int main(int _argc, char** _argv) {
 		std::cout << "Filtering time: " << tFilter << ",with N=" << sor.getMeanK() << endl;
 		std::cout << "Points filtered: " << cloud->size() - filteredCloud->size() << endl;
 
-
+		//transform the pointcloud for visualization = parallel pointclouds
 		Eigen::Matrix4f transform, transform2;
 		transform << 1, 0, 0, 1000,
 			0, 1, 0, 0,
@@ -104,6 +132,9 @@ int main(int _argc, char** _argv) {
 		viewer.showCloud(cloud, "cloud");
 		viewer.showCloud(filteredCloud, "filtered");
 		viewer.showCloud(negativePoints, "negative");
+		avg.filter(*voxelPoints);
+		pcl::transformPointCloud(*voxelPoints, *voxelPoints, transform);
+		viewer.showCloud(voxelPoints, "voxels");
 		cloud->clear();
 #endif
 
