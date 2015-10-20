@@ -25,7 +25,7 @@ public:		// Public interface
 	void clear();
 
 	/// Filter internal pointcloud
-	void filter();
+	pcl::PointCloud<pcl::PointXYZ> filter(pcl::PointCloud<pcl::PointXYZ> &_cloud);
 
 	/// Add points into internal cloud.
 	/// \param _cloud:
