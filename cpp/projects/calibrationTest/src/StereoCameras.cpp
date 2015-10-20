@@ -103,7 +103,7 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 			continue;
 
 		// Calculate matching and add points
-		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i], pair<int,int>(60,320));
+		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i], pair<int,int>(60,400));
 		if(!validRegion.contains(matchedPoint))
 			continue;
 
