@@ -13,17 +13,21 @@
 #include <pcl/point_types.h>
 
 class EnvironmentMap {
-public:
+public:		// Public interface
 	EnvironmentMap();
-	EnvironmentMap(pcl::PointCloud<pcl::PointXYZRGB> _firstCloud);
+	EnvironmentMap(pcl::PointCloud<pcl::PointXYZ> &_firstCloud);
 
 	void clear();
 	void clean();
-	bool update(pcl::PointCloud<pcl::PointXYZRGB> _cloud);
+	bool update(const pcl::PointCloud< pcl::PointXYZ> &_cloud);
 
-	std::vector<pcl::PointCloud<pcl::PointXYZRGB>> clusterCloud();
+	std::vector<pcl::PointCloud<pcl::PointXYZ>> clusterCloud();
 
-private:
+private:	// Private methods
+
+private:	// Members
+	pcl::PointCloud<pcl::PointXYZ> mCloud;
+
 };	// class EnvironmentMap
 
 #endif	//	ENVIRONMENTMAP_H_

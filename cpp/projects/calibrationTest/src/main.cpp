@@ -10,6 +10,7 @@
 #include <fstream>
 #include "StereoCameras.h"
 #include "TimeTools.h"
+#include "EnvironmentMap.h"
 
 #ifdef ENABLE_PCL
 	#include <pcl/visualization/cloud_viewer.h>
@@ -39,6 +40,7 @@ int main(int _argc, char** _argv) {
 	StereoCameras stereoCameras("C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
 	stereoCameras.load("stereo_D");
 
+
 	#ifdef ENABLE_PCL
 		pcl::visualization::CloudViewer viewer("Simple Cloud Viewer");
 	#endif
@@ -63,27 +65,32 @@ int main(int _argc, char** _argv) {
 			continue;
 
 		#ifdef ENABLE_PCL
-			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);  //fill the cloud.
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudRGB(new pcl::PointCloud<pcl::PointXYZRGB>);  //fill the cloud.
+			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);  //fill the cloud.
 
 			//double temp_x , temp_y , temp_z;
 			for (unsigned i = 0; i < points3d.size(); i++) {
 				if (points3d[i].x > -3000 && points3d[i].x < 3000) {
 					if (points3d[i].y > -3000 && points3d[i].y < 3000) {
 						if (points3d[i].z > 0 && points3d[i].z < 1500) {
-							pcl::PointXYZRGB point;
+							pcl::PointXYZRGB pointRGB;
+							pcl::PointXYZ point;
 							point.x = points3d[i].x;
 							point.y = points3d[i].y;
 							point.z = points3d[i].z;
-							point.r = 255*abs(points3d[i].x)/3000;
-							point.g = 255 - 255*abs(points3d[i].y)/3000;
-							point.b = 255*abs(points3d[i].z)/1500;
+							pointRGB.x = points3d[i].x;
+							pointRGB.y = points3d[i].y;
+							pointRGB.z = points3d[i].z;
+							pointRGB.r = 255*abs(points3d[i].x)/3000;
+							pointRGB.g = 255 - 255*abs(points3d[i].y)/3000;
+							pointRGB.b = 255*abs(points3d[i].z)/1500;
+							cloudRGB->push_back(pointRGB);
 							cloud->push_back(point);
 						}
 					}
 				}
 			}
-
-			viewer.showCloud(cloud);
+			viewer.showCloud(cloudRGB);
 		#endif
 
 		Mat display;
