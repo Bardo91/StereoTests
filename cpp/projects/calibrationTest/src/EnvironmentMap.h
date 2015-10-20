@@ -35,6 +35,9 @@ public:		// Public interface
 	/// \return  
 	std::vector<pcl::PointCloud<pcl::PointXYZ>> clusterCloud();
 
+	/// Get point cloud
+	pcl::PointCloud<pcl::PointXYZ> cloud();
+
 private:	// Private methods
 
 private:	// Members

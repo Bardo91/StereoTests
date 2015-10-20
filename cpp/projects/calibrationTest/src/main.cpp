@@ -46,6 +46,7 @@ int main(int _argc, char** _argv) {
 	#endif
 	Mat frame1, frame2;
 	BOViL::STime *timer = BOViL::STime::get();
+	EnvironmentMap map3d;
 	for (;;) {
 		double t0 = timer->getTime();
 		stereoCameras.frames(frame1, frame2, StereoCameras::eFrameFixing::Undistort);
@@ -89,8 +90,9 @@ int main(int _argc, char** _argv) {
 						}
 					}
 				}
-			}
-			viewer.showCloud(cloudRGB);
+			}		
+			map3d.addPoints(*cloud);
+			viewer.showCloud(map3d.cloud().makeShared());	
 		#endif
 
 		Mat display;
