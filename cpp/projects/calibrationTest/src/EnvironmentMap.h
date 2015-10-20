@@ -14,13 +14,29 @@
 
 class EnvironmentMap {
 public:		// Public interface
+	/// Basic constructor. Initialize an empty map
 	EnvironmentMap();
+
+	/// Constructor. Initialize map with an initial set of points
+	/// \param _firstCloud: Initial set of points.
 	EnvironmentMap(pcl::PointCloud<pcl::PointXYZ> &_firstCloud);
 
+	/// Remove internal pointcloud
 	void clear();
-	void clean();
+
+	/// Filter internal pointcloud
+	void filter();
+
+	/// Add points into internal cloud. Without filter and anything
+	/// \param _cloud:
+	void addPoints(const pcl::PointCloud< pcl::PointXYZ> &_cloud);
+
+	/// Merge internal pointcloud with given one properlly to reconstruct environment without point of view information.
+	/// \param _cloud:
 	bool update(const pcl::PointCloud< pcl::PointXYZ> &_cloud);
 
+	/// Cluster internal point cloud and returns vector with clusters
+	/// \return  
 	std::vector<pcl::PointCloud<pcl::PointXYZ>> clusterCloud();
 
 private:	// Private methods

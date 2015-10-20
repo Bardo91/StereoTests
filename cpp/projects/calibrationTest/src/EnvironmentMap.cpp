@@ -21,23 +21,39 @@
 using namespace pcl;
 using namespace std;
 
+//---------------------------------------------------------------------------------------------------------------------
 EnvironmentMap::EnvironmentMap() {
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 EnvironmentMap::EnvironmentMap(PointCloud<PointXYZ> &_firstCloud) {
 	mCloud += _firstCloud;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 void EnvironmentMap::clear() {
 }
 
-void EnvironmentMap::clean() {
-} 
+//---------------------------------------------------------------------------------------------------------------------
+void EnvironmentMap::filter() {
+}
 
+//---------------------------------------------------------------------------------------------------------------------
+void EnvironmentMap::addPoints(const pcl::PointCloud<pcl::PointXYZ>& _cloud) {
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 bool EnvironmentMap::update(const PointCloud<PointXYZ> &_cloud) {
+	if (mCloud.size() == 0) {
+
+	}
+	else {
+
+	}
 	return false;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 vector<PointCloud<PointXYZ>> EnvironmentMap::clusterCloud() {
 	return vector<PointCloud<PointXYZ>>();
 }
