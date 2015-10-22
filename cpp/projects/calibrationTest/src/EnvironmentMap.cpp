@@ -21,7 +21,7 @@
 
 // Point cloud filter
 #include <pcl/common/transforms.h>
-#include <pcl/filters/statistical_outlier_removal.h>
+
 
 
 using namespace pcl;
@@ -76,8 +76,12 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 		PointCloud<PointXYZ>::Ptr voxeledCloud(new PointCloud<PointXYZ>);
 		filteredCloud = filter(_cloud);
 		voxeledCloud = voxel(filteredCloud);
-		mCloud = concatenatePointClouds(*voxeledCloud, mCloud);
-		mCloud = *voxel(mCloud.makeShared());
+		Eigen::Matrix4f transformation = getTransformationBetweenPcs(*voxeledCloud, mCloud);
+
+		PointCloud<PointXYZ> transformedCloud;
+		transformPointCloud(*filteredCloud, transformedCloud, transformation);
+		mCloud += transformedCloud;
+		//mCloud = *voxel(mCloud.makeShared());
 	}
 }
 
@@ -100,7 +104,7 @@ PointCloud<PointXYZ> EnvironmentMap::cloud() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-PointCloud<PointXYZ> EnvironmentMap::concatenatePointClouds(const PointCloud<PointXYZ>& _newCloud, const PointCloud<PointXYZ>& _fixedCloud) {
+Eigen::Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>& _newCloud, const PointCloud<PointXYZ>& _fixedCloud) {
 	// Compute surface normals and curvature
 	PointCloud<PointNormal> cloudAndNormals1 = computeNormals(_newCloud);
 	PointCloud<PointNormal> cloudAndNormals2 = computeNormals(_fixedCloud);
@@ -108,7 +112,7 @@ PointCloud<PointXYZ> EnvironmentMap::concatenatePointClouds(const PointCloud<Poi
 
 	IterativeClosestPointNonLinear<PointNormal, PointNormal> reg;
 	reg.setTransformationEpsilon (1e-6);
-	reg.setMaxCorrespondenceDistance (100);  
+	reg.setMaxCorrespondenceDistance (10);  
 	reg.setMaximumIterations (2);
 	
 	PointXYZC point_representation;
@@ -132,20 +136,22 @@ PointCloud<PointXYZ> EnvironmentMap::concatenatePointClouds(const PointCloud<Poi
 
 		//if the difference between this transformation and the previous one is smaller than the threshold,  refine the process by reducing the maximal correspondence distance
 		if (fabs ((reg.getLastIncrementalTransformation () - prev).sum ()) < reg.getTransformationEpsilon ())
-			reg.setMaxCorrespondenceDistance (reg.getMaxCorrespondenceDistance () - 0.001);
+			reg.setMaxCorrespondenceDistance (reg.getMaxCorrespondenceDistance () - 1);
 
 		prev = reg.getLastIncrementalTransformation ();
 	}
 
 	// Get the transformation from target to source
 	targetToSource = Ti.inverse();
-	PointCloud<PointXYZ> output;
-	transformPointCloud (_newCloud, output, targetToSource);
+	return targetToSource;
 
-	//add the source to the transformed target
-	output += _fixedCloud;
-
-	return output;
+	//PointCloud<PointXYZ> output;
+	//transformPointCloud (_newCloud, output, targetToSource);
+	//
+	////add the source to the transformed target
+	//output += _fixedCloud;
+	//
+	//return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

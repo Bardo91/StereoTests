@@ -41,7 +41,7 @@ int main(int _argc, char** _argv) {
 
 	/*stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(15, 10), 22.3);
 	stereoCameras.save("stereo_D");*/
-	StereoCameras stereoCameras("C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
+	StereoCameras stereoCameras("C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
 	stereoCameras.load("stereo_D");
 
 #ifdef ENABLE_PCL
@@ -59,18 +59,19 @@ int main(int _argc, char** _argv) {
 
 		cvtColor(frame1, frame1, CV_BGR2GRAY);
 		cvtColor(frame2, frame2, CV_BGR2GRAY);
-		
+
 		double cBlurThreshold = 0.75;
 		bool isBlurry1 = isBlurry(frame1, cBlurThreshold);
 		bool isBlurry2 = isBlurry(frame2, cBlurThreshold);
 		if (isBlurry1 || isBlurry2) {
 			cvtColor(frame1, frame1, CV_GRAY2BGR);
 			cvtColor(frame2, frame2, CV_GRAY2BGR);
-			if(isBlurry1)
-				putText(frame1, "Blurry Image", Point2i(20,30), FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0,0,255), 5);
-			if(isBlurry2)
-				putText(frame2, "Blurry Image", Point2i(20,30), FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0,0,255), 5);
-		} else {
+			if (isBlurry1)
+				putText(frame1, "Blurry Image", Point2i(20, 30), FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255), 5);
+			if (isBlurry2)
+				putText(frame2, "Blurry Image", Point2i(20, 30), FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255), 5);
+		}
+		else {
 			double t2 = timer->getTime();
 			vector<Point3f> points3d = stereoCameras.pointCloud(frame1, frame2);
 			double t3 = timer->getTime();
@@ -92,31 +93,34 @@ int main(int _argc, char** _argv) {
 					}
 				}
 			}
-		}
 
-		map3d.addPoints(cloud.makeShared());
-		Eigen::Matrix4f transform;
-		transform << 1, 0, 0, 1500,
-			0, 0.945518575599317, -0.325568154457157, 0,
-			0, 0.325568154457157, 0.945518575599317, 0;
-		/*for (uint i = 0; i < 15; i++)
-		{
+			map3d.addPoints(cloud.makeShared());
+			Eigen::Matrix4f transform;
+			transform << 1, 0, 0, 1500,
+				0, 0.945518575599317, -0.325568154457157, 0,
+				0, 0.325568154457157, 0.945518575599317, 0;
+			/*for (uint i = 0; i < 15; i++)
+			{
 			//transformPointCloud(cloud, cloud, transform);
 			//cloud = map3d.voxel(cloud);
 			cout << "Voxelated cloud, i:"<< i <<", " << cloud.size() << endl;
 			viewer.showCloud(cloud.makeShared());
-			
-		}*/
-		
-		transformPointCloud(cloud, cloud, transform);
-		viewer.showCloud(cloud.makeShared(),"currentCloud");
-		viewer.showCloud(map3d.cloud().makeShared(),"map");
-		//viewer.showCloud(voxeledCloud.makeShared());
-		#endif
+
+			}*/
+
+			transformPointCloud(cloud, cloud, transform);
+			viewer.showCloud(cloud.makeShared(), "currentCloud");
+			viewer.showCloud(map3d.cloud().makeShared(), "map");
+			//viewer.showCloud(voxeledCloud.makeShared());
+			#endif
+
+		}
+
+
 
 		Mat display;
 		hconcat(frame1, frame2, display);
 		imshow("display", display);
-		waitKey();
+		waitKey(1);
 	}
 }

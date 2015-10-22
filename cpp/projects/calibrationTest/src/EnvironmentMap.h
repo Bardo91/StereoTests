@@ -12,6 +12,10 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/common/transforms.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+
+
 
 class EnvironmentMap {
 public:		// Public interface
@@ -39,7 +43,7 @@ public:		// Public interface
 	pcl::PointCloud<pcl::PointXYZ> cloud();
 
 private:	// Private methods
-	pcl::PointCloud<pcl::PointXYZ> concatenatePointClouds(const pcl::PointCloud< pcl::PointXYZ> &_newCloud, const pcl::PointCloud< pcl::PointXYZ> &_fixedCloud);
+	Eigen::Matrix4f getTransformationBetweenPcs(const pcl::PointCloud< pcl::PointXYZ> &_newCloud, const pcl::PointCloud< pcl::PointXYZ> &_fixedCloud);
 	pcl::PointCloud<pcl::PointNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ> &_pointCloud);
 
 private:	// Members
