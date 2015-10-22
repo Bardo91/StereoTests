@@ -11,25 +11,25 @@
 #include <vector>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/filters/voxel_grid.h>
 
 class EnvironmentMap {
 public:		// Public interface
 	/// Basic constructor. Initialize an empty map
-	EnvironmentMap();
-
-	/// Constructor. Initialize map with an initial set of points
-	/// \param _firstCloud: Initial set of points.
-	EnvironmentMap(pcl::PointCloud<pcl::PointXYZ> &_firstCloud);
+	EnvironmentMap(float _voxelSize);
 
 	/// Remove internal pointcloud
 	void clear();
 
 	/// Filter internal pointcloud
-	pcl::PointCloud<pcl::PointXYZ> filter(pcl::PointCloud<pcl::PointXYZ> &_cloud);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 
 	/// Add points into internal cloud.
 	/// \param _cloud:
-	void addPoints(const pcl::PointCloud< pcl::PointXYZ> &_cloud);
+	void addPoints(const pcl::PointCloud< pcl::PointXYZ>::Ptr &_cloud);
+
+	/// voxelate current map/pointcloud
+	pcl::PointCloud<pcl::PointXYZ>::Ptr voxel(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 
 	/// Cluster internal point cloud and returns vector with clusters
 	/// \return  
@@ -44,6 +44,8 @@ private:	// Private methods
 
 private:	// Members
 	pcl::PointCloud<pcl::PointXYZ> mCloud;
+	pcl::VoxelGrid<pcl::PointXYZ> mVoxelGrid;
+	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> mOutlierRemoval;
 
 };	// class EnvironmentMap
 

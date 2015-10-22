@@ -21,7 +21,6 @@
 
 // Point cloud filter
 #include <pcl/common/transforms.h>
-#include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 
 
@@ -46,13 +45,11 @@ public:
 };
 
 //---------------------------------------------------------------------------------------------------------------------
-EnvironmentMap::EnvironmentMap() {
-
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-EnvironmentMap::EnvironmentMap(PointCloud<PointXYZ> &_firstCloud) {
-	mCloud += _firstCloud;
+EnvironmentMap::EnvironmentMap(float _voxelSize) {
+	mVoxelGrid.setLeafSize(_voxelSize, _voxelSize, _voxelSize);
+	mOutlierRemoval.setMeanK(10);
+	mOutlierRemoval.setStddevMulThresh(0.1);
+	mOutlierRemoval.setNegative(false);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -61,29 +58,35 @@ void EnvironmentMap::clear() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-PointCloud<PointXYZ> EnvironmentMap::filter(PointCloud<PointXYZ> &_cloud) {
-	StatisticalOutlierRemoval<PointXYZ> sor;
-	PointCloud<PointXYZ> filteredCloud;
-	sor.setInputCloud(_cloud.makeShared());
-	sor.setMeanK(10);
-	sor.setStddevMulThresh(0.1);
-	ApproximateVoxelGrid<PointXYZ> avg;
-	avg.setLeafSize(30, 30, 30);
-	avg.setInputCloud(filteredCloud.makeShared());
-	sor.setNegative(false);
-	sor.filter(filteredCloud);
+PointCloud<PointXYZ>::Ptr EnvironmentMap::filter(const PointCloud<PointXYZ>::Ptr &_cloud) {
+	PointCloud<PointXYZ>::Ptr filteredCloud(new PointCloud<PointXYZ>);
+	mOutlierRemoval.setInputCloud(_cloud);
+	mOutlierRemoval.filter(*filteredCloud);
 	return filteredCloud;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void EnvironmentMap::addPoints(const PointCloud<PointXYZ>& _cloud) {
+void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 	if (mCloud.size() == 0) {
-		mCloud += _cloud;
+		mCloud += *_cloud;
 		return;
 	}
 	else {
-		mCloud = concatenatePointClouds(_cloud, mCloud);
+		PointCloud<PointXYZ>::Ptr filteredCloud(new PointCloud<PointXYZ>);
+		PointCloud<PointXYZ>::Ptr voxeledCloud(new PointCloud<PointXYZ>);
+		filteredCloud = filter(_cloud);
+		voxeledCloud = voxel(filteredCloud);
+		mCloud = concatenatePointClouds(*voxeledCloud, mCloud);
+		mCloud = *voxel(mCloud.makeShared());
 	}
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::voxel(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud) {
+	mVoxelGrid.setInputCloud(_cloud);
+	PointCloud<PointXYZ>::Ptr voxeled(new PointCloud<PointXYZ>);
+	mVoxelGrid.filter(*voxeled);
+	return voxeled;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

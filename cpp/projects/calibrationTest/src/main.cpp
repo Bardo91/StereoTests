@@ -16,6 +16,7 @@
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/common/transforms.h>
 #endif
 
 using namespace std;
@@ -38,7 +39,7 @@ int main(int _argc, char** _argv) {
 
 	/*stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(15, 10), 22.3);
 	stereoCameras.save("stereo_D");*/
-	StereoCameras stereoCameras("C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
+	StereoCameras stereoCameras("C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
 	stereoCameras.load("stereo_D");
 
 #ifdef ENABLE_PCL
@@ -46,7 +47,7 @@ int main(int _argc, char** _argv) {
 #endif
 	Mat frame1, frame2;
 	BOViL::STime *timer = BOViL::STime::get();
-	EnvironmentMap map3d;
+	EnvironmentMap map3d(30);
 	for (;;) {
 		double t0 = timer->getTime();
 		stereoCameras.frames(frame1, frame2, StereoCameras::eFrameFixing::Undistort);
@@ -79,9 +80,24 @@ int main(int _argc, char** _argv) {
 			}
 		}
 
-		cloud = map3d.filter(cloud);
-		map3d.addPoints(cloud);
-		viewer.showCloud(map3d.cloud().makeShared());
+		map3d.addPoints(cloud.makeShared());
+		Eigen::Matrix4f transform;
+		transform << 1, 0, 0, 1500,
+			0, 0.945518575599317, -0.325568154457157, 0,
+			0, 0.325568154457157, 0.945518575599317, 0;
+		/*for (uint i = 0; i < 15; i++)
+		{
+			//transformPointCloud(cloud, cloud, transform);
+			//cloud = map3d.voxel(cloud);
+			cout << "Voxelated cloud, i:"<< i <<", " << cloud.size() << endl;
+			viewer.showCloud(cloud.makeShared());
+			
+		}*/
+		
+		transformPointCloud(cloud, cloud, transform);
+		viewer.showCloud(cloud.makeShared(),"currentCloud");
+		viewer.showCloud(map3d.cloud().makeShared(),"map");
+		//viewer.showCloud(voxeledCloud.makeShared());
 		#endif
 
 		Mat display;
