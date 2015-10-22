@@ -97,10 +97,10 @@ PointCloud<PointXYZ> EnvironmentMap::cloud() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-PointCloud<PointXYZ> EnvironmentMap::concatenatePointClouds(const PointCloud<PointXYZ>& _cloud1, const PointCloud<PointXYZ>& _cloud2) {
+PointCloud<PointXYZ> EnvironmentMap::concatenatePointClouds(const PointCloud<PointXYZ>& _newCloud, const PointCloud<PointXYZ>& _fixedCloud) {
 	// Compute surface normals and curvature
-	PointCloud<PointNormal> cloudAndNormals1 = computeNormals(_cloud1);
-	PointCloud<PointNormal> cloudAndNormals2 = computeNormals(_cloud2);
+	PointCloud<PointNormal> cloudAndNormals1 = computeNormals(_newCloud);
+	PointCloud<PointNormal> cloudAndNormals2 = computeNormals(_fixedCloud);
 
 
 	IterativeClosestPointNonLinear<PointNormal, PointNormal> reg;
@@ -137,10 +137,10 @@ PointCloud<PointXYZ> EnvironmentMap::concatenatePointClouds(const PointCloud<Poi
 	// Get the transformation from target to source
 	targetToSource = Ti.inverse();
 	PointCloud<PointXYZ> output;
-	transformPointCloud (mCloud, output, targetToSource);
+	transformPointCloud (_newCloud, output, targetToSource);
 
 	//add the source to the transformed target
-	output += _cloud1;
+	output += _fixedCloud;
 
 	return output;
 }

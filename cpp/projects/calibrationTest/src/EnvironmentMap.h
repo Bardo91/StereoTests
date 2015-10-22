@@ -39,7 +39,7 @@ public:		// Public interface
 	pcl::PointCloud<pcl::PointXYZ> cloud();
 
 private:	// Private methods
-	pcl::PointCloud<pcl::PointXYZ> concatenatePointClouds(const pcl::PointCloud< pcl::PointXYZ> &_cloud1, const pcl::PointCloud< pcl::PointXYZ> &_cloud2);
+	pcl::PointCloud<pcl::PointXYZ> concatenatePointClouds(const pcl::PointCloud< pcl::PointXYZ> &_newCloud, const pcl::PointCloud< pcl::PointXYZ> &_fixedCloud);
 	pcl::PointCloud<pcl::PointNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ> &_pointCloud);
 
 private:	// Members
