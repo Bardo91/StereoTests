@@ -42,35 +42,49 @@ PointCloud<PointXYZ>::Ptr EnvironmentMap::filter(const PointCloud<PointXYZ>::Ptr
 	return filteredCloud;
 }
 
-PointCloud<PointXYZRGB>::Ptr colorizePointCloud(PointCloud<PointXYZ>::Ptr _cloud, int _r, int _g, int _b) {
-	PointCloud<PointXYZRGB>::Ptr colorizedCloud(new PointCloud<PointXYZRGB>);
-	for (PointXYZ point : *_cloud) {
-		PointXYZRGB p;
-		p.x = point.x;
-		p.y = point.y;
-		p.z = point.z;
-		p.r = _r;
-		p.g = _g;
-		p.b = _b;
-		colorizedCloud->push_back(p);
-	}
-	return colorizedCloud;
-}
 //---------------------------------------------------------------------------------------------------------------------
 void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
+	// Store First cloud as reference
 	if (mCloud.size() == 0) {
 		mCloud += *voxel(filter(_cloud));
-	} else {
-		PointCloud<PointXYZ>::Ptr filteredCloud(new PointCloud<PointXYZ>);
-		filteredCloud = filter(_cloud);
-		PointCloud<PointXYZ>::Ptr voxeledCloud = voxel(filteredCloud);
-		Matrix4f transformation = getTransformationBetweenPcs(*voxeledCloud, mCloud);
-		PointCloud<PointXYZ> transformedCloud;
-		transformPointCloud(*filteredCloud, transformedCloud, transformation);
-		
-		mCloud += transformedCloud;
-		mCloud = *voxel(mCloud.makeShared());
 	}
+
+	// Storing and processing history of point clouds.
+	unsigned cHistorySize = 2;
+	mCloudHistory.push_back(_cloud);
+		
+	if (mCloudHistory.size() >= cHistorySize) {
+		// Now we consider only 2 clouds on history, if want to increase it, need to define points with probabilities.
+		PointCloud<PointXYZ>::Ptr cloud1 = voxel(filter(mCloudHistory[0]));
+		PointCloud<PointXYZ>::Ptr cloud2 = voxel(filter(mCloudHistory[1]));
+
+		PointCloud<PointXYZ> transformedCloud1;
+		PointCloud<PointXYZ> transformedCloud2;
+
+		Matrix4f transformation = getTransformationBetweenPcs(*cloud1, mCloud);
+		transformPointCloud(*cloud1, transformedCloud1, transformation);
+		transformation = getTransformationBetweenPcs(*cloud2, mCloud);
+		transformPointCloud(*cloud2, transformedCloud2, transformation);
+
+
+		PointCloud<PointXYZ> andCloud = convoluteCloudsOnGrid(transformedCloud1, transformedCloud2);
+		mCloud += andCloud;
+		// Finally discart oldest cloud
+		mCloudHistory.pop_front();
+	}
+	//if (mCloud.size() == 0) {
+	//	mCloud += *voxel(filter(_cloud));
+	//} else {
+	//	PointCloud<PointXYZ>::Ptr filteredCloud(new PointCloud<PointXYZ>);
+	//	filteredCloud = filter(_cloud);
+	//	PointCloud<PointXYZ>::Ptr voxeledCloud = voxel(filteredCloud);
+	//	Matrix4f transformation = getTransformationBetweenPcs(*voxeledCloud, mCloud);
+	//	PointCloud<PointXYZ> transformedCloud;
+	//	transformPointCloud(*filteredCloud, transformedCloud, transformation);
+	//	
+	//	mCloud += transformedCloud;
+	//	mCloud = *voxel(mCloud.makeShared());
+	//}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -121,6 +135,30 @@ Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>&
 	// Get the transformation from target to source
 	targetToSource = Ti;//.inverse();
 	return targetToSource;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+PointCloud<PointXYZ> EnvironmentMap::convoluteCloudsOnGrid(const PointCloud<PointXYZ>& _cloud1, const PointCloud<PointXYZ>& _cloud2) {
+	PointCloud<PointXYZ> outCloud;
+	bool isFirstLarge = _cloud1.size() > _cloud2.size() ? true:false;
+
+	// Put larger structure into VoxelGrid.
+	if (isFirstLarge) 
+		voxel(_cloud1.makeShared());
+	else
+		voxel(_cloud2.makeShared());
+
+	// Iterate over the smaller cloud
+	for (PointXYZ point : isFirstLarge? _cloud2 : _cloud1) {
+		Eigen::Vector3i voxelCoord = mVoxelGrid.getGridCoordinates(point.x, point.y, point.z);
+		int index = mVoxelGrid.getCentroidIndexAt(voxelCoord);
+		if (index != -1) {
+			outCloud.push_back(point);	// If have more than 2 clouds on history, needed probabilities. 666 TODO
+			std::cout << "--> Got  match! <--" << std::endl;
+		}
+	}
+
+	return outCloud;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

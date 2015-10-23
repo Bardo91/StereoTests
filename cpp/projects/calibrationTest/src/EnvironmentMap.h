@@ -76,16 +76,22 @@ public:		// Public interface
 	pcl::PointCloud<pcl::PointXYZ> cloud();
 
 private:	// Private methods
-	Eigen::Matrix4f getTransformationBetweenPcs(const pcl::PointCloud< pcl::PointXYZ> &_newCloud, const pcl::PointCloud< pcl::PointXYZ> &_fixedCloud);
+	Eigen::Matrix4f getTransformationBetweenPcs(const pcl::PointCloud<pcl::PointXYZ> &_newCloud, const pcl::PointCloud< pcl::PointXYZ> &_fixedCloud);
 	
+	// This method use the internal voxel grid to downsample the input clouds. 
+	// Then operate a 1x1 convolution between both: 
+	//			exists(cloud1(x,y,z)) && exists(cloud2(x,y,z)) ? Point(x,y,z) : null
+	pcl::PointCloud<pcl::PointXYZ> convoluteCloudsOnGrid(const pcl::PointCloud<pcl::PointXYZ> &_cloud1, const pcl::PointCloud<pcl::PointXYZ> &_cloud2);
+
 	bool validTransformation(const Eigen::Matrix4f &_transformation, double _maxAngle, double _maxTranslation);
 
 private:	// Members
 	Params	mParams;
 
-	pcl::PointCloud<pcl::PointXYZ>					mCloud;
-	pcl::VoxelGrid<pcl::PointXYZ>					mVoxelGrid;
-	pcl::StatisticalOutlierRemoval<pcl::PointXYZ>	mOutlierRemoval;
+	std::deque<pcl::PointCloud<pcl::PointXYZ>::Ptr>		mCloudHistory;
+	pcl::PointCloud<pcl::PointXYZ>						mCloud;
+	pcl::VoxelGrid<pcl::PointXYZ>						mVoxelGrid;
+	pcl::StatisticalOutlierRemoval<pcl::PointXYZ>		mOutlierRemoval;
 	pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ>	mPcJoiner;
 
 	const double cMaxAngle			= M_PI/180*1;	// 1º
