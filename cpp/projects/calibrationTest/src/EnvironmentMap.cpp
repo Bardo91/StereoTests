@@ -11,23 +11,6 @@ using namespace std;
 using namespace Eigen;
 
 //---------------------------------------------------------------------------------------------------------------------
-// Define a new point representation for < x, y, z, curvature >
-class PointXYZC : public PointRepresentation<PointNormal> {
-	using PointRepresentation<PointNormal>::nr_dimensions_;
-public:
-	PointXYZC (){
-		nr_dimensions_ = 4;
-	}
-
-	virtual void copyToFloatArray (const PointNormal  &p, float * out) const {
-		out[0] = p.x;
-		out[1] = p.y;
-		out[2] = p.z;
-		out[3] = p.curvature;
-	}
-};
-
-//---------------------------------------------------------------------------------------------------------------------
 EnvironmentMap::EnvironmentMap(EnvironmentMap::Params _params) {
 	mParams = _params;
 
@@ -44,11 +27,6 @@ EnvironmentMap::EnvironmentMap(EnvironmentMap::Params _params) {
 	mPcJoiner.setTransformationEpsilon (_params.icpMaxTransformationEpsilon);
 	mPcJoiner.setMaxCorrespondenceDistance (_params.icpMaxCorrespondenceDistance);  
 	mPcJoiner.setMaximumIterations (_params.icpMaxIcpIterations);
-	
-	PointXYZC point_representation;
-	float alpha[4] = {1.0, 1.0, 1.0, 1.0};
-	point_representation.setRescaleValues (alpha);
-	mPcJoiner.setPointRepresentation (boost::make_shared<const PointXYZC> (point_representation));
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -116,18 +94,18 @@ PointCloud<PointXYZ> EnvironmentMap::cloud() {
 //---------------------------------------------------------------------------------------------------------------------
 Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>& _newCloud, const PointCloud<PointXYZ>& _fixedCloud) {
 	// Compute surface normals and curvature
-	PointCloud<PointNormal> cloudAndNormals1 = computeNormals(_newCloud);
-	PointCloud<PointNormal> cloudAndNormals2 = computeNormals(_fixedCloud);
+	PointCloud<PointXYZ> cloud1 = _newCloud;
+	PointCloud<PointXYZ> cloud2 = _fixedCloud;
 
-	mPcJoiner.setInputSource (cloudAndNormals1.makeShared());
-	mPcJoiner.setInputTarget (cloudAndNormals2.makeShared());
+	mPcJoiner.setInputSource (cloud1.makeShared());
+	mPcJoiner.setInputTarget (cloud2.makeShared());
 
 	Matrix4f Ti = Matrix4f::Identity (), prev, targetToSource;
-	PointCloud<PointNormal> alignedCloud1 = cloudAndNormals1;
+	PointCloud<PointXYZ> alignedCloud1 = cloud1;
 	for (int i = 0; i < mParams.icpMaxCorrDistDownStepIterations; ++i) {
-		cloudAndNormals1 = alignedCloud1;
+		cloud1 = alignedCloud1;
 
-		mPcJoiner.setInputSource (cloudAndNormals1.makeShared());
+		mPcJoiner.setInputSource (cloud1.makeShared());
 		mPcJoiner.align (alignedCloud1);
 
 		//accumulate transformation between each Iteration
@@ -143,21 +121,6 @@ Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>&
 	// Get the transformation from target to source
 	targetToSource = Ti;//.inverse();
 	return targetToSource;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-PointCloud<PointNormal> EnvironmentMap::computeNormals(const PointCloud<PointXYZ>& _pointCloud) {
-	NormalEstimation<PointXYZ, PointNormal> estimator;
-	search::KdTree<PointXYZ>::Ptr tree (new search::KdTree<PointXYZ> ());
-	estimator.setSearchMethod (tree);
-	estimator.setKSearch (30);
-
-	PointCloud<PointNormal> cloudAndNormals;
-	estimator.setInputCloud (_pointCloud.makeShared());
-	estimator.compute (cloudAndNormals);
-	copyPointCloud (_pointCloud, cloudAndNormals);
-	
-	return cloudAndNormals;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
