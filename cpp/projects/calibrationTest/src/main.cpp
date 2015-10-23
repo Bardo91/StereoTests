@@ -56,10 +56,10 @@ int main(int _argc, char** _argv) {
 	params.outlierStdDev						= 0.05;
 	params.outlierSetNegative					= false;
 	params.icpMaxTransformationEpsilon			= 1e-2;
-	params.icpMaxCorrespondenceDistance			= 1;
 	params.icpMaxIcpIterations					= 3;
-	params.icpMaxAlignmentIterations			= 30;
-	params.icpMaxCorrespondenceDistanceDownStep = 0.1;
+	params.icpMaxCorrespondenceDistance			= 1;
+	params.icpMaxCorrDistDownStep				= 0.1;
+	params.icpMaxCorrDistDownStepIterations		= 30;
 
 	EnvironmentMap map3d(params);
 	for (;;) {

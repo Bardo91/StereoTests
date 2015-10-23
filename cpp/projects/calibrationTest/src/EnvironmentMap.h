@@ -46,10 +46,10 @@ public:		// Public interface
 
 		// ICP-NL
 		float	icpMaxTransformationEpsilon;
-		float	icpMaxCorrespondenceDistance;
 		int		icpMaxIcpIterations;
-		int		icpMaxAlignmentIterations;
-		float	icpMaxCorrespondenceDistanceDownStep;
+		float	icpMaxCorrespondenceDistance;
+		float	icpMaxCorrDistDownStep;
+		int		icpMaxCorrDistDownStepIterations;
 	};
 
 	/// Basic constructor. Initialize an empty map

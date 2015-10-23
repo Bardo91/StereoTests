@@ -83,38 +83,12 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 	if (mCloud.size() == 0) {
 		mCloud += *voxel(filter(_cloud));
 	} else {
-		//visualization::CloudViewer viewer("Debug cloud");
-		//viewer.showCloud(mCloud.makeShared(), "Ori");
-		//system("PAUSE");
-		//viewer.showCloud(colorizePointCloud(_cloud, 255, 0,0), "Input");
-		//system("PAUSE");
 		PointCloud<PointXYZ>::Ptr filteredCloud(new PointCloud<PointXYZ>);
 		filteredCloud = filter(_cloud);
-		//viewer.showCloud(colorizePointCloud(filteredCloud, 0, 255,0), "Filtered");
-		//system("PAUSE");
 		PointCloud<PointXYZ>::Ptr voxeledCloud = voxel(filteredCloud);
-		//viewer.showCloud(colorizePointCloud(filteredCloud, 0, 0,255), "Voxeled");
-		//system("PAUSE");
 		Matrix4f transformation = getTransformationBetweenPcs(*voxeledCloud, mCloud);
 		PointCloud<PointXYZ> transformedCloud;
 		transformPointCloud(*voxeledCloud, transformedCloud, transformation);
-		//viewer.showCloud(colorizePointCloud(transformedCloud.makeShared(), 0, 255,255), "Transformed");
-		//system("PAUSE");
-
-		//boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer")); 
-		//viewer->setBackgroundColor (0, 0, 0); 
-		//viewer->addPointCloud<pcl::PointXYZ> (mCloud.makeShared(),  "Ori"); 
-		//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(_cloud, 0, 255,0),  "Input"); 
-		//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(voxeledCloud, 0, 255,0),  "Filtered"); 
-		//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(filteredCloud, 0, 0,255),  "Voxeled"); 
-		//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(transformedCloud.makeShared(), 255, 0,0),  "Transformed"); 
-		//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Ori"); 
-		//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Input"); 
-		//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Filtered"); 
-		//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Voxeled"); 
-		//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Transformed"); 
-		//viewer->addCoordinateSystem (1.0); 
-
 		
 		mCloud += transformedCloud;
 		mCloud = *voxel(mCloud.makeShared());
@@ -150,7 +124,7 @@ Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>&
 
 	Matrix4f Ti = Matrix4f::Identity (), prev, targetToSource;
 	PointCloud<PointNormal> alignedCloud1 = cloudAndNormals1;
-	for (int i = 0; i < mParams.icpMaxAlignmentIterations; ++i) {
+	for (int i = 0; i < mParams.icpMaxCorrDistDownStepIterations; ++i) {
 		cloudAndNormals1 = alignedCloud1;
 
 		mPcJoiner.setInputSource (cloudAndNormals1.makeShared());
@@ -161,7 +135,7 @@ Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>&
 
 		//if the difference between this transformation and the previous one is smaller than the threshold,  refine the process by reducing the maximal correspondence distance
 		if (fabs ((mPcJoiner.getLastIncrementalTransformation () - prev).sum ()) < mPcJoiner.getTransformationEpsilon ())
-			mPcJoiner.setMaxCorrespondenceDistance (mPcJoiner.getMaxCorrespondenceDistance () - 1);
+			mPcJoiner.setMaxCorrespondenceDistance (mPcJoiner.getMaxCorrespondenceDistance () - mParams.icpMaxCorrDistDownStep);
 
 		prev = mPcJoiner.getLastIncrementalTransformation ();
 	}
