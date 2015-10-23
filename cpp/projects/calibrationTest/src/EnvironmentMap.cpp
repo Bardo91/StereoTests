@@ -6,27 +6,6 @@
 
 #include "EnvironmentMap.h"
 
-// Joining and alignement
-#include <boost/make_shared.hpp>
-#include <pcl/io/pcd_io.h>
-#include <pcl/filters/filter.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/point_representation.h>
-#include <pcl/registration/icp.h>
-#include <pcl/registration/icp_nl.h>
-#include <pcl/registration/transforms.h>
-#include <pcl/visualization/pcl_visualizer.h>
-
-
-// Point cloud filter
-#include <pcl/common/transforms.h>
-
-
-
-#include <pcl/visualization/cloud_viewer.h>
-
-
 using namespace pcl;
 using namespace std;
 using namespace Eigen;
@@ -49,11 +28,27 @@ public:
 };
 
 //---------------------------------------------------------------------------------------------------------------------
-EnvironmentMap::EnvironmentMap(float _voxelSize) {
-	mVoxelGrid.setLeafSize(_voxelSize, _voxelSize, _voxelSize);
-	mOutlierRemoval.setMeanK(10);
-	mOutlierRemoval.setStddevMulThresh(0.05);
-	mOutlierRemoval.setNegative(false);
+EnvironmentMap::EnvironmentMap(EnvironmentMap::Params _params) {
+	mParams = _params;
+
+	// Initialize members
+	// Init voxel class
+	mVoxelGrid.setLeafSize(_params.voxelSize, _params.voxelSize, _params.voxelSize);
+
+	// Init filtering class
+	mOutlierRemoval.setMeanK(_params.outlierMeanK);
+	mOutlierRemoval.setStddevMulThresh(_params.outlierStdDev);
+	mOutlierRemoval.setNegative(_params.outlierSetNegative);
+
+	// Init ICP-NL class
+	mPcJoiner.setTransformationEpsilon (_params.icpMaxTransformationEpsilon);
+	mPcJoiner.setMaxCorrespondenceDistance (_params.icpMaxCorrespondenceDistance);  
+	mPcJoiner.setMaximumIterations (_params.icpMaxIcpIterations);
+	
+	PointXYZC point_representation;
+	float alpha[4] = {1.0, 1.0, 1.0, 1.0};
+	point_representation.setRescaleValues (alpha);
+	mPcJoiner.setPointRepresentation (boost::make_shared<const PointXYZC> (point_representation));
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -150,35 +145,25 @@ Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>&
 	PointCloud<PointNormal> cloudAndNormals1 = computeNormals(_newCloud);
 	PointCloud<PointNormal> cloudAndNormals2 = computeNormals(_fixedCloud);
 
-	IterativeClosestPointNonLinear<PointNormal, PointNormal> reg;
-	reg.setTransformationEpsilon (1e-2);
-	reg.setMaxCorrespondenceDistance (0.01);  
-	reg.setMaximumIterations (3);
-	
-	PointXYZC point_representation;
-	float alpha[4] = {1.0, 1.0, 1.0, 1.0};
-	point_representation.setRescaleValues (alpha);
-	reg.setPointRepresentation (boost::make_shared<const PointXYZC> (point_representation));
-
-	reg.setInputSource (cloudAndNormals1.makeShared());
-	reg.setInputTarget (cloudAndNormals2.makeShared());
+	mPcJoiner.setInputSource (cloudAndNormals1.makeShared());
+	mPcJoiner.setInputTarget (cloudAndNormals2.makeShared());
 
 	Matrix4f Ti = Matrix4f::Identity (), prev, targetToSource;
 	PointCloud<PointNormal> alignedCloud1 = cloudAndNormals1;
-	for (int i = 0; i < 30; ++i) {
+	for (int i = 0; i < mParams.icpMaxAlignmentIterations; ++i) {
 		cloudAndNormals1 = alignedCloud1;
 
-		reg.setInputSource (cloudAndNormals1.makeShared());
-		reg.align (alignedCloud1);
+		mPcJoiner.setInputSource (cloudAndNormals1.makeShared());
+		mPcJoiner.align (alignedCloud1);
 
 		//accumulate transformation between each Iteration
-		Ti = reg.getFinalTransformation () * Ti;
+		Ti = mPcJoiner.getFinalTransformation () * Ti;
 
 		//if the difference between this transformation and the previous one is smaller than the threshold,  refine the process by reducing the maximal correspondence distance
-		if (fabs ((reg.getLastIncrementalTransformation () - prev).sum ()) < reg.getTransformationEpsilon ())
-			reg.setMaxCorrespondenceDistance (reg.getMaxCorrespondenceDistance () - 1);
+		if (fabs ((mPcJoiner.getLastIncrementalTransformation () - prev).sum ()) < mPcJoiner.getTransformationEpsilon ())
+			mPcJoiner.setMaxCorrespondenceDistance (mPcJoiner.getMaxCorrespondenceDistance () - 1);
 
-		prev = reg.getLastIncrementalTransformation ();
+		prev = mPcJoiner.getLastIncrementalTransformation ();
 	}
 
 	// Get the transformation from target to source

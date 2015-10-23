@@ -8,19 +8,52 @@
 #ifndef ENVIRONMENTMAP_H_
 #define ENVIRONMENTMAP_H_
 
+// 666 TODO: clean includes
+
 #include <vector>
+
+
+#include <boost/make_shared.hpp>
+#include <pcl/common/transforms.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/filters/filter.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/common/transforms.h>
-#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/point_representation.h>
+#include <pcl/registration/icp.h>
+#include <pcl/registration/icp_nl.h>
+#include <pcl/registration/transforms.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/visualization/cloud_viewer.h>
+
 
 
 
 class EnvironmentMap {
 public:		// Public interface
+	/// Internal structure to configure algorithms
+	struct Params {
+		// Voxeling parameters.
+		float	voxelSize;
+
+		// Filter outlier removal.
+		int		outlierMeanK;
+		float	outlierStdDev;
+		bool	outlierSetNegative;
+
+		// ICP-NL
+		float	icpMaxTransformationEpsilon;
+		float	icpMaxCorrespondenceDistance;
+		int		icpMaxIcpIterations;
+		int		icpMaxAlignmentIterations;
+		float	icpMaxCorrespondenceDistanceDownStep;
+	};
+
 	/// Basic constructor. Initialize an empty map
-	EnvironmentMap(float _voxelSize);
+	EnvironmentMap(Params _params);
 
 	/// Remove internal pointcloud
 	void clear();
@@ -49,9 +82,12 @@ private:	// Private methods
 	bool validTransformation(const Eigen::Matrix4f &_transformation, double _maxAngle, double _maxTranslation);
 
 private:	// Members
-	pcl::PointCloud<pcl::PointXYZ> mCloud;
-	pcl::VoxelGrid<pcl::PointXYZ> mVoxelGrid;
-	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> mOutlierRemoval;
+	Params	mParams;
+
+	pcl::PointCloud<pcl::PointXYZ>					mCloud;
+	pcl::VoxelGrid<pcl::PointXYZ>					mVoxelGrid;
+	pcl::StatisticalOutlierRemoval<pcl::PointXYZ>	mOutlierRemoval;
+	pcl::IterativeClosestPointNonLinear<pcl::PointNormal, pcl::PointNormal>	mPcJoiner;
 
 	const double cMaxAngle			= M_PI/180*1;	// 1º
 	const double cMaxTranslation	= 5;			// 10 mm 

@@ -49,7 +49,19 @@ int main(int _argc, char** _argv) {
 #endif
 	Mat frame1, frame2;
 	BOViL::STime *timer = BOViL::STime::get();
-	EnvironmentMap map3d(0.03);
+	
+	EnvironmentMap::Params params;
+	params.voxelSize							= 0.03;
+	params.outlierMeanK							= 10;
+	params.outlierStdDev						= 0.05;
+	params.outlierSetNegative					= false;
+	params.icpMaxTransformationEpsilon			= 1e-2;
+	params.icpMaxCorrespondenceDistance			= 1;
+	params.icpMaxIcpIterations					= 3;
+	params.icpMaxAlignmentIterations			= 30;
+	params.icpMaxCorrespondenceDistanceDownStep = 0.1;
+
+	EnvironmentMap map3d(params);
 	for (;;) {
 		double t0 = timer->getTime();
 		stereoCameras.frames(frame1, frame2, StereoCameras::eFrameFixing::Undistort);
@@ -106,8 +118,6 @@ int main(int _argc, char** _argv) {
 			#endif
 
 		}
-
-
 
 		Mat display;
 		hconcat(frame1, frame2, display);
