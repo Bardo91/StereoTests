@@ -88,7 +88,7 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 		PointCloud<PointXYZ>::Ptr voxeledCloud = voxel(filteredCloud);
 		Matrix4f transformation = getTransformationBetweenPcs(*voxeledCloud, mCloud);
 		PointCloud<PointXYZ> transformedCloud;
-		transformPointCloud(*voxeledCloud, transformedCloud, transformation);
+		transformPointCloud(*filteredCloud, transformedCloud, transformation);
 		
 		mCloud += transformedCloud;
 		mCloud = *voxel(mCloud.makeShared());

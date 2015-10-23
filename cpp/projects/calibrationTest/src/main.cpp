@@ -56,7 +56,7 @@ int main(int _argc, char** _argv) {
 	params.outlierStdDev						= 0.05;
 	params.outlierSetNegative					= false;
 	params.icpMaxTransformationEpsilon			= 1e-2;
-	params.icpMaxIcpIterations					= 3;
+	params.icpMaxIcpIterations					= 10;
 	params.icpMaxCorrespondenceDistance			= 1;
 	params.icpMaxCorrDistDownStep				= 0.1;
 	params.icpMaxCorrDistDownStepIterations		= 30;
@@ -122,6 +122,8 @@ int main(int _argc, char** _argv) {
 		Mat display;
 		hconcat(frame1, frame2, display);
 		imshow("display", display);
-		waitKey();
+		waitKey(1);
 	}
+
+	waitKey();
 }
