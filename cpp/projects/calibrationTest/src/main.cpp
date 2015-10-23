@@ -26,21 +26,21 @@ using namespace cv;
 using namespace pcl;
 
 int main(int _argc, char** _argv) {
-	/*vector<Mat> calibrationFrames1, calibrationFrames2;
-	for (unsigned i = 0; true; i++) {
-		// Load image
-		Mat frame1 = imread("C:/programming/Calibration D/Calibration D/SmallBoard/img_cam1_" + to_string(i) + ".jpg");
-		Mat frame2 = imread("C:/programming/Calibration D/Calibration D/SmallBoard/img_cam2_" + to_string(i) + ".jpg");
-		if (frame1.rows == 0 || frame2.rows == 0)
-			break;
-
-		// Add image to list of images for calibration.
-		calibrationFrames1.push_back(frame1);
-		calibrationFrames2.push_back(frame2);
-	}*/
-
-	/*stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(15, 10), 22.3);
-	stereoCameras.save("stereo_D");*/
+	//vector<Mat> calibrationFrames1, calibrationFrames2;
+	//for (unsigned i = 0; true; i++) {
+	//	// Load image
+	//	Mat frame1 = imread("C:/programming/Calibration D/Calibration D/SmallBoard/img_cam1_" + to_string(i) + ".jpg");
+	//	Mat frame2 = imread("C:/programming/Calibration D/Calibration D/SmallBoard/img_cam2_" + to_string(i) + ".jpg");
+	//	if (frame1.rows == 0 || frame2.rows == 0)
+	//		break;
+	//
+	//	// Add image to list of images for calibration.
+	//	calibrationFrames1.push_back(frame1);
+	//	calibrationFrames2.push_back(frame2);
+	//}
+	//
+	//stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(15, 10), 0.0223);
+	//stereoCameras.save("stereo_D");
 	StereoCameras stereoCameras("C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
 	stereoCameras.load("stereo_D");
 
@@ -49,7 +49,7 @@ int main(int _argc, char** _argv) {
 #endif
 	Mat frame1, frame2;
 	BOViL::STime *timer = BOViL::STime::get();
-	EnvironmentMap map3d(30);
+	EnvironmentMap map3d(0.03);
 	for (;;) {
 		double t0 = timer->getTime();
 		stereoCameras.frames(frame1, frame2, StereoCameras::eFrameFixing::Undistort);
@@ -84,9 +84,9 @@ int main(int _argc, char** _argv) {
 			#ifdef ENABLE_PCL
 			//double temp_x , temp_y , temp_z;
 			for (unsigned i = 0; i < points3d.size(); i++) {
-				if (points3d[i].x > -3000 && points3d[i].x < 3000) {
-					if (points3d[i].y > -3000 && points3d[i].y < 3000) {
-						if (points3d[i].z > 650 && points3d[i].z < 1500) {
+				if (points3d[i].x > -3 && points3d[i].x < 3) {
+					if (points3d[i].y > -3 && points3d[i].y < 3) {
+						if (points3d[i].z > 0.65 && points3d[i].z < 1.5) {
 							PointXYZ point(points3d[i].x, points3d[i].y, points3d[i].z);
 							cloud.push_back(point);
 						}
@@ -97,21 +97,12 @@ int main(int _argc, char** _argv) {
 			map3d.addPoints(cloud.makeShared());
 			Eigen::Matrix4f transform;
 			transform << 1, 0, 0, 1500,
-				0, 0.945518575599317, -0.325568154457157, 0,
-				0, 0.325568154457157, 0.945518575599317, 0;
-			/*for (uint i = 0; i < 15; i++)
-			{
-			//transformPointCloud(cloud, cloud, transform);
-			//cloud = map3d.voxel(cloud);
-			cout << "Voxelated cloud, i:"<< i <<", " << cloud.size() << endl;
-			viewer.showCloud(cloud.makeShared());
-
-			}*/
+				0, 1, 0, 0,
+				0, 0, 1, 0;
 
 			transformPointCloud(cloud, cloud, transform);
 			viewer.showCloud(cloud.makeShared(), "currentCloud");
 			viewer.showCloud(map3d.cloud().makeShared(), "map");
-			//viewer.showCloud(voxeledCloud.makeShared());
 			#endif
 
 		}
@@ -121,6 +112,6 @@ int main(int _argc, char** _argv) {
 		Mat display;
 		hconcat(frame1, frame2, display);
 		imshow("display", display);
-		waitKey(1);
+		waitKey();
 	}
 }

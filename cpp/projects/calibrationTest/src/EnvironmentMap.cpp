@@ -24,8 +24,12 @@
 
 
 
+#include <pcl/visualization/cloud_viewer.h>
+
+
 using namespace pcl;
 using namespace std;
+using namespace Eigen;
 
 //---------------------------------------------------------------------------------------------------------------------
 // Define a new point representation for < x, y, z, curvature >
@@ -48,7 +52,7 @@ public:
 EnvironmentMap::EnvironmentMap(float _voxelSize) {
 	mVoxelGrid.setLeafSize(_voxelSize, _voxelSize, _voxelSize);
 	mOutlierRemoval.setMeanK(10);
-	mOutlierRemoval.setStddevMulThresh(0.1);
+	mOutlierRemoval.setStddevMulThresh(0.05);
 	mOutlierRemoval.setNegative(false);
 }
 
@@ -65,23 +69,60 @@ PointCloud<PointXYZ>::Ptr EnvironmentMap::filter(const PointCloud<PointXYZ>::Ptr
 	return filteredCloud;
 }
 
+PointCloud<PointXYZRGB>::Ptr colorizePointCloud(PointCloud<PointXYZ>::Ptr _cloud, int _r, int _g, int _b) {
+	PointCloud<PointXYZRGB>::Ptr colorizedCloud(new PointCloud<PointXYZRGB>);
+	for (PointXYZ point : *_cloud) {
+		PointXYZRGB p;
+		p.x = point.x;
+		p.y = point.y;
+		p.z = point.z;
+		p.r = _r;
+		p.g = _g;
+		p.b = _b;
+		colorizedCloud->push_back(p);
+	}
+	return colorizedCloud;
+}
 //---------------------------------------------------------------------------------------------------------------------
 void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 	if (mCloud.size() == 0) {
-		mCloud += *_cloud;
-		return;
-	}
-	else {
+		mCloud += *voxel(filter(_cloud));
+	} else {
+		//visualization::CloudViewer viewer("Debug cloud");
+		//viewer.showCloud(mCloud.makeShared(), "Ori");
+		//system("PAUSE");
+		//viewer.showCloud(colorizePointCloud(_cloud, 255, 0,0), "Input");
+		//system("PAUSE");
 		PointCloud<PointXYZ>::Ptr filteredCloud(new PointCloud<PointXYZ>);
-		PointCloud<PointXYZ>::Ptr voxeledCloud(new PointCloud<PointXYZ>);
 		filteredCloud = filter(_cloud);
-		voxeledCloud = voxel(filteredCloud);
-		Eigen::Matrix4f transformation = getTransformationBetweenPcs(*voxeledCloud, mCloud);
-
+		//viewer.showCloud(colorizePointCloud(filteredCloud, 0, 255,0), "Filtered");
+		//system("PAUSE");
+		PointCloud<PointXYZ>::Ptr voxeledCloud = voxel(filteredCloud);
+		//viewer.showCloud(colorizePointCloud(filteredCloud, 0, 0,255), "Voxeled");
+		//system("PAUSE");
+		Matrix4f transformation = getTransformationBetweenPcs(*voxeledCloud, mCloud);
 		PointCloud<PointXYZ> transformedCloud;
-		transformPointCloud(*filteredCloud, transformedCloud, transformation);
+		transformPointCloud(*voxeledCloud, transformedCloud, transformation);
+		//viewer.showCloud(colorizePointCloud(transformedCloud.makeShared(), 0, 255,255), "Transformed");
+		//system("PAUSE");
+
+		//boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer")); 
+		//viewer->setBackgroundColor (0, 0, 0); 
+		//viewer->addPointCloud<pcl::PointXYZ> (mCloud.makeShared(),  "Ori"); 
+		//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(_cloud, 0, 255,0),  "Input"); 
+		//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(voxeledCloud, 0, 255,0),  "Filtered"); 
+		//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(filteredCloud, 0, 0,255),  "Voxeled"); 
+		//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(transformedCloud.makeShared(), 255, 0,0),  "Transformed"); 
+		//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Ori"); 
+		//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Input"); 
+		//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Filtered"); 
+		//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Voxeled"); 
+		//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Transformed"); 
+		//viewer->addCoordinateSystem (1.0); 
+
+		
 		mCloud += transformedCloud;
-		//mCloud = *voxel(mCloud.makeShared());
+		mCloud = *voxel(mCloud.makeShared());
 	}
 }
 
@@ -104,16 +145,15 @@ PointCloud<PointXYZ> EnvironmentMap::cloud() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Eigen::Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>& _newCloud, const PointCloud<PointXYZ>& _fixedCloud) {
+Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>& _newCloud, const PointCloud<PointXYZ>& _fixedCloud) {
 	// Compute surface normals and curvature
 	PointCloud<PointNormal> cloudAndNormals1 = computeNormals(_newCloud);
 	PointCloud<PointNormal> cloudAndNormals2 = computeNormals(_fixedCloud);
 
-
 	IterativeClosestPointNonLinear<PointNormal, PointNormal> reg;
-	reg.setTransformationEpsilon (1e-6);
-	reg.setMaxCorrespondenceDistance (10);  
-	reg.setMaximumIterations (2);
+	reg.setTransformationEpsilon (1e-2);
+	reg.setMaxCorrespondenceDistance (0.01);  
+	reg.setMaximumIterations (3);
 	
 	PointXYZC point_representation;
 	float alpha[4] = {1.0, 1.0, 1.0, 1.0};
@@ -123,7 +163,7 @@ Eigen::Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<Poi
 	reg.setInputSource (cloudAndNormals1.makeShared());
 	reg.setInputTarget (cloudAndNormals2.makeShared());
 
-	Eigen::Matrix4f Ti = Eigen::Matrix4f::Identity (), prev, targetToSource;
+	Matrix4f Ti = Matrix4f::Identity (), prev, targetToSource;
 	PointCloud<PointNormal> alignedCloud1 = cloudAndNormals1;
 	for (int i = 0; i < 30; ++i) {
 		cloudAndNormals1 = alignedCloud1;
@@ -142,16 +182,8 @@ Eigen::Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<Poi
 	}
 
 	// Get the transformation from target to source
-	targetToSource = Ti.inverse();
+	targetToSource = Ti;//.inverse();
 	return targetToSource;
-
-	//PointCloud<PointXYZ> output;
-	//transformPointCloud (_newCloud, output, targetToSource);
-	//
-	////add the source to the transformed target
-	//output += _fixedCloud;
-	//
-	//return output;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -167,4 +199,28 @@ PointCloud<PointNormal> EnvironmentMap::computeNormals(const PointCloud<PointXYZ
 	copyPointCloud (_pointCloud, cloudAndNormals);
 	
 	return cloudAndNormals;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+bool EnvironmentMap::validTransformation(const Matrix4f & _transformation, double _maxAngle, double _maxTranslation) {
+	Matrix3f rotation = _transformation.block<3,3>(0,0);
+	Vector3f translation = _transformation.block<3,1>(0,3);
+	
+	Affine3f aff(Affine3f::Identity());
+	aff = aff*rotation;
+	
+	float roll, pitch, yaw;
+	getEulerAngles(aff, roll, pitch, yaw);
+
+	std::cout << "Rotations: " << roll << ", " << pitch << ", " << yaw << std::endl;
+	std::cout << "Translations: " << translation(0) << ", " << translation(1) << ", " << translation(2) << std::endl;
+
+	if (abs(roll) < cMaxAngle && abs(pitch) < cMaxAngle && abs(yaw) < cMaxAngle  &&
+		abs(translation(0)) < cMaxTranslation && abs(translation(1)) < cMaxTranslation && abs(translation(2)) < cMaxTranslation) {
+		std::cout << "Valid point cloud rotation" << std::endl;
+		return true;
+	} else {
+		std::cout << "Invalid point cloud rotation" << std::endl;
+		return false;
+	}
 }

@@ -46,11 +46,15 @@ private:	// Private methods
 	Eigen::Matrix4f getTransformationBetweenPcs(const pcl::PointCloud< pcl::PointXYZ> &_newCloud, const pcl::PointCloud< pcl::PointXYZ> &_fixedCloud);
 	pcl::PointCloud<pcl::PointNormal> computeNormals(const pcl::PointCloud<pcl::PointXYZ> &_pointCloud);
 
+	bool validTransformation(const Eigen::Matrix4f &_transformation, double _maxAngle, double _maxTranslation);
+
 private:	// Members
 	pcl::PointCloud<pcl::PointXYZ> mCloud;
 	pcl::VoxelGrid<pcl::PointXYZ> mVoxelGrid;
 	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> mOutlierRemoval;
 
+	const double cMaxAngle			= M_PI/180*1;	// 1º
+	const double cMaxTranslation	= 5;			// 10 mm 
 };	// class EnvironmentMap
 
 #endif	//	ENVIRONMENTMAP_H_
