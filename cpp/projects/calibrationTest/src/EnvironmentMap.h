@@ -29,6 +29,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/cloud_viewer.h>
 
+#include "TimeTools.h"
 
 
 
@@ -45,7 +46,8 @@ public:		// Public interface
 		bool	outlierSetNegative;
 
 		// ICP-NL
-		float	icpMaxTransformationEpsilon;
+		double	icpMaxTransformationEpsilon;
+		double	icpEuclideanEpsilon;
 		int		icpMaxIcpIterations;
 		float	icpMaxCorrespondenceDistance;
 		float	icpMaxCorrDistDownStep;
@@ -90,6 +92,8 @@ private:	// Members
 
 	const double cMaxAngle			= M_PI/180*1;	// 1º
 	const double cMaxTranslation	= 5;			// 10 mm 
+
+	Eigen::Matrix4f mPreviousCloud2MapTransformation = Eigen::Matrix4f::Identity();
 };	// class EnvironmentMap
 
 #endif	//	ENVIRONMENTMAP_H_
