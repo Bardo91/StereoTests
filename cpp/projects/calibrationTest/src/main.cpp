@@ -115,7 +115,7 @@ int main(int _argc, char** _argv) {
 		Mat display;
 		hconcat(frame1, frame2, display);
 		imshow("display", display);
-		waitKey();
+		waitKey(1);
 	}
 
 	waitKey();

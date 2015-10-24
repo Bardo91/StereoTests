@@ -5,6 +5,7 @@
 //
 
 #include "EnvironmentMap.h"
+#include <opencv2/opencv.hpp>
 
 using namespace pcl;
 using namespace std;
@@ -138,11 +139,44 @@ Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>&
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+PointCloud<PointXYZRGB>::Ptr colorizePointCloud(const PointCloud<PointXYZ>::Ptr &_cloud, int _r, int _g, int _b) {
+	PointCloud<PointXYZRGB>::Ptr colorizedCloud(new PointCloud<PointXYZRGB>);
+	for (PointXYZ point : *_cloud) {
+		PointXYZRGB p;
+		p.x = point.x;
+		p.y = point.y;
+		p.z = point.z;
+		p.r = _r;
+		p.g = _g;
+		p.b = _b;
+		colorizedCloud->push_back(p);
+	}
+	return colorizedCloud;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 PointCloud<PointXYZ> EnvironmentMap::convoluteCloudsOnGrid(const PointCloud<PointXYZ>& _cloud1, const PointCloud<PointXYZ>& _cloud2) {
 	PointCloud<PointXYZ> outCloud;
 	bool isFirstLarge = _cloud1.size() > _cloud2.size() ? true:false;
 
+	//boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer")); 
+	//viewer->setBackgroundColor (0, 0, 0); 
+	//viewer->addCoordinateSystem (1.0); 
+	//viewer->addPointCloud<pcl::PointXYZ> (mCloud.makeShared(),  "Ori"); 
+	//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(_cloud1.makeShared(), 255,0 ,0),  "Input1"); 
+	//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(_cloud2.makeShared(), 0, 255,0),  "Input2"); 
+	//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(filteredCloud, 0, 0,255),  "Voxeled"); 
+	//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(transformedCloud.makeShared(), 255, 0,0),  "Transformed"); 
+	//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "Ori"); 
+	//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "Input1"); 
+	//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "Input2"); 
+	//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Voxeled"); 
+	//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 4, "Transformed"); 
+
+	//cv::waitKey();
+
 	// Put larger structure into VoxelGrid.
+	mVoxelGrid.setSaveLeafLayout(true);
 	if (isFirstLarge) 
 		voxel(_cloud1.makeShared());
 	else
@@ -154,10 +188,12 @@ PointCloud<PointXYZ> EnvironmentMap::convoluteCloudsOnGrid(const PointCloud<Poin
 		int index = mVoxelGrid.getCentroidIndexAt(voxelCoord);
 		if (index != -1) {
 			outCloud.push_back(point);	// If have more than 2 clouds on history, needed probabilities. 666 TODO
-			std::cout << "--> Got  match! <--" << std::endl;
+			//std::cout << "--> Got  match! <--" << std::endl;
 		}
 	}
-
+	std::cout << "Size of first: " << _cloud1.size() << std::endl;
+	std::cout << "Size of second: " << _cloud2.size() << std::endl;
+	std::cout << "Size of result: " << outCloud.size() << std::endl;
 	return outCloud;
 }
 
