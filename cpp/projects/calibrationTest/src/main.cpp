@@ -51,7 +51,7 @@ int main(int _argc, char** _argv) {
 	BOViL::STime *timer = BOViL::STime::get();
 	
 	EnvironmentMap::Params params;
-	params.voxelSize							= 0.03;
+	params.voxelSize							= 0.02;
 	params.outlierMeanK							= 10;
 	params.outlierStdDev						= 0.05;
 	params.outlierSetNegative					= false;
@@ -72,7 +72,7 @@ int main(int _argc, char** _argv) {
 		cvtColor(frame1, frame1, CV_BGR2GRAY);
 		cvtColor(frame2, frame2, CV_BGR2GRAY);
 
-		double cBlurThreshold = 0.75;
+		double cBlurThreshold = 0.8;
 		bool isBlurry1 = isBlurry(frame1, cBlurThreshold);
 		bool isBlurry2 = isBlurry(frame2, cBlurThreshold);
 		if (isBlurry1 || isBlurry2) {
