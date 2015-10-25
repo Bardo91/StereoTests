@@ -28,22 +28,22 @@ using namespace pcl;
 using namespace BOViL::plot;
 
 int main(int _argc, char** _argv) {
-	//vector<Mat> calibrationFrames1, calibrationFrames2;
-	//for (unsigned i = 0; true; i++) {
-	//	// Load image
-	//	Mat frame1 = imread("C:/programming/Calibration D/Calibration D/SmallBoard/img_cam1_" + to_string(i) + ".jpg");
-	//	Mat frame2 = imread("C:/programming/Calibration D/Calibration D/SmallBoard/img_cam2_" + to_string(i) + ".jpg");
-	//	if (frame1.rows == 0 || frame2.rows == 0)
-	//		break;
-	//
-	//	// Add image to list of images for calibration.
-	//	calibrationFrames1.push_back(frame1);
-	//	calibrationFrames2.push_back(frame2);
-	//}
-	//
-	//stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(15, 10), 0.0223);
-	//stereoCameras.save("stereo_D");
-	StereoCameras stereoCameras("C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
+	/*vector<Mat> calibrationFrames1, calibrationFrames2;
+	for (unsigned i = 0; true; i++) {
+		// Load image
+		Mat frame1 = imread("C:/Users/GRVC/Desktop/Calibration D/SmallBoard/img_cam1_" + to_string(i) + ".jpg");
+		Mat frame2 = imread("C:/Users/GRVC/Desktop/Calibration D/SmallBoard/img_cam2_" + to_string(i) + ".jpg");
+		if (frame1.rows == 0 || frame2.rows == 0)
+			break;
+	
+		// Add image to list of images for calibration.
+		calibrationFrames1.push_back(frame1);
+		calibrationFrames2.push_back(frame2);
+	}
+	StereoCameras stereoCameras("C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
+	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(15, 10), 0.0223);
+	stereoCameras.save("stereo_D");*/
+	StereoCameras stereoCameras("C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
 	stereoCameras.load("stereo_D");
 
 #ifdef ENABLE_PCL
@@ -57,11 +57,12 @@ int main(int _argc, char** _argv) {
 	params.outlierMeanK							= 10;
 	params.outlierStdDev						= 0.05;
 	params.outlierSetNegative					= false;
-	params.icpMaxTransformationEpsilon			= 1e-2;
-	params.icpMaxIcpIterations					= 10;
-	params.icpMaxCorrespondenceDistance			= 1;
-	params.icpMaxCorrDistDownStep				= 0.1;
-	params.icpMaxCorrDistDownStepIterations		= 30;
+	params.icpMaxTransformationEpsilon			= 1e-20; //seems to have no influence, implies local minimum found
+	params.icpEuclideanEpsilon					= 1e-20; //seems to have no influence, implies local minimum found
+	params.icpMaxIcpIterations					= 1000; //no increase in time.. meaning we reach exit condition much sooner
+	params.icpMaxCorrespondenceDistance			= 0.1; //had it at 1 meter, now reduced it to 10 cm... results similar
+	params.icpMaxCorrDistDownStep				= 0.01;
+	params.icpMaxCorrDistDownStepIterations		= 1;
 
 	vector<double> timePlot;
 	Graph2d graph("TimePlot");

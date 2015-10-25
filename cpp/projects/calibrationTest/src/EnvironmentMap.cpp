@@ -28,6 +28,7 @@ EnvironmentMap::EnvironmentMap(EnvironmentMap::Params _params) {
 	mPcJoiner.setTransformationEpsilon (_params.icpMaxTransformationEpsilon);
 	mPcJoiner.setMaxCorrespondenceDistance (_params.icpMaxCorrespondenceDistance);  
 	mPcJoiner.setMaximumIterations (_params.icpMaxIcpIterations);
+	mPcJoiner.setEuclideanFitnessEpsilon(_params.icpEuclideanEpsilon);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -96,21 +97,22 @@ PointCloud<PointXYZ> EnvironmentMap::cloud() {
 
 //---------------------------------------------------------------------------------------------------------------------
 Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>& _newCloud, const PointCloud<PointXYZ>& _fixedCloud) {
-	// Compute surface normals and curvature
-	PointCloud<PointXYZ> cloud1 = _newCloud;
-	PointCloud<PointXYZ> cloud2 = _fixedCloud;
+	//PointCloud<PointXYZ> cloud1 = _newCloud;
+	//PointCloud<PointXYZ> cloud2 = _fixedCloud;
+	BOViL::STime *timer = BOViL::STime::get();
+	double t;
 
-	mPcJoiner.setInputSource (cloud1.makeShared());
-	mPcJoiner.setInputTarget (cloud2.makeShared());
+	mPcJoiner.setInputSource (_newCloud.makeShared());
+	mPcJoiner.setInputTarget (_fixedCloud.makeShared());
 
 	Matrix4f Ti = Matrix4f::Identity (), prev, targetToSource;
-	PointCloud<PointXYZ> alignedCloud1 = cloud1;
+	PointCloud<PointXYZ> alignedCloud1;// = cloud1;
 	for (int i = 0; i < mParams.icpMaxCorrDistDownStepIterations; ++i) {
-		cloud1 = alignedCloud1;
-
-		mPcJoiner.setInputSource (cloud1.makeShared());
-		mPcJoiner.align (alignedCloud1);
-
+		//cloud1 = alignedCloud1;
+		double t0 = timer->getTime();
+		//mPcJoiner.setInputSource (cloud1.makeShared());
+		mPcJoiner.align (alignedCloud1, mPreviousCloud2MapTransformation);
+		t = timer->getTime() - t0;
 		//accumulate transformation between each Iteration
 		Ti = mPcJoiner.getFinalTransformation () * Ti;
 
@@ -121,8 +123,13 @@ Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>&
 		prev = mPcJoiner.getLastIncrementalTransformation ();
 	}
 
+	cout << "Time for alignment " << t << endl;
+
+	cout << "Fitness score " << mPcJoiner.getFitnessScore() << "   Has conveged? " << mPcJoiner.hasConverged() << endl;
+
 	// Get the transformation from target to source
 	targetToSource = Ti;
+	mPreviousCloud2MapTransformation = targetToSource;
 	return targetToSource;
 }
 
