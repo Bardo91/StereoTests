@@ -13,6 +13,7 @@
 #include "TimeTools.h"
 #include "EnvironmentMap.h"
 #include "ImageFilteringTools.h"
+#include "graph2d.h"
 
 #ifdef ENABLE_PCL
 #include <pcl/visualization/cloud_viewer.h>
@@ -24,6 +25,7 @@
 using namespace std;
 using namespace cv;
 using namespace pcl;
+using namespace BOViL::plot;
 
 int main(int _argc, char** _argv) {
 	//vector<Mat> calibrationFrames1, calibrationFrames2;
@@ -60,6 +62,9 @@ int main(int _argc, char** _argv) {
 	params.icpMaxCorrespondenceDistance			= 1;
 	params.icpMaxCorrDistDownStep				= 0.1;
 	params.icpMaxCorrDistDownStepIterations		= 30;
+
+	vector<double> timePlot;
+	Graph2d graph("TimePlot");
 
 	EnvironmentMap map3d(params);
 	for (;;) {
@@ -115,7 +120,11 @@ int main(int _argc, char** _argv) {
 		Mat display;
 		hconcat(frame1, frame2, display);
 		imshow("display", display);
-		waitKey(1);
+		double t3 = timer->getTime();
+		timePlot.push_back(t3-t0);
+		graph.clean();
+		graph.draw(timePlot, 0, 0, 255, Graph2d::eDrawType::Lines);
+		waitKey(3);
 	}
 
 	waitKey();
