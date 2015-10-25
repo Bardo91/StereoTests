@@ -62,6 +62,7 @@ int main(int _argc, char** _argv) {
 	params.icpMaxCorrespondenceDistance			= 1;
 	params.icpMaxCorrDistDownStep				= 0.1;
 	params.icpMaxCorrDistDownStepIterations		= 30;
+	params.historySize							= 5;
 
 	vector<double> timePlot;
 	Graph2d graph("TimePlot");

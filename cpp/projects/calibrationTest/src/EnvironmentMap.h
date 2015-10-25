@@ -50,6 +50,9 @@ public:		// Public interface
 		float	icpMaxCorrespondenceDistance;
 		float	icpMaxCorrDistDownStep;
 		int		icpMaxCorrDistDownStepIterations;
+
+		// Pointcloud history filtering
+		unsigned	historySize;
 	};
 
 	/// Basic constructor. Initialize an empty map

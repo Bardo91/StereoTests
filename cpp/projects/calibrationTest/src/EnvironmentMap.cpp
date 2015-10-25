@@ -51,25 +51,28 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 	}
 
 	// Storing and processing history of point clouds.
-	unsigned cHistorySize = 2;
 	mCloudHistory.push_back(_cloud);
-		
-	if (mCloudHistory.size() >= cHistorySize) {
-		// Now we consider only 2 clouds on history, if want to increase it, need to define points with probabilities.
+	
+	if (mCloudHistory.size() >= mParams.historySize) {
+		// Get first pointcloud
 		PointCloud<PointXYZ>::Ptr cloud1 = voxel(filter(mCloudHistory[0]));
-		PointCloud<PointXYZ>::Ptr cloud2 = voxel(filter(mCloudHistory[1]));
-
 		PointCloud<PointXYZ> transformedCloud1;
-		PointCloud<PointXYZ> transformedCloud2;
-
 		Matrix4f transformation = getTransformationBetweenPcs(*cloud1, mCloud);
 		transformPointCloud(*cloud1, transformedCloud1, transformation);
-		transformation = getTransformationBetweenPcs(*cloud2, mCloud);
-		transformPointCloud(*cloud2, transformedCloud2, transformation);
+		
 
+		for (unsigned i = 1; i < mParams.historySize; i++) {
+			// Now we consider only 2 clouds on history, if want to increase it, need to define points with probabilities.
+			PointCloud<PointXYZ>::Ptr cloud2 = voxel(filter(mCloudHistory[i]));
 
-		PointCloud<PointXYZ> andCloud = convoluteCloudsOnGrid(transformedCloud1, transformedCloud2);
-		mCloud += andCloud;
+			PointCloud<PointXYZ> transformedCloud2;
+			transformation = getTransformationBetweenPcs(*cloud2, mCloud);
+			transformPointCloud(*cloud2, transformedCloud2, transformation);
+
+			cloud1 = convoluteCloudsOnGrid(transformedCloud1, transformedCloud2).makeShared();
+		}
+
+		mCloud += *cloud1;
 		mCloud = *voxel(mCloud.makeShared());
 		// Finally discart oldest cloud
 		mCloudHistory.pop_front();
