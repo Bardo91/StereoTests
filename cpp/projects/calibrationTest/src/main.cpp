@@ -134,7 +134,7 @@ int main(int _argc, char** _argv) {
 				cloud_cluster->width = cloud_cluster->points.size();
 				cloud_cluster->height = 1;
 				cloud_cluster->is_dense = true;
-				gui->addCluster(cloud_cluster, 2, rand()*255/RAND_MAX, rand()*255/RAND_MAX, rand()*255/RAND_MAX);
+				gui->addCluster(cloud_cluster, 3, rand()*255/RAND_MAX, rand()*255/RAND_MAX, rand()*255/RAND_MAX);
 
 				std::cout << "PointCloud representing the Cluster: " << cloud_cluster->points.size() << " data points." << std::endl;
 				j++;

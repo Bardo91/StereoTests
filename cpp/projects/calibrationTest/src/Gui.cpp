@@ -52,7 +52,7 @@ void Gui::clearMap() {
 void Gui::addCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cluster, unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b) {
 	mPcCounter++;
 	m3dViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cluster, _r, _g, _b),"Cluster_"+to_string(mPcCounter),mViewPortMapViewer);
-	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, 1, "Cluster_"+to_string(mPcCounter),mViewPortMapViewer);
+	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, _pointSize, "Cluster_"+to_string(mPcCounter),mViewPortMapViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
