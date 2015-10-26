@@ -75,10 +75,10 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 			transformation = getTransformationBetweenPcs(*cloud2, mCloud);
 			transformPointCloud(*cloud2, transformedCloud2, transformation);
 
-			cloud1 = convoluteCloudsOnGrid(transformedCloud1, transformedCloud2).makeShared();
+			transformedCloud1 = convoluteCloudsOnGrid(transformedCloud1, transformedCloud2);
 		}
 
-		mCloud += *cloud1;
+		mCloud += transformedCloud1;
 		mCloud = *voxel(mCloud.makeShared());
 		// Finally discart oldest cloud
 		mCloudHistory.pop_front();
