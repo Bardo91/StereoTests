@@ -121,10 +121,9 @@ int main(int _argc, char** _argv) {
 			map3d.addPoints(cloud.makeShared());
 			gui->drawMap(map3d.cloud().makeShared());
 			gui->addPointToPcViewer(cloud.makeShared());
-			//viewer.showCloud(map3d.cloud().makeShared(), "map");
+			
 			std::vector<pcl::PointIndices> mClusterIndices;
 			mClusterIndices = map3d.clusterCloud(map3d.cloud().makeShared());
-
 
 			int j = 0;
 			for (std::vector<pcl::PointIndices>::const_iterator it = mClusterIndices.begin(); it != mClusterIndices.end(); ++it)
@@ -135,13 +134,11 @@ int main(int _argc, char** _argv) {
 				cloud_cluster->width = cloud_cluster->points.size();
 				cloud_cluster->height = 1;
 				cloud_cluster->is_dense = true;
-				viewer.showCloud(cloud_cluster, "cloud"+to_string(j));
+				gui->addCluster(cloud_cluster, 2, rand()*255/RAND_MAX, rand()*255/RAND_MAX, rand()*255/RAND_MAX);
 
 				std::cout << "PointCloud representing the Cluster: " << cloud_cluster->points.size() << " data points." << std::endl;
 				j++;
 			}
-			#endif
-
 		}
 
 		double t3 = timer->getTime();

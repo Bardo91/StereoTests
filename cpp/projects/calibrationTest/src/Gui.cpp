@@ -39,6 +39,7 @@ Gui * Gui::get() {
 //---------------------------------------------------------------------------------------------------------------------
 
 void Gui::drawMap(const PointCloud<PointXYZ>::Ptr & _map) {
+	clearMap();
 	m3dViewer->updatePointCloud(_map, "map");	// Not efficient but fast implementation	
 }
 
