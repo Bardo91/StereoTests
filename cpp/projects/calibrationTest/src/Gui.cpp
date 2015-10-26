@@ -79,9 +79,9 @@ void Gui::updateStereoImages(const Mat & _left, const Mat & _right) {
 void Gui::putBlurry(bool _left) {
 	Point2i startPoint;
 	if(_left)
-		Point2i(20, 100);
+		startPoint = Point2i(20, 30);
 	else
-		Point2i(20 + mLeftImage.cols, 100);
+		startPoint = Point2i(20 + mLeftImage.cols, 30);
 
 	putText(mPairStereo, "Blurry Image", startPoint, FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255),4);
 	imshow(mName + "_StereoViewer", mPairStereo);
