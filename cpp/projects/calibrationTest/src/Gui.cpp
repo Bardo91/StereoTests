@@ -39,36 +39,37 @@ Gui * Gui::get() {
 //---------------------------------------------------------------------------------------------------------------------
 
 void Gui::drawMap(const PointCloud<PointXYZ>::Ptr & _map) {
-	mMapViewer->addPointCloud<PointXYZ>(_map, "map");	// Not efficient but fast implementation
-	mMapViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, 1, "map");
+	m3dViewer->updatePointCloud(_map, "map");	// Not efficient but fast implementation	
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::clearMap() {
-	mMapViewer->removeAllPointClouds();
+	m3dViewer->removeAllPointClouds(mViewPortMapViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::addCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cluster, unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b) {
-	mMapViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cluster, _r, _g, _b));
-	mMapViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, 1, "Cluster_"+to_string(mPcCounter++));
+	mPcCounter++;
+	m3dViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cluster, _r, _g, _b),"Cluster_"+to_string(mPcCounter),mViewPortMapViewer);
+	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, 1, "Cluster_"+to_string(mPcCounter),mViewPortMapViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::addPointToPcViewer(const PointCloud<PointXYZ>::Ptr & _cloud, unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b) {
-	mPcViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cloud, _r, _g, _b));
-	mPcViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, _pointSize, "Cloud"+to_string(mPcCounter++));
+	mPcCounter++;
+	m3dViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cloud, _r, _g, _b),"Cloud"+to_string(mPcCounter),mViewportPcViewer);
+	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, _pointSize, "Cloud"+to_string(mPcCounter),mViewportPcViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::clearPcViewer() {
-	mPcViewer->removeAllPointClouds();
+	m3dViewer->removeAllPointClouds();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::updateStereoImages(const Mat & _left, const Mat & _right) {
-	cvtColor(_left, mLeftImage, CV_GRAY2BGR);
-	cvtColor(_right, mRightImage, CV_GRAY2BGR);
+	mLeftImage = _left; 
+	mRightImage = _right;
 	hconcat(mLeftImage, mRightImage, mPairStereo);
 
 	imshow(mName + "_StereoViewer", mPairStereo);
@@ -76,12 +77,12 @@ void Gui::updateStereoImages(const Mat & _left, const Mat & _right) {
 
 void Gui::putBlurry(bool _left) {
 	Point2i startPoint;
-	if(left)
-		Point2i(20, 30);
+	if(_left)
+		Point2i(20, 100);
 	else
-		Point2i(20 + mLeftImage.cols, 30);
+		Point2i(20 + mLeftImage.cols, 100);
 
-	putText(mPairStereo, "Blurry Image", startPoint, FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255), 4);
+	putText(mPairStereo, "Blurry Image", startPoint, FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255),4);
 	imshow(mName + "_StereoViewer", mPairStereo);
 }
 
@@ -116,20 +117,25 @@ void Gui::drawBoundBoxes(const vector<Rect>& _boxes, bool _isLeft, unsigned _r, 
 // Private methods
 //---------------------------------------------------------------------------------------------------------------------
 
-Gui::Gui(string _name): mName(_name), mMapViewer(new PCLVisualizer (mName+"_MapViewer")), mPcViewer(new PCLVisualizer (mName+"_PcViewer")) {
+Gui::Gui(string _name): mName(_name), m3dViewer(new PCLVisualizer (mName)) {
 
+	m3dViewer->initCameraParameters ();
+	m3dViewer->addCoordinateSystem (0.5);
 	// Set up mapViewer
-	mMapViewer->setBackgroundColor (0, 0, 0);
-	mMapViewer->addCoordinateSystem (1.0);
-	mMapViewer->initCameraParameters ();
-
-	// Set up point cloud Viewer
-	mPcViewer->setBackgroundColor (0, 0, 0);
-	mPcViewer->addCoordinateSystem (1.0);
-	mPcViewer->initCameraParameters ();
+	m3dViewer->createViewPort (0.0, 0.0, 0.5, 1.0, mViewPortMapViewer);
+	m3dViewer->setBackgroundColor (0, 0, 0, mViewPortMapViewer);
+	m3dViewer->addCoordinateSystem (0.5,"XYZ_map", mViewPortMapViewer);
+	PointCloud<PointXYZ>::Ptr emptyCloud(new PointCloud<PointXYZ>);
+	m3dViewer->addPointCloud(emptyCloud, "map",mViewPortMapViewer);
+	m3dViewer->addText ("Map Viewer", 10, 10, "MapViewer text", mViewPortMapViewer);
+	// Set up pc viewer
+	m3dViewer->createViewPort (0.5, 0.0, 1.0, 1.0, mViewportPcViewer);
+	m3dViewer->setBackgroundColor (0.1, 0.1, 0.1, mViewportPcViewer);
+	m3dViewer->addCoordinateSystem (0.5,"XYZ_pc",mViewportPcViewer);
+	m3dViewer->addText ("Cloud Viewer", 10, 10, "PcViewer text", mViewportPcViewer);
 
 	// Set up stereo viewer
-	namedWindow(mName + "_StereoViewer", CV_WINDOW_NORMAL);
+	namedWindow(mName + "_StereoViewer", CV_WINDOW_AUTOSIZE);
 }
 //---------------------------------------------------------------------------------------------------------------------
 PointCloud<PointXYZRGB>::Ptr Gui::colorizePointCloud(const PointCloud<PointXYZ>::Ptr & _cloud, int _r, int _g, int _b) {

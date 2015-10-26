@@ -77,8 +77,8 @@ private:	// Members
 	
 	std::string	mName;	// Base name for all windows.
 	
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> mMapViewer;
-	boost::shared_ptr<pcl::visualization::PCLVisualizer> mPcViewer;
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> m3dViewer;
+	int mViewPortMapViewer = 0, mViewportPcViewer = 1;
 
 	cv::Mat mLeftImage, mRightImage, mPairStereo;
 

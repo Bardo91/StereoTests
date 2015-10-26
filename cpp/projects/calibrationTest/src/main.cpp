@@ -14,13 +14,13 @@
 #include "EnvironmentMap.h"
 #include "ImageFilteringTools.h"
 #include "graph2d.h"
+#include "Gui.h"
 
-#ifdef ENABLE_PCL
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/common/transforms.h>
-#endif
+
 
 using namespace std;
 using namespace cv;
@@ -28,6 +28,10 @@ using namespace pcl;
 using namespace BOViL::plot;
 
 int main(int _argc, char** _argv) {
+	if (_argc < 2) {
+		std::cerr << "Not enough input arguments" << std::endl;
+	}
+
 	/*vector<Mat> calibrationFrames1, calibrationFrames2;
 	for (unsigned i = 0; true; i++) {
 		// Load image
@@ -43,12 +47,13 @@ int main(int _argc, char** _argv) {
 	StereoCameras stereoCameras("C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
 	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(15, 10), 0.0223);
 	stereoCameras.save("stereo_D");*/
-	StereoCameras stereoCameras("C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
+	
+	StereoCameras stereoCameras(string(_argv[1]) + "LargeRandom_highFPS/img_cam1_%d.jpg", string(_argv[1]) + "LargeRandom_highFPS/img_cam2_%d.jpg");
 	stereoCameras.load("stereo_D");
 
-#ifdef ENABLE_PCL
-	visualization::CloudViewer viewer("Simple Cloud Viewer");
-#endif
+	Gui::init("My_gui");
+	Gui* gui = Gui::get();
+	
 	Mat frame1, frame2;
 	BOViL::STime *timer = BOViL::STime::get();
 	
@@ -73,6 +78,8 @@ int main(int _argc, char** _argv) {
 		double t0 = timer->getTime();
 		stereoCameras.frames(frame1, frame2, StereoCameras::eFrameFixing::Undistort);
 		double t1 = timer->getTime();
+		gui->updateStereoImages(frame1, frame2);
+		
 		if (frame1.rows == 0)
 			break;
 
@@ -82,15 +89,12 @@ int main(int _argc, char** _argv) {
 		double cBlurThreshold = 0.8;
 		bool isBlurry1 = isBlurry(frame1, cBlurThreshold);
 		bool isBlurry2 = isBlurry(frame2, cBlurThreshold);
-		if (isBlurry1 || isBlurry2) {
-			cvtColor(frame1, frame1, CV_GRAY2BGR);
-			cvtColor(frame2, frame2, CV_GRAY2BGR);
-			if (isBlurry1)
-				putText(frame1, "Blurry Image", Point2i(20, 30), FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255), 5);
-			if (isBlurry2)
-				putText(frame2, "Blurry Image", Point2i(20, 30), FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255), 5);
-		}
-		else {
+		if(isBlurry1) 
+			gui->putBlurry(true);
+		if(isBlurry2) 
+			gui->putBlurry(false);
+
+		if(!isBlurry1 && !isBlurry2) {
 			double t2 = timer->getTime();
 			vector<Point3f> points3d = stereoCameras.pointCloud(frame1, frame2);
 			double t3 = timer->getTime();
@@ -100,7 +104,6 @@ int main(int _argc, char** _argv) {
 				continue;
 
 			pcl::PointCloud<PointXYZ> cloud;
-			#ifdef ENABLE_PCL
 			//double temp_x , temp_y , temp_z;
 			for (unsigned i = 0; i < points3d.size(); i++) {
 				if (points3d[i].x > -3 && points3d[i].x < 3) {
@@ -114,19 +117,16 @@ int main(int _argc, char** _argv) {
 			}
 
 			map3d.addPoints(cloud.makeShared());
-			viewer.showCloud(map3d.cloud().makeShared(), "map");
-			#endif
-
+			gui->drawMap(map3d.cloud().makeShared());
+			gui->addPointToPcViewer(cloud.makeShared());
 		}
 
-		Mat display;
-		hconcat(frame1, frame2, display);
-		imshow("display", display);
 		double t3 = timer->getTime();
 		timePlot.push_back(t3-t0);
 		graph.clean();
 		graph.draw(timePlot, 0, 0, 255, Graph2d::eDrawType::Lines);
-		waitKey(3);
+		waitKey();
+		gui->clearPcViewer();
 	}
 
 	waitKey();
