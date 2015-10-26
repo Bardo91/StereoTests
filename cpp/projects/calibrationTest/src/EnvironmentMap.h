@@ -74,6 +74,9 @@ public:		// Public interface
 	/// Get point cloud
 	pcl::PointCloud<pcl::PointXYZ> cloud();
 
+	// Look for planes in the given pointcloud.
+	pcl::ModelCoefficients::Ptr  extractPlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud);
+
 private:	// Private methods
 	// Filter internal pointcloud.
 	pcl::PointCloud<pcl::PointXYZ>::Ptr filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
@@ -89,7 +92,7 @@ private:	// Private methods
 	pcl::PointCloud<pcl::PointXYZ> convoluteCloudsOnGrid(const pcl::PointCloud<pcl::PointXYZ> &_cloud1, const pcl::PointCloud<pcl::PointXYZ> &_cloud2);
 
 	bool validTransformation(const Eigen::Matrix4f &_transformation, double _maxAngle, double _maxTranslation);
-
+	
 private:	// Members
 	Params	mParams;
 

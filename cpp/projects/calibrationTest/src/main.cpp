@@ -43,7 +43,7 @@ int main(int _argc, char** _argv) {
 	StereoCameras stereoCameras("C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
 	stereoCameras.calibrate(calibrationFrames1, calibrationFrames2, Size(15, 10), 0.0223);
 	stereoCameras.save("stereo_D");*/
-	StereoCameras stereoCameras("C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/Users/GRVC/Desktop/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
+	StereoCameras stereoCameras("C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam1_%d.jpg", "C:/programming/Calibration D/Calibration D/LargeRandom_highFPS/img_cam2_%d.jpg");
 	stereoCameras.load("stereo_D");
 
 #ifdef ENABLE_PCL
@@ -115,6 +115,7 @@ int main(int _argc, char** _argv) {
 
 			map3d.addPoints(cloud.makeShared());
 			viewer.showCloud(map3d.cloud().makeShared(), "map");
+			map3d.extractPlanes(map3d.cloud().makeShared());
 			#endif
 
 		}
