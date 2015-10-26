@@ -80,7 +80,7 @@ private:	// Members
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> mMapViewer;
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> mPcViewer;
 
-	cv::Mat mLeftImage, mRightImage;
+	cv::Mat mLeftImage, mRightImage, mPairStereo;
 
 	unsigned mPcCounter = 0;	// This variable is used to generate different names between pointcloud inside the vizualizer.
 								// 666 TODO: check it.

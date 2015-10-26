@@ -67,19 +67,45 @@ void Gui::clearPcViewer() {
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::updateStereoImages(const Mat & _left, const Mat & _right) {
-	
+	cvtColor(_left, mLeftImage, CV_GRAY2BGR);
+	cvtColor(_right, mRightImage, CV_GRAY2BGR);
+	hconcat(mLeftImage, mRightImage, mPairStereo);
+
+	imshow(mName + "_StereoViewer", mPairStereo);
 }
 
 void Gui::putBlurry(bool _left) {
+	Point2i startPoint;
+	if(left)
+		Point2i(20, 30);
+	else
+		Point2i(20 + mLeftImage.cols, 30);
 
+	putText(mPairStereo, "Blurry Image", startPoint, FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255), 4);
+	imshow(mName + "_StereoViewer", mPairStereo);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::drawPoints(const vector<Point2i>& _points, bool _isLeft, unsigned _r, unsigned _g, unsigned _b) {
+	Scalar color = Scalar(_b, _g, _r);
+	Point2i offset(_isLeft?0:mLeftImage.cols, 0);
+
+	for (Point2i point : _points) {
+		circle(mPairStereo, point+offset, 3, color);
+	}
+	imshow(mName + "_StereoViewer", mPairStereo);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::drawBoundBoxes(const vector<Rect>& _boxes, bool _isLeft, unsigned _r, unsigned _g, unsigned _b) {
+	Scalar color = Scalar(_b, _g, _r);
+	int offset = _isLeft?0:mLeftImage.cols;
+
+	for (Rect box : _boxes) {
+		box.x += offset;
+		rectangle(mPairStereo, box, color);
+	}
+	imshow(mName + "_StereoViewer", mPairStereo);
 }
 
 
