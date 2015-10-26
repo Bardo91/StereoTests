@@ -29,6 +29,9 @@ public:		// Public interface
 	/// Clear map viewer.
 	void clearMap();
 
+	/// Add cluster of single object in the point cloud;
+	void addCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cluster,  unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b);
+
 	/// This viewer is a general purpose viewer for displaying point cloud.
 	/// \param _cloud: Point cloud to be displayed
 	/// \param _pointSize: Wanted size of point for display
@@ -45,6 +48,10 @@ public:		// Public interface
 	/// \param: _right: right image if the stereo pair
 	void updateStereoImages(const cv::Mat &_left, const cv::Mat &_right);
 	
+	/// Mark image as blurry
+	/// \param _left: true to mark left image, false to right
+	void putBlurry(bool _left);
+
 	/// Draw points over the stereo pair of images
 	/// \param _points: Points to be drawn relative to single image coordinates
 	/// \param _isLeft: True if points belong to left image, false if belong to right image.
@@ -63,6 +70,7 @@ public:		// Public interface
 
 private:	// Private methods
 	Gui(std::string _name);
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr colorizePointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, int _r, int _g, int _b);
 
 private:	// Members
 	static Gui	*mInstance;
@@ -74,6 +82,8 @@ private:	// Members
 
 	cv::Mat mLeftImage, mRightImage;
 
+	unsigned mPcCounter = 0;	// This variable is used to generate different names between pointcloud inside the vizualizer.
+								// 666 TODO: check it.
 };	//	class Gui
 
 #endif	//	GUI_H_
