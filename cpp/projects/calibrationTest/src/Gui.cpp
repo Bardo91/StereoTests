@@ -29,18 +29,18 @@ Gui * Gui::get() {
 	return mInstance;
 }
 
-void Gui::drawMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _map)
-{
-}
-
-void Gui::clearMap()
-{
-}
-
 //---------------------------------------------------------------------------------------------------------------------
 // Public interface
 //---------------------------------------------------------------------------------------------------------------------
 
+void Gui::drawMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _map) {
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::clearMap() {
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 void Gui::addPointToPcViewer(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud, unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b) {
 }
 
