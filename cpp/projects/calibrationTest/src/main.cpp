@@ -69,7 +69,9 @@ int main(int _argc, char** _argv) {
 	params.icpMaxCorrDistDownStep				= 0.01;
 	params.icpMaxCorrDistDownStepIterations		= 1;
 	params.historySize							= 5;
-
+	params.clusterTolerance						= 0.05; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
+	params.minClusterSize						= 20;
+	params.maxClusterSize						= 200;
 	vector<double> timePlot;
 	Graph2d graph("TimePlot");
 
@@ -119,6 +121,27 @@ int main(int _argc, char** _argv) {
 			map3d.addPoints(cloud.makeShared());
 			gui->drawMap(map3d.cloud().makeShared());
 			gui->addPointToPcViewer(cloud.makeShared());
+			//viewer.showCloud(map3d.cloud().makeShared(), "map");
+			std::vector<pcl::PointIndices> mClusterIndices;
+			mClusterIndices = map3d.clusterCloud(map3d.cloud().makeShared());
+
+
+			int j = 0;
+			for (std::vector<pcl::PointIndices>::const_iterator it = mClusterIndices.begin(); it != mClusterIndices.end(); ++it)
+			{
+				pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
+				for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit)
+					cloud_cluster->points.push_back(map3d.cloud().points[*pit]); //*
+				cloud_cluster->width = cloud_cluster->points.size();
+				cloud_cluster->height = 1;
+				cloud_cluster->is_dense = true;
+				viewer.showCloud(cloud_cluster, "cloud"+to_string(j));
+
+				std::cout << "PointCloud representing the Cluster: " << cloud_cluster->points.size() << " data points." << std::endl;
+				j++;
+			}
+			#endif
+
 		}
 
 		double t3 = timer->getTime();
