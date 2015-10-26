@@ -63,15 +63,9 @@ public:		// Public interface
 	/// Remove internal pointcloud
 	void clear();
 
-	/// Filter internal pointcloud
-	pcl::PointCloud<pcl::PointXYZ>::Ptr filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
-
 	/// Add points into internal cloud.
 	/// \param _cloud:
 	void addPoints(const pcl::PointCloud< pcl::PointXYZ>::Ptr &_cloud);
-
-	/// voxelate current map/pointcloud
-	pcl::PointCloud<pcl::PointXYZ>::Ptr voxel(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 
 	/// Cluster internal point cloud and returns vector with clusters
 	/// \return  
@@ -81,6 +75,12 @@ public:		// Public interface
 	pcl::PointCloud<pcl::PointXYZ> cloud();
 
 private:	// Private methods
+	// Filter internal pointcloud.
+	pcl::PointCloud<pcl::PointXYZ>::Ptr filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
+	// voxelate current map/pointcloud.
+	pcl::PointCloud<pcl::PointXYZ>::Ptr voxel(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
+
+	// Calculate transformation between two point cloud using ICP-NL algorithm.
 	Eigen::Matrix4f getTransformationBetweenPcs(const pcl::PointCloud<pcl::PointXYZ> &_newCloud, const pcl::PointCloud< pcl::PointXYZ> &_fixedCloud);
 	
 	// This method use the internal voxel grid to downsample the input clouds. 
