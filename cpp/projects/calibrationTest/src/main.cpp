@@ -123,7 +123,16 @@ int main(int _argc, char** _argv) {
 			gui->addPointToPcViewer(cloud.makeShared());
 			
 			std::vector<pcl::PointIndices> mClusterIndices;
-			mClusterIndices = map3d.clusterCloud(map3d.cloud().makeShared());
+			pcl::PointCloud<PointXYZ>::Ptr currentViewCleanedCloud;
+			currentViewCleanedCloud = map3d.voxel(map3d.filter(cloud.makeShared()));
+			pcl::PointCloud<PointXYZ>::Ptr cloudForProcessing;
+			bool useMapForClusters = true;
+			if(useMapForClusters)
+				cloudForProcessing = map3d.cloud().makeShared();
+			else
+				cloudForProcessing = currentViewCleanedCloud;
+
+			mClusterIndices = map3d.clusterCloud(cloudForProcessing);
 
 			int j = 0;
 			for (std::vector<pcl::PointIndices>::const_iterator it = mClusterIndices.begin(); it != mClusterIndices.end(); ++it)
@@ -131,25 +140,22 @@ int main(int _argc, char** _argv) {
 				pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
 				vector<Point3f> points3d;
 				PointCloud<PointXYZ> clusterFromCameraView;
-				PointXYZ transformedPoint;
 				for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
-					cloud_cluster->points.push_back(map3d.cloud().points[*pit]); //*
-					//if(true) //if we are projecting map points, we need to transform them to the curent view
-					//{ 
-					//	transformedPoint = transformPoint(map3d.cloud().points[*pit], map3d.lastView2MapTransformation());
-					//	points3d.push_back(Point3f(transformedPoint.x, transformedPoint.y, transformedPoint.z));
-					//}
-					//else {
-					//	points3d.push_back(Point3f(map3d.cloud().points[*pit].x, map3d.cloud().points[*pit].y, map3d.cloud().points[*pit].z));
-					//}
+					cloud_cluster->points.push_back(cloudForProcessing->points[*pit]); //*
 				}
 				cloud_cluster->width = cloud_cluster->points.size();
 				cloud_cluster->height = 1;
 				cloud_cluster->is_dense = true;
-				Eigen::Matrix4f invT = map3d.lastView2MapTransformation().inverse();
-				transformPointCloud(*cloud_cluster, clusterFromCameraView, invT);
-				for (const PointXYZ point : clusterFromCameraView)
-					points3d.push_back(Point3f(point.x, point.y, point.z));
+				if (useMapForClusters) {
+					Eigen::Matrix4f invT = map3d.lastView2MapTransformation().inverse();
+					transformPointCloud(*cloud_cluster, clusterFromCameraView, invT);
+					for (const PointXYZ point : clusterFromCameraView)
+						points3d.push_back(Point3f(point.x, point.y, point.z));
+				}
+				else {
+					for (const PointXYZ point : *cloud_cluster)
+						points3d.push_back(Point3f(point.x, point.y, point.z));
+				}
 				
 				vector<Point2f> reprojection1, reprojection2;
 				projectPoints(points3d, Mat::eye(3, 3, CV_64F), Mat::zeros(3, 1, CV_64F),stereoCameras.camera(0).matrix(), stereoCameras.camera(0).distCoeffs(), reprojection1);
