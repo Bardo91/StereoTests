@@ -35,6 +35,11 @@ EnvironmentMap::EnvironmentMap(EnvironmentMap::Params _params) {
 	mPcJoiner.setMaxCorrespondenceDistance (_params.icpMaxCorrespondenceDistance);  
 	mPcJoiner.setMaximumIterations (_params.icpMaxIcpIterations);
 	mPcJoiner.setEuclideanFitnessEpsilon(_params.icpEuclideanEpsilon);
+
+	// Init Euclidean Extraction
+	mEuclideanClusterExtraction.setClusterTolerance(_params.clusterTolerance);
+	mEuclideanClusterExtraction.setMinClusterSize(_params.minClusterSize);
+	mEuclideanClusterExtraction.setMaxClusterSize(_params.maxClusterSize);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -76,10 +81,10 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 			transformation = getTransformationBetweenPcs(*cloud2, mCloud);
 			transformPointCloud(*cloud2, transformedCloud2, transformation);
 
-			cloud1 = convoluteCloudsOnGrid(transformedCloud1, transformedCloud2).makeShared();
+			transformedCloud1 = convoluteCloudsOnGrid(transformedCloud1, transformedCloud2);
 		}
 
-		mCloud += *cloud1;
+		mCloud += transformedCloud1;
 		mCloud = *voxel(mCloud.makeShared());
 		// Finally discart oldest cloud
 		mCloudHistory.pop_front();
@@ -95,8 +100,17 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::voxel(const pcl::PointCloud<
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-vector<PointCloud<PointXYZ>> EnvironmentMap::clusterCloud() {
-	return vector<PointCloud<PointXYZ>>();
+vector<PointIndices> EnvironmentMap::clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud) {
+	// Creating the KdTree object for the search method of the extraction
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+	tree->setInputCloud(_cloud);
+	//vector of indices of each cluster
+	std::vector<pcl::PointIndices> clusterIndices;
+	mEuclideanClusterExtraction.setSearchMethod(tree);
+	mEuclideanClusterExtraction.setInputCloud(_cloud);
+	mEuclideanClusterExtraction.extract(clusterIndices);
+
+	return clusterIndices;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

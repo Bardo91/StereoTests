@@ -28,6 +28,7 @@
 #include <pcl/registration/transforms.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/cloud_viewer.h>
+#include <pcl/segmentation/extract_clusters.h>
 
 #include "TimeTools.h"
 
@@ -55,6 +56,11 @@ public:		// Public interface
 
 		// Pointcloud history filtering
 		unsigned	historySize;
+
+		// Euclidean clustering
+		double	clusterTolerance;
+		int		minClusterSize;
+		int		maxClusterSize;
 	};
 
 	/// Basic constructor. Initialize an empty map
@@ -69,7 +75,7 @@ public:		// Public interface
 
 	/// Cluster internal point cloud and returns vector with clusters
 	/// \return  
-	std::vector<pcl::PointCloud<pcl::PointXYZ>> clusterCloud();
+	std::vector<pcl::PointIndices> clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 
 	/// Get point cloud
 	pcl::PointCloud<pcl::PointXYZ> cloud();
@@ -101,6 +107,8 @@ private:	// Members
 	pcl::VoxelGrid<pcl::PointXYZ>						mVoxelGrid;
 	pcl::StatisticalOutlierRemoval<pcl::PointXYZ>		mOutlierRemoval;
 	pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ>	mPcJoiner;
+	pcl::EuclideanClusterExtraction<pcl::PointXYZ> mEuclideanClusterExtraction;
+
 
 	const double cMaxAngle			= M_PI/180*1;	// 1º
 	const double cMaxTranslation	= 5;			// 10 mm 
