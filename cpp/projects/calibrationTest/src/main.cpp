@@ -129,13 +129,22 @@ int main(int _argc, char** _argv) {
 			for (std::vector<pcl::PointIndices>::const_iterator it = mClusterIndices.begin(); it != mClusterIndices.end(); ++it)
 			{
 				pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
-				for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit)
+				vector<Point3f> points3d;
+				for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
 					cloud_cluster->points.push_back(map3d.cloud().points[*pit]); //*
+					points3d.push_back(Point3f(map3d.cloud().points[*pit].x, map3d.cloud().points[*pit].y, map3d.cloud().points[*pit].z));
+				}
 				cloud_cluster->width = cloud_cluster->points.size();
 				cloud_cluster->height = 1;
 				cloud_cluster->is_dense = true;
-				gui->addCluster(cloud_cluster, 3, rand()*255/RAND_MAX, rand()*255/RAND_MAX, rand()*255/RAND_MAX);
-
+				
+				vector<Point2f> reprojection1, reprojection2;
+				projectPoints(points3d, Mat::eye(3, 3, CV_64F), Mat::zeros(3, 1, CV_64F),stereoCameras.camera(0).matrix(), stereoCameras.camera(0).distCoeffs(), reprojection1);
+				projectPoints(points3d, stereoCameras.rotation(), stereoCameras.translation(), stereoCameras.camera(1).matrix(), stereoCameras.camera(1).distCoeffs(), reprojection2);
+				unsigned r, g, b; r = rand() * 255 / RAND_MAX; g = rand() * 255 / RAND_MAX; b = rand() * 255 / RAND_MAX;
+				gui->addCluster(cloud_cluster, 3, r,g,b);
+				gui->drawPoints(reprojection1, true, r,g,b);
+				gui->drawPoints(reprojection2, false, r, g, b);
 				std::cout << "PointCloud representing the Cluster: " << cloud_cluster->points.size() << " data points." << std::endl;
 				j++;
 			}

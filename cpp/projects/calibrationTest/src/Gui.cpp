@@ -88,7 +88,7 @@ void Gui::putBlurry(bool _left) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawPoints(const vector<Point2i>& _points, bool _isLeft, unsigned _r, unsigned _g, unsigned _b) {
+void Gui::drawPoints(const vector<Point2f>& _points, bool _isLeft, unsigned _r, unsigned _g, unsigned _b) {
 	Scalar color = Scalar(_b, _g, _r);
 	Point2i offset(_isLeft?0:mLeftImage.cols, 0);
 

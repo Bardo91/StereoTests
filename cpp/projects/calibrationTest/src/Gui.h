@@ -58,7 +58,7 @@ public:		// Public interface
 	/// \param _r: Red (0-255) channel of the final desired color for the _points
 	/// \param _g: green (0-255) channel of the final desired color for the _points
 	/// \param _b: blue (0-255) channel of the final desired color for the _points
-	void drawPoints(const std::vector<cv::Point2i> &_points, bool _isLeft, unsigned _r=255, unsigned _g=255, unsigned _b=255);
+	void drawPoints(const std::vector<cv::Point2f> &_points, bool _isLeft, unsigned _r=255, unsigned _g=255, unsigned _b=255);
 
 	/// Draw boxes over the stereo pair of images
 	/// \param _boxes: Points to be drawn relative to single image coordinates
