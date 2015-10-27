@@ -63,6 +63,7 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 	// Store First cloud as reference
 	if (mCloud.size() == 0) {
 		mCloud += *voxel(filter(_cloud));
+		mLastJoinedCloud = mCloud.makeShared();
 	}
 
 	// Storing and processing history of point clouds.
@@ -86,6 +87,7 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 
 			transformedCloud1 = convoluteCloudsOnGrid(transformedCloud1, transformedCloud2);
 		}
+		mLastJoinedCloud = transformedCloud1.makeShared();
 
 		mCloud += transformedCloud1;
 		mCloud = *voxel(mCloud.makeShared());
@@ -136,6 +138,11 @@ vector<PointIndices> EnvironmentMap::clusterCloud(const PointCloud<PointXYZ>::Pt
 //---------------------------------------------------------------------------------------------------------------------
 PointCloud<PointXYZ> EnvironmentMap::cloud() {
 	return mCloud;
+}
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::lastJoinedCloud()
+{
+	return mLastJoinedCloud;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
