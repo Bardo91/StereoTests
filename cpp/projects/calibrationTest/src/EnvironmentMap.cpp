@@ -100,7 +100,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::voxel(const pcl::PointCloud<
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-vector<PointIndices> EnvironmentMap::clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud) {
+
+std::vector<pcl::PointIndices> EnvironmentMap::clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud) {
 	// Creating the KdTree object for the search method of the extraction
 	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
 	tree->setInputCloud(_cloud);
@@ -109,7 +110,24 @@ vector<PointIndices> EnvironmentMap::clusterCloud(const pcl::PointCloud<pcl::Poi
 	mEuclideanClusterExtraction.setSearchMethod(tree);
 	mEuclideanClusterExtraction.setInputCloud(_cloud);
 	mEuclideanClusterExtraction.extract(clusterIndices);
+	return clusterIndices;
+}
 
+
+
+std::vector<pcl::PointIndices> EnvironmentMap::clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> &_clusters) {
+	std::vector<pcl::PointIndices> clusterIndices = clusterCloud(_cloud);
+	int j = 0;
+	for (std::vector<pcl::PointIndices>::const_iterator it = clusterIndices.begin(); it != clusterIndices.end(); ++it) {
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloudCluster(new pcl::PointCloud<pcl::PointXYZ>);
+		for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
+			cloudCluster->points.push_back(mCloud.points[*pit]);
+		}
+		cloudCluster->width = cloudCluster->points.size();
+		cloudCluster->height = 1;
+		cloudCluster->is_dense = true;
+		_clusters.push_back(cloudCluster);
+	}
 	return clusterIndices;
 }
 

@@ -128,22 +128,11 @@ int main(int _argc, char** _argv) {
 			gui->addPointToPcViewer(map3d.cloud().makeShared());
 			gui->addPointToPcViewer(map3d.extractFloor(map3d.cloud().makeShared()), 2, 255, 0, 0);
 
-			std::vector<pcl::PointIndices> mClusterIndices;
-			mClusterIndices = map3d.clusterCloud(map3d.cloud().makeShared());
-
-			int j = 0;
-			for (std::vector<pcl::PointIndices>::const_iterator it = mClusterIndices.begin(); it != mClusterIndices.end(); ++it)
-			{
-				pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
-				for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit)
-					cloud_cluster->points.push_back(map3d.cloud().points[*pit]); //*
-				cloud_cluster->width = cloud_cluster->points.size();
-				cloud_cluster->height = 1;
-				cloud_cluster->is_dense = true;
-				gui->addCluster(cloud_cluster, 3, rand()*255/RAND_MAX, rand()*255/RAND_MAX, rand()*255/RAND_MAX);
-
-				std::cout << "PointCloud representing the Cluster: " << cloud_cluster->points.size() << " data points." << std::endl;
-				j++;
+			std::vector<pcl::PointCloud<PointXYZ>::Ptr> clusters;
+			map3d.clusterCloud(map3d.cloud().makeShared(), clusters);
+			for (pcl::PointCloud<PointXYZ>::Ptr cluster : clusters) {
+				gui->addCluster(cluster, 3, rand()*255/RAND_MAX, rand()*255/RAND_MAX, rand()*255/RAND_MAX);
+				std::cout << "PointCloud representing the Cluster: " << cluster->points.size() << " data points." << std::endl;
 			}
 		}
 

@@ -82,11 +82,12 @@ public:		// Public interface
 	/// Cluster internal point cloud and returns vector with clusters
 	/// \return  
 	std::vector<pcl::PointIndices> clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
+	std::vector<pcl::PointIndices> clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> &_clusters);
 
 	/// Get point cloud
 	pcl::PointCloud<pcl::PointXYZ> cloud();
 
-	// Look for planes in the given pointcloud.
+	/// Look for planes in the given pointcloud.
 	pcl::PointCloud<pcl::PointXYZ>::Ptr  extractFloor(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 
 private:	// Private methods
