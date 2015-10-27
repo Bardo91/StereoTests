@@ -72,6 +72,11 @@ int main(int _argc, char** _argv) {
 	params.clusterTolerance						= 0.05; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
 	params.minClusterSize						= 20;
 	params.maxClusterSize						= 200;
+	params.floorDistanceThreshold				= 0.01;
+	params.floorMaxIters						= 1000;
+	params.floorCameraMinAngle					= M_PI/180 * 180;
+	params.floorCameraMaxAngle					= M_PI/180 * 30;
+
 	vector<double> timePlot;
 	Graph2d graph("TimePlot");
 
@@ -120,8 +125,9 @@ int main(int _argc, char** _argv) {
 
 			map3d.addPoints(cloud.makeShared());
 			gui->drawMap(map3d.cloud().makeShared());
-			gui->addPointToPcViewer(cloud.makeShared());
-			
+			gui->addPointToPcViewer(map3d.cloud().makeShared());
+			gui->addPointToPcViewer(map3d.extractFloor(map3d.cloud().makeShared()), 2, 255, 0, 0);
+
 			std::vector<pcl::PointIndices> mClusterIndices;
 			mClusterIndices = map3d.clusterCloud(map3d.cloud().makeShared());
 

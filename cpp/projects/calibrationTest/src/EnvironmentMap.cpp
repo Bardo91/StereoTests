@@ -223,35 +223,37 @@ bool EnvironmentMap::validTransformation(const Matrix4f & _transformation, doubl
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-pcl::ModelCoefficients::Ptr  EnvironmentMap::extractPlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud) {
+pcl::PointCloud<pcl::PointXYZ>::Ptr  EnvironmentMap::extractFloor(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud) {
 	pcl::PCLPointCloud2::Ptr cloud_blob (new pcl::PCLPointCloud2), cloud_filtered_blob (new pcl::PCLPointCloud2);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>), cloud_p (new pcl::PointCloud<pcl::PointXYZ>), cloud_f (new pcl::PointCloud<pcl::PointXYZ>);
 	cloud_filtered = _cloud;
 
-	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
-	pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
 	// Create the segmentation object
 	pcl::SACSegmentation<pcl::PointXYZ> seg;
-	// Optional
 	seg.setOptimizeCoefficients (true);
-	// Mandatory
 	seg.setModelType (pcl::SACMODEL_PLANE);
 	seg.setMethodType (pcl::SAC_RANSAC);
-	seg.setMaxIterations (1000);
-	seg.setDistanceThreshold (0.01);
+	seg.setMaxIterations (mParams.floorMaxIters);
+	seg.setDistanceThreshold (mParams.floorDistanceThreshold);
+
+	// Set maximum allowed angle between Normal of the floor and the Z-axis of the camera.
+	Vector3f axis = Vector3f::UnitZ();
+
+	seg.setAxis(axis);
+	seg.setEpsAngle(mParams.floorCameraMaxAngle);
 
 	// Create the filtering object
 	pcl::ExtractIndices<pcl::PointXYZ> extract;
 
-	int i = 0, nr_points = (int) cloud_filtered->points.size ();
-	// While 30% of the original cloud is still there
-	while (cloud_filtered->points.size () > 0.3 * nr_points)
-	{
+	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
+	pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+
+	int i = 0, nr_points = (int) _cloud->points.size ();
+	while (_cloud->points.size () > 0.3 * nr_points) { // While 30% of the original cloud is still there
 		// Segment the largest planar component from the remaining cloud
 		seg.setInputCloud (cloud_filtered);
 		seg.segment (*inliers, *coefficients);
-		if (inliers->indices.size () == 0)
-		{
+		if (inliers->indices.size () == 0) {
 			std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
 			break;
 		}
@@ -268,18 +270,5 @@ pcl::ModelCoefficients::Ptr  EnvironmentMap::extractPlanes(pcl::PointCloud<pcl::
 		cloud_filtered.swap (cloud_f);
 		i++;
 	}
-
-	//boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-	//viewer->setBackgroundColor (0, 0, 0);
-	//viewer->addCoordinateSystem (1.0);
-	//viewer->initCameraParameters ();
-	//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(_cloud, 255, 0,0), "Input");
-	//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "Input");
-	//viewer->addPointCloud<pcl::PointXYZRGB> (colorizePointCloud(cloud_p, 0, 255,0), "cloud_p");
-	//viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "cloud_p");
-	//
-	//cv::namedWindow("test");
-	//cv::waitKey();
-
-	return coefficients;
+	return cloud_p;
 }

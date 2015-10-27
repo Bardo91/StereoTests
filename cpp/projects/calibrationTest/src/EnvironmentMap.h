@@ -61,6 +61,12 @@ public:		// Public interface
 		double	clusterTolerance;
 		int		minClusterSize;
 		int		maxClusterSize;
+
+		// Floor extractor
+		double			floorCameraMinAngle;
+		double			floorCameraMaxAngle;
+		double			floorDistanceThreshold;
+		unsigned		floorMaxIters;
 	};
 
 	/// Basic constructor. Initialize an empty map
@@ -81,7 +87,7 @@ public:		// Public interface
 	pcl::PointCloud<pcl::PointXYZ> cloud();
 
 	// Look for planes in the given pointcloud.
-	pcl::ModelCoefficients::Ptr  extractPlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr  extractFloor(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 
 private:	// Private methods
 	// Filter internal pointcloud.
