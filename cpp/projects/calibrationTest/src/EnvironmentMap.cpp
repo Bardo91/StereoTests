@@ -5,6 +5,8 @@
 //
 
 #include "EnvironmentMap.h"
+#include "Gui.h"
+
 
 #include <opencv2/opencv.hpp>
 #include <pcl/segmentation/sac_segmentation.h>
@@ -12,6 +14,7 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/common/common.h>
 
 using namespace pcl;
 using namespace std;
@@ -92,7 +95,7 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::voxel(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud) {
+PointCloud<PointXYZ>::Ptr EnvironmentMap::voxel(const PointCloud<PointXYZ>::Ptr &_cloud) {
 	mVoxelGrid.setInputCloud(_cloud);
 	PointCloud<PointXYZ>::Ptr voxeled(new PointCloud<PointXYZ>);
 	mVoxelGrid.filter(*voxeled);
@@ -101,12 +104,12 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::voxel(const pcl::PointCloud<
 
 //---------------------------------------------------------------------------------------------------------------------
 
-std::vector<pcl::PointIndices> EnvironmentMap::clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud) {
+vector<PointIndices> EnvironmentMap::clusterCloud(const PointCloud<PointXYZ>::Ptr &_cloud) {
 	// Creating the KdTree object for the search method of the extraction
-	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+	search::KdTree<PointXYZ>::Ptr tree(new search::KdTree<PointXYZ>);
 	tree->setInputCloud(_cloud);
 	//vector of indices of each cluster
-	std::vector<pcl::PointIndices> clusterIndices;
+	vector<PointIndices> clusterIndices;
 	mEuclideanClusterExtraction.setSearchMethod(tree);
 	mEuclideanClusterExtraction.setInputCloud(_cloud);
 	mEuclideanClusterExtraction.extract(clusterIndices);
@@ -115,12 +118,11 @@ std::vector<pcl::PointIndices> EnvironmentMap::clusterCloud(const pcl::PointClou
 
 
 
-std::vector<pcl::PointIndices> EnvironmentMap::clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> &_clusters) {
-	std::vector<pcl::PointIndices> clusterIndices = clusterCloud(_cloud);
-	int j = 0;
-	for (std::vector<pcl::PointIndices>::const_iterator it = clusterIndices.begin(); it != clusterIndices.end(); ++it) {
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloudCluster(new pcl::PointCloud<pcl::PointXYZ>);
-		for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
+vector<PointIndices> EnvironmentMap::clusterCloud(const PointCloud<PointXYZ>::Ptr &_cloud, vector<PointCloud<PointXYZ>::Ptr> &_clusters) {
+	vector<PointIndices> clusterIndices = clusterCloud(_cloud);
+	for (vector<PointIndices>::const_iterator it = clusterIndices.begin(); it != clusterIndices.end(); ++it) {
+		PointCloud<PointXYZ>::Ptr cloudCluster(new PointCloud<PointXYZ>);
+		for (vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
 			cloudCluster->points.push_back(mCloud.points[*pit]);
 		}
 		cloudCluster->width = cloudCluster->points.size();
@@ -210,9 +212,9 @@ PointCloud<PointXYZ> EnvironmentMap::convoluteCloudsOnGrid(const PointCloud<Poin
 			outCloud.push_back(point);	// If have more than 2 clouds on history, needed probabilities. 666 TODO
 		}
 	}
-	std::cout << "Size of first: " << _cloud1.size() << std::endl;
-	std::cout << "Size of second: " << _cloud2.size() << std::endl;
-	std::cout << "Size of result: " << outCloud.size() << std::endl;
+	cout << "Size of first: " << _cloud1.size() << endl;
+	cout << "Size of second: " << _cloud2.size() << endl;
+	cout << "Size of result: " << outCloud.size() << endl;
 	return outCloud;
 }
 
@@ -227,66 +229,46 @@ bool EnvironmentMap::validTransformation(const Matrix4f & _transformation, doubl
 	float roll, pitch, yaw;
 	getEulerAngles(aff, roll, pitch, yaw);
 
-	std::cout << "Rotations: " << roll << ", " << pitch << ", " << yaw << std::endl;
-	std::cout << "Translations: " << translation(0) << ", " << translation(1) << ", " << translation(2) << std::endl;
+	cout << "Rotations: " << roll << ", " << pitch << ", " << yaw << endl;
+	cout << "Translations: " << translation(0) << ", " << translation(1) << ", " << translation(2) << endl;
 
 	if (abs(roll) < cMaxAngle && abs(pitch) < cMaxAngle && abs(yaw) < cMaxAngle  &&
 		abs(translation(0)) < cMaxTranslation && abs(translation(1)) < cMaxTranslation && abs(translation(2)) < cMaxTranslation) {
-		std::cout << "Valid point cloud rotation" << std::endl;
+		cout << "Valid point cloud rotation" << endl;
 		return true;
 	} else {
-		std::cout << "Invalid point cloud rotation" << std::endl;
+		cout << "Invalid point cloud rotation" << endl;
 		return false;
 	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-pcl::PointCloud<pcl::PointXYZ>::Ptr  EnvironmentMap::extractFloor(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud) {
-	pcl::PCLPointCloud2::Ptr cloud_blob (new pcl::PCLPointCloud2), cloud_filtered_blob (new pcl::PCLPointCloud2);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>), cloud_p (new pcl::PointCloud<pcl::PointXYZ>), cloud_f (new pcl::PointCloud<pcl::PointXYZ>);
-	cloud_filtered = _cloud;
+ModelCoefficients  EnvironmentMap::extractFloor(const PointCloud<PointXYZ>::Ptr &_cloud) {
+	vector<PointCloud<PointXYZ>::Ptr> clusters;
+	clusterCloud(_cloud, clusters);
 
-	// Create the segmentation object
+	if(clusters.size() < 3)
+		return ModelCoefficients();
+
+	PointCloud<PointXYZ> farthestPoints;
+	Eigen::Vector4f pivotPt;
+	pivotPt << 0,0,0,1;
+	for (PointCloud<PointXYZ>::Ptr cluster: clusters) {
+		Eigen::Vector4f maxPt;
+		getMaxDistance(*cluster, pivotPt, maxPt);
+		PointXYZ point(maxPt(0), maxPt(1), maxPt(2));
+		farthestPoints.push_back(point);
+	}
+	
+	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+	pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
 	pcl::SACSegmentation<pcl::PointXYZ> seg;
 	seg.setOptimizeCoefficients (true);
 	seg.setModelType (pcl::SACMODEL_PLANE);
 	seg.setMethodType (pcl::SAC_RANSAC);
-	seg.setMaxIterations (mParams.floorMaxIters);
-	seg.setDistanceThreshold (mParams.floorDistanceThreshold);
+	seg.setDistanceThreshold (0.1);
+	seg.setInputCloud (farthestPoints.makeShared());
+	seg.segment (*inliers, *coefficients);
 
-	// Set maximum allowed angle between Normal of the floor and the Z-axis of the camera.
-	Vector3f axis = Vector3f::UnitZ();
-
-	seg.setAxis(axis);
-	seg.setEpsAngle(mParams.floorCameraMaxAngle);
-
-	// Create the filtering object
-	pcl::ExtractIndices<pcl::PointXYZ> extract;
-
-	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
-	pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
-
-	int i = 0, nr_points = (int) _cloud->points.size ();
-	while (_cloud->points.size () > 0.3 * nr_points) { // While 30% of the original cloud is still there
-		// Segment the largest planar component from the remaining cloud
-		seg.setInputCloud (cloud_filtered);
-		seg.segment (*inliers, *coefficients);
-		if (inliers->indices.size () == 0) {
-			std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
-			break;
-		}
-
-		// Extract the inliers
-		extract.setInputCloud (cloud_filtered);
-		extract.setIndices (inliers);
-		extract.setNegative (false);
-		extract.filter (*cloud_p);
-		std::cerr << "PointCloud representing the planar component: " << cloud_p->width * cloud_p->height << " data points." << std::endl;
-		// Create the filtering object
-		extract.setNegative (true);
-		extract.filter (*cloud_f);
-		cloud_filtered.swap (cloud_f);
-		i++;
-	}
-	return cloud_p;
+	return *coefficients;
 }

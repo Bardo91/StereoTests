@@ -88,7 +88,7 @@ public:		// Public interface
 	pcl::PointCloud<pcl::PointXYZ> cloud();
 
 	/// Look for planes in the given pointcloud.
-	pcl::PointCloud<pcl::PointXYZ>::Ptr  extractFloor(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
+	pcl::ModelCoefficients  extractFloor(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 
 private:	// Private methods
 	// Filter internal pointcloud.
