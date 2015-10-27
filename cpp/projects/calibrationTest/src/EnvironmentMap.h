@@ -88,6 +88,8 @@ public:		// Public interface
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr lastJoinedCloud();
 
+	Eigen::Matrix4f lastView2MapTransformation();
+
 private:	// Private methods
 	Eigen::Matrix4f getTransformationBetweenPcs(const pcl::PointCloud<pcl::PointXYZ> &_newCloud, const pcl::PointCloud< pcl::PointXYZ> &_fixedCloud);
 	
@@ -114,6 +116,7 @@ private:	// Members
 	const double cMaxTranslation	= 5;			// 10 mm 
 
 	Eigen::Matrix4f mPreviousCloud2MapTransformation = Eigen::Matrix4f::Identity();
+	Eigen::Matrix4f mLastView2MapTransformation = Eigen::Matrix4f::Identity();
 };	// class EnvironmentMap
 
 #endif	//	ENVIRONMENTMAP_H_

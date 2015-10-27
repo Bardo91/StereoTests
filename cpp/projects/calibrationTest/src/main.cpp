@@ -68,7 +68,7 @@ int main(int _argc, char** _argv) {
 	params.icpMaxCorrespondenceDistance			= 0.1; //had it at 1 meter, now reduced it to 10 cm... results similar
 	params.icpMaxCorrDistDownStep				= 0.01;
 	params.icpMaxCorrDistDownStepIterations		= 1;
-	params.historySize							= 5;
+	params.historySize							= 2;
 	params.clusterTolerance						= 0.05; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
 	params.minClusterSize						= 20;
 	params.maxClusterSize						= 200;
@@ -130,13 +130,26 @@ int main(int _argc, char** _argv) {
 			{
 				pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
 				vector<Point3f> points3d;
+				PointCloud<PointXYZ> clusterFromCameraView;
+				PointXYZ transformedPoint;
 				for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
 					cloud_cluster->points.push_back(map3d.cloud().points[*pit]); //*
-					points3d.push_back(Point3f(map3d.cloud().points[*pit].x, map3d.cloud().points[*pit].y, map3d.cloud().points[*pit].z));
+					//if(true) //if we are projecting map points, we need to transform them to the curent view
+					//{ 
+					//	transformedPoint = transformPoint(map3d.cloud().points[*pit], map3d.lastView2MapTransformation());
+					//	points3d.push_back(Point3f(transformedPoint.x, transformedPoint.y, transformedPoint.z));
+					//}
+					//else {
+					//	points3d.push_back(Point3f(map3d.cloud().points[*pit].x, map3d.cloud().points[*pit].y, map3d.cloud().points[*pit].z));
+					//}
 				}
 				cloud_cluster->width = cloud_cluster->points.size();
 				cloud_cluster->height = 1;
 				cloud_cluster->is_dense = true;
+				Eigen::Matrix4f invT = map3d.lastView2MapTransformation().inverse();
+				transformPointCloud(*cloud_cluster, clusterFromCameraView, invT);
+				for (const PointXYZ point : clusterFromCameraView)
+					points3d.push_back(Point3f(point.x, point.y, point.z));
 				
 				vector<Point2f> reprojection1, reprojection2;
 				projectPoints(points3d, Mat::eye(3, 3, CV_64F), Mat::zeros(3, 1, CV_64F),stereoCameras.camera(0).matrix(), stereoCameras.camera(0).distCoeffs(), reprojection1);
@@ -154,7 +167,7 @@ int main(int _argc, char** _argv) {
 		timePlot.push_back(t3-t0);
 		graph.clean();
 		graph.draw(timePlot, 0, 0, 255, Graph2d::eDrawType::Lines);
-		waitKey();
+		waitKey(0);
 		gui->clearPcViewer();
 	}
 
