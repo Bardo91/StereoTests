@@ -161,9 +161,17 @@ int main(int _argc, char** _argv) {
 				projectPoints(points3d, Mat::eye(3, 3, CV_64F), Mat::zeros(3, 1, CV_64F),stereoCameras.camera(0).matrix(), stereoCameras.camera(0).distCoeffs(), reprojection1);
 				projectPoints(points3d, stereoCameras.rotation(), stereoCameras.translation(), stereoCameras.camera(1).matrix(), stereoCameras.camera(1).distCoeffs(), reprojection2);
 				unsigned r, g, b; r = rand() * 255 / RAND_MAX; g = rand() * 255 / RAND_MAX; b = rand() * 255 / RAND_MAX;
-				gui->addCluster(cloud_cluster, 3, r,g,b);
-				gui->drawPoints(reprojection1, true, r,g,b);
+				gui->addCluster(cloud_cluster, 3, r, g, b);
+				gui->drawPoints(reprojection1, true, r, g, b);
 				gui->drawPoints(reprojection2, false, r, g, b);
+				// Calculate convexHull
+				std::vector<Point2f> convexHull1, convexHull2;
+				convexHull(reprojection1, convexHull1);
+				convexHull(reprojection2, convexHull2);
+
+				gui->drawPolygon(convexHull1, true, r, g, b);
+				gui->drawPolygon(convexHull2, false, r, g, b);
+
 				std::cout << "PointCloud representing the Cluster: " << cloud_cluster->points.size() << " data points." << std::endl;
 				j++;
 			}
