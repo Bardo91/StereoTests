@@ -92,6 +92,9 @@ public:		// Public interface
 	/// Look for planes in the given pointcloud.
 	pcl::ModelCoefficients  extractFloor(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 
+	/// Crop the map using a plane
+	void cropMap(pcl::ModelCoefficients _plane, bool _upperSide = true);
+
 private:	// Private methods
 	// Filter internal pointcloud.
 	pcl::PointCloud<pcl::PointXYZ>::Ptr filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);

@@ -105,7 +105,6 @@ PointCloud<PointXYZ>::Ptr EnvironmentMap::voxel(const PointCloud<PointXYZ>::Ptr 
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-
 vector<PointIndices> EnvironmentMap::clusterCloud(const PointCloud<PointXYZ>::Ptr &_cloud) {
 	// Creating the KdTree object for the search method of the extraction
 	search::KdTree<PointXYZ>::Ptr tree(new search::KdTree<PointXYZ>);
@@ -118,8 +117,7 @@ vector<PointIndices> EnvironmentMap::clusterCloud(const PointCloud<PointXYZ>::Pt
 	return clusterIndices;
 }
 
-
-
+//---------------------------------------------------------------------------------------------------------------------
 vector<PointIndices> EnvironmentMap::clusterCloud(const PointCloud<PointXYZ>::Ptr &_cloud, vector<PointCloud<PointXYZ>::Ptr> &_clusters) {
 	vector<PointIndices> clusterIndices = clusterCloud(_cloud);
 	for (vector<PointIndices>::const_iterator it = clusterIndices.begin(); it != clusterIndices.end(); ++it) {
@@ -140,9 +138,58 @@ PointCloud<PointXYZ> EnvironmentMap::cloud() {
 	return mCloud;
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::lastJoinedCloud()
-{
+//---------------------------------------------------------------------------------------------------------------------
+pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::lastJoinedCloud() {
 	return mLastJoinedCloud;
+}
+
+
+//---------------------------------------------------------------------------------------------------------------------
+ModelCoefficients  EnvironmentMap::extractFloor(const PointCloud<PointXYZ>::Ptr &_cloud) {
+	vector<PointCloud<PointXYZ>::Ptr> clusters;
+	clusterCloud(_cloud, clusters);
+
+	if(clusters.size() < 3)
+		return ModelCoefficients();
+
+	PointCloud<PointXYZ> farthestPoints;
+	Eigen::Vector4f pivotPt;
+	pivotPt << 0,0,0,1;
+	for (PointCloud<PointXYZ>::Ptr cluster: clusters) {
+		Eigen::Vector4f maxPt;
+		getMaxDistance(*cluster, pivotPt, maxPt);
+		PointXYZ point(maxPt(0), maxPt(1), maxPt(2));
+		farthestPoints.push_back(point);
+	}
+
+	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+	pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+	pcl::SACSegmentation<pcl::PointXYZ> seg;
+	seg.setOptimizeCoefficients (true);
+	seg.setModelType (pcl::SACMODEL_PLANE);
+	seg.setMethodType (pcl::SAC_RANSAC);
+	seg.setDistanceThreshold (0.1);
+	seg.setInputCloud (farthestPoints.makeShared());
+	seg.segment (*inliers, *coefficients);
+
+	return *coefficients;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void EnvironmentMap::cropMap(pcl::ModelCoefficients _plane, bool _upperSide) {
+	if (mCloud.size() == 0)
+		return;
+
+	auto predicate = [&](const PointXYZ &_point) {
+		double val = (-_plane.values[0] * _point.x - _plane.values[1] * _point.y - _plane.values[3])/_plane.values[2];
+
+		if(_upperSide)
+			return _point.z > val? true:false;
+		else
+			return _point.z > val? false:true;
+	};
+
+	mCloud.erase( std::remove_if( mCloud.begin(), mCloud.end(), predicate ), mCloud.end() );
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -249,33 +296,3 @@ bool EnvironmentMap::validTransformation(const Matrix4f & _transformation, doubl
 	}
 }
 
-//---------------------------------------------------------------------------------------------------------------------
-ModelCoefficients  EnvironmentMap::extractFloor(const PointCloud<PointXYZ>::Ptr &_cloud) {
-	vector<PointCloud<PointXYZ>::Ptr> clusters;
-	clusterCloud(_cloud, clusters);
-
-	if(clusters.size() < 3)
-		return ModelCoefficients();
-
-	PointCloud<PointXYZ> farthestPoints;
-	Eigen::Vector4f pivotPt;
-	pivotPt << 0,0,0,1;
-	for (PointCloud<PointXYZ>::Ptr cluster: clusters) {
-		Eigen::Vector4f maxPt;
-		getMaxDistance(*cluster, pivotPt, maxPt);
-		PointXYZ point(maxPt(0), maxPt(1), maxPt(2));
-		farthestPoints.push_back(point);
-	}
-	
-	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
-	pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-	pcl::SACSegmentation<pcl::PointXYZ> seg;
-	seg.setOptimizeCoefficients (true);
-	seg.setModelType (pcl::SACMODEL_PLANE);
-	seg.setMethodType (pcl::SAC_RANSAC);
-	seg.setDistanceThreshold (0.1);
-	seg.setInputCloud (farthestPoints.makeShared());
-	seg.segment (*inliers, *coefficients);
-
-	return *coefficients;
-}
