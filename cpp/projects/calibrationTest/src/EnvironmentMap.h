@@ -89,6 +89,8 @@ public:		// Public interface
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr lastJoinedCloud();
 
+	Eigen::Matrix4f lastView2MapTransformation();
+
 	/// Look for planes in the given pointcloud.
 	pcl::ModelCoefficients  extractFloor(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 
@@ -127,6 +129,7 @@ private:	// Members
 	const double cMaxTranslation	= 5;			// 10 mm 
 
 	Eigen::Matrix4f mPreviousCloud2MapTransformation = Eigen::Matrix4f::Identity();
+	Eigen::Matrix4f mLastView2MapTransformation = Eigen::Matrix4f::Identity();
 };	// class EnvironmentMap
 
 #endif	//	ENVIRONMENTMAP_H_

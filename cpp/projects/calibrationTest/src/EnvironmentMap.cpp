@@ -61,6 +61,7 @@ PointCloud<PointXYZ>::Ptr EnvironmentMap::filter(const PointCloud<PointXYZ>::Ptr
 //---------------------------------------------------------------------------------------------------------------------
 void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 	// Store First cloud as reference
+	// 666 we store the actual first cloud instead of considering history, this means we accept the noise from the first cloud
 	if (mCloud.size() == 0) {
 		mCloud += *voxel(filter(_cloud));
 		mLastJoinedCloud = mCloud.makeShared();
@@ -88,7 +89,7 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 			transformedCloud1 = convoluteCloudsOnGrid(transformedCloud1, transformedCloud2);
 		}
 		mLastJoinedCloud = transformedCloud1.makeShared();
-
+		mLastView2MapTransformation = transformation; //needed for gui reprojection of map points
 		mCloud += transformedCloud1;
 		mCloud = *voxel(mCloud.makeShared());
 		// Finally discart oldest cloud
@@ -143,6 +144,10 @@ PointCloud<PointXYZ>::Ptr EnvironmentMap::lastJoinedCloud() {
 	return mLastJoinedCloud;
 }
 
+Eigen::Matrix4f EnvironmentMap::lastView2MapTransformation()
+{
+	return mLastView2MapTransformation;
+}
 
 //---------------------------------------------------------------------------------------------------------------------
 ModelCoefficients  EnvironmentMap::extractFloor(const PointCloud<PointXYZ>::Ptr &_cloud) {
@@ -194,6 +199,8 @@ void EnvironmentMap::cropCloud(PointCloud<PointXYZ>::Ptr &_cloud, ModelCoefficie
 
 //---------------------------------------------------------------------------------------------------------------------
 Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>& _newCloud, const PointCloud<PointXYZ>& _fixedCloud) {
+	// 666 we use the transformation guess in this function, so it is not as general for any input as we like, since
+	// this general guess is in regards to the entire map (mCloud)
 	//PointCloud<PointXYZ> cloud1 = _newCloud;
 	//PointCloud<PointXYZ> cloud2 = _fixedCloud;
 	BOViL::STime *timer = BOViL::STime::get();

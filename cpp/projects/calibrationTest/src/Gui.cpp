@@ -102,7 +102,7 @@ void Gui::putBlurry(bool _left) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawPoints(const vector<Point2i>& _points, bool _isLeft, unsigned _r, unsigned _g, unsigned _b) {
+void Gui::drawPoints(const vector<Point2f>& _points, bool _isLeft, unsigned _r, unsigned _g, unsigned _b) {
 	Scalar color = Scalar(_b, _g, _r);
 	Point2i offset(_isLeft?0:mLeftImage.cols, 0);
 
@@ -127,6 +127,24 @@ void Gui::drawBoundBoxes(const vector<Rect>& _boxes, bool _isLeft, unsigned _r, 
 
 //---------------------------------------------------------------------------------------------------------------------
 
+void Gui::drawPolygon(const std::vector<cv::Point2f>& _polygon, bool _isLeft, unsigned _r, unsigned _g, unsigned _b) {
+	Scalar color = Scalar(_b, _g, _r);
+	Point2f offset(_isLeft?0:mLeftImage.cols, 0);	
+
+	// Draw all lines except between last and initial point.
+	for (unsigned i = 0; i < _polygon.size() - 1;i++) {
+		Point2f p1 = _polygon[i] + offset;
+		Point2f p2 = _polygon[i+1] + offset;
+		line(mPairStereo, p1, p2, color,3);
+	}
+	
+	// Draw last line
+	Point2f p1 = _polygon[0] + offset;
+	Point2f p2 = _polygon[_polygon.size()-1] + offset;
+	line(mPairStereo, p1, p2, color,3);
+
+	imshow(mName + "_StereoViewer", mPairStereo);
+}
 
 //---------------------------------------------------------------------------------------------------------------------
 // Private methods
