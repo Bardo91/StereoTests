@@ -146,7 +146,7 @@ void Gui::reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, unsig
 		points3d.push_back(Point3f(point.x, point.y, point.z));
 	vector<Point2f> reprojection1, reprojection2;
 	projectPoints(points3d, mStereoCameras.globalRotation(), mStereoCameras.globalTranslation(), mStereoCameras.camera(0).matrix(), mStereoCameras.camera(0).distCoeffs(), reprojection1);
-	projectPoints(points3d, mStereoCameras.globalRotation()*mStereoCameras.rotation(), mStereoCameras.globalRotation()*mStereoCameras.translation() + mStereoCameras.globalTranslation(), mStereoCameras.camera(1).matrix(), mStereoCameras.camera(1).distCoeffs(), reprojection2);
+	projectPoints(points3d, mStereoCameras.rotation()*mStereoCameras.globalRotation(), mStereoCameras.translation() + mStereoCameras.rotation()*mStereoCameras.globalTranslation(), mStereoCameras.camera(1).matrix(), mStereoCameras.camera(1).distCoeffs(), reprojection2);
 	drawPoints(reprojection1, true, _r, _g, _b);
 	drawPoints(reprojection2, false, _r, _g, _b);
 	// Calculate convexHull
