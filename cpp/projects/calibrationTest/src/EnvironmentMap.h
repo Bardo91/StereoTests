@@ -97,11 +97,12 @@ public:		// Public interface
 	/// Crop the map using a plane
 	void cropCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, pcl::ModelCoefficients _plane, bool _upperSide = true);
 
-private:	// Private methods
 	// Filter internal pointcloud.
 	pcl::PointCloud<pcl::PointXYZ>::Ptr filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
+
 	// voxelate current map/pointcloud.
 	pcl::PointCloud<pcl::PointXYZ>::Ptr voxel(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
+private:	// Private methods
 
 	// Calculate transformation between two point cloud using ICP-NL algorithm.
 	Eigen::Matrix4f getTransformationBetweenPcs(const pcl::PointCloud<pcl::PointXYZ> &_newCloud, const pcl::PointCloud< pcl::PointXYZ> &_fixedCloud);
