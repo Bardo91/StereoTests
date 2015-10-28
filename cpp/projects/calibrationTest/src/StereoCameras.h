@@ -87,6 +87,15 @@ public:
 	/// \param _filePath: path of the file.
 	void load(std::string _filePath);
 
+	/// Set the global camera rotation and translation
+	void updateGlobalRT(const cv::Mat &_R,const cv::Mat &_T);
+
+	/// Get the global camera rotation
+	cv::Mat globalRotation() const;
+
+	/// Get the global camera translation
+	cv::Mat globalTranslation() const;
+
 private:
 	void calibrateStereo(const std::vector<std::vector<cv::Point2f>> &_imagePoints1, const std::vector<std::vector<cv::Point2f>> &_imagePoints2, cv::Size _imageSize, cv::Size _boardSize, float _squareSize);
 
@@ -101,6 +110,7 @@ private:
 private:
 	Camera mCamera1, mCamera2;
 	cv::Mat mR, mT, mE, mF;
+	cv::Mat mGlobalR, mGlobalT; //these describe the transformation from the world coordinate system, if it's used
 
 	bool mCalibrated = false;
 };

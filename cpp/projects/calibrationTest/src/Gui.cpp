@@ -18,9 +18,9 @@ using namespace pcl::visualization;
 Gui* Gui::mInstance = nullptr;
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::init(string _name) {
+void Gui::init(string _name, StereoCameras& _stereoCameras) {
 	assert(mInstance == nullptr);
-	mInstance = new Gui(_name);
+	mInstance = new Gui(_name, _stereoCameras);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -46,6 +46,13 @@ void Gui::drawMap(const PointCloud<PointXYZ>::Ptr & _map) {
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::clearMap() {
 	m3dViewer->removeAllPointClouds(mViewPortMapViewer);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::drawCandidate(const ObjectCandidate & _candidate)
+{
+	addCluster(_candidate.cloud(), 3, _candidate.R(), _candidate.G(), _candidate.B());
+	reprojectCloud(_candidate.cloud(), _candidate.R(), _candidate.G(), _candidate.B());
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -112,7 +119,6 @@ void Gui::drawBoundBoxes(const vector<Rect>& _boxes, bool _isLeft, unsigned _r, 
 
 
 //---------------------------------------------------------------------------------------------------------------------
-
 void Gui::drawPolygon(const std::vector<cv::Point2f>& _polygon, bool _isLeft, unsigned _r, unsigned _g, unsigned _b) {
 	Scalar color = Scalar(_b, _g, _r);
 	Point2f offset(_isLeft?0:mLeftImage.cols, 0);	
@@ -133,11 +139,31 @@ void Gui::drawPolygon(const std::vector<cv::Point2f>& _polygon, bool _isLeft, un
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+void Gui::reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, unsigned _r, unsigned _g, unsigned _b)
+{
+	vector<Point3f> points3d;
+	for (const PointXYZ point : *_cloud)
+		points3d.push_back(Point3f(point.x, point.y, point.z));
+	vector<Point2f> reprojection1, reprojection2;
+	//this should work when projecting a point cloud from the camera coordinate system, for world, we have to rotate it
+	projectPoints(points3d, Mat::eye(3, 3, CV_64F), Mat::zeros(3, 1, CV_64F), mStereoCameras.camera(0).matrix(), mStereoCameras.camera(0).distCoeffs(), reprojection1);
+	projectPoints(points3d, mStereoCameras.rotation(), mStereoCameras.translation(), mStereoCameras.camera(1).matrix(), mStereoCameras.camera(1).distCoeffs(), reprojection2);
+	drawPoints(reprojection1, true, _r, _g, _b);
+	drawPoints(reprojection2, false, _r, _g, _b);
+	// Calculate convexHull
+	std::vector<Point2f> convexHull1, convexHull2;
+	convexHull(reprojection1, convexHull1);
+	convexHull(reprojection2, convexHull2);
+
+	drawPolygon(convexHull1, true, _r, _g, _b);
+	drawPolygon(convexHull2, false, _r, _g, _b);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 // Private methods
 //---------------------------------------------------------------------------------------------------------------------
 
-Gui::Gui(string _name): mName(_name), m3dViewer(new PCLVisualizer (mName)) {
-
+Gui::Gui(string _name, StereoCameras& _stereoCameras): mName(_name), m3dViewer(new PCLVisualizer (mName)), mStereoCameras(_stereoCameras) {
 	m3dViewer->initCameraParameters ();
 	m3dViewer->addCoordinateSystem (0.5);
 	// Set up mapViewer

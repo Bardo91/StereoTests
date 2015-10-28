@@ -11,11 +11,11 @@ using namespace std;
 
 //---------------------------------------------------------------------------------------------------------------------
 StereoCameras::StereoCameras(unsigned _indexCamera1, unsigned _indexCamera2): mCamera1(_indexCamera1), mCamera2(_indexCamera2) {
-
+	updateGlobalRT(cv::Mat::eye(3, 3, CV_32F), cv::Mat::zeros(3,1,CV_32F));
 }
 
 StereoCameras::StereoCameras(string _pattern1, string _pattern2): mCamera1(_pattern1), mCamera2(_pattern2) {
-
+	updateGlobalRT(cv::Mat::eye(3, 3, CV_32F), cv::Mat::zeros(3, 1, CV_32F));
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -179,6 +179,22 @@ void StereoCameras::load(string _filePath) {
 	fs["mF"] >> mF;
 
 	mCalibrated = true;
+}
+
+void StereoCameras::updateGlobalRT(const cv::Mat &_R,const cv::Mat &_T)
+{
+	mGlobalR = _R;
+	mGlobalT = _T;
+}
+
+cv::Mat StereoCameras::globalRotation() const
+{
+	return mGlobalR;
+}
+
+cv::Mat StereoCameras::globalTranslation() const
+{
+	return mGlobalT;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
