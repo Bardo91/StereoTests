@@ -69,8 +69,8 @@ int main(int _argc, char** _argv) {
 	params.icpMaxCorrDistDownStep				= 0.01;
 	params.icpMaxCorrDistDownStepIterations		= 1;
 	params.historySize							= 2;
-	params.clusterTolerance						= 0.05; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
-	params.minClusterSize						= 20;
+	params.clusterTolerance						= 0.035; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
+	params.minClusterSize						= 15;
 	params.maxClusterSize						= 200;
 	params.floorDistanceThreshold				= 0.01;
 	params.floorMaxIters						= 1000;
@@ -139,56 +139,43 @@ int main(int _argc, char** _argv) {
 			else
 				cloudForProcessing = currentViewCleanedCloud;
 
-			mClusterIndices = map3d.clusterCloud(cloudForProcessing);
+			ModelCoefficients plane = map3d.extractFloor(map3d.cloud().makeShared());
+			gui->drawPlane(plane, 0,0,1.5);
+			PointCloud<PointXYZ>::Ptr cropedCloud = cloudForProcessing;
+			map3d.cropCloud(cropedCloud, plane);
+			std::vector<pcl::PointCloud<PointXYZ>::Ptr> clusters;
+			map3d.clusterCloud(cloudForProcessing, clusters);
 
-			int j = 0;
-			for (std::vector<pcl::PointIndices>::const_iterator it = mClusterIndices.begin(); it != mClusterIndices.end(); ++it)
-			{
-				pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
-				vector<Point3f> points3d;
-				PointCloud<PointXYZ> clusterFromCameraView;
-				for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
-					cloud_cluster->points.push_back(cloudForProcessing->points[*pit]); //*
-				}
-				cloud_cluster->width = cloud_cluster->points.size();
-				cloud_cluster->height = 1;
-				cloud_cluster->is_dense = true;
+			
+			for (pcl::PointCloud<PointXYZ>::Ptr cluster : clusters) {
+				gui->addCluster(cluster, 3, rand()*255/RAND_MAX, rand()*255/RAND_MAX, rand()*255/RAND_MAX);
+				vector<Point3f> clusterPoints;
 				if (useMapForClusters) {
 					Eigen::Matrix4f invT = map3d.lastView2MapTransformation().inverse();
-					transformPointCloud(*cloud_cluster, clusterFromCameraView, invT);
+					PointCloud<PointXYZ> clusterFromCameraView;
+					transformPointCloud(*cluster, clusterFromCameraView, invT);
 					for (const PointXYZ point : clusterFromCameraView)
-						points3d.push_back(Point3f(point.x, point.y, point.z));
+						clusterPoints.push_back(Point3f(point.x, point.y, point.z));
 				}
 				else {
-					for (const PointXYZ point : *cloud_cluster)
-						points3d.push_back(Point3f(point.x, point.y, point.z));
+					for (const PointXYZ point : *cluster)
+						clusterPoints.push_back(Point3f(point.x, point.y, point.z));
 				}
-				
+
 				vector<Point2f> reprojection1, reprojection2;
-				projectPoints(points3d, Mat::eye(3, 3, CV_64F), Mat::zeros(3, 1, CV_64F),stereoCameras.camera(0).matrix(), stereoCameras.camera(0).distCoeffs(), reprojection1);
-				projectPoints(points3d, stereoCameras.rotation(), stereoCameras.translation(), stereoCameras.camera(1).matrix(), stereoCameras.camera(1).distCoeffs(), reprojection2);
+				projectPoints(clusterPoints, Mat::eye(3, 3, CV_64F), Mat::zeros(3, 1, CV_64F),stereoCameras.camera(0).matrix(), stereoCameras.camera(0).distCoeffs(), reprojection1);
+				projectPoints(clusterPoints, stereoCameras.rotation(), stereoCameras.translation(), stereoCameras.camera(1).matrix(), stereoCameras.camera(1).distCoeffs(), reprojection2);
 				unsigned r, g, b; r = rand() * 255 / RAND_MAX; g = rand() * 255 / RAND_MAX; b = rand() * 255 / RAND_MAX;
-				gui->addCluster(cloud_cluster, 3, r, g, b);
+				gui->addCluster(cluster, 3, r, g, b);
 				gui->drawPoints(reprojection1, true, r, g, b);
 				gui->drawPoints(reprojection2, false, r, g, b);
 				// Calculate convexHull
 				std::vector<Point2f> convexHull1, convexHull2;
 				convexHull(reprojection1, convexHull1);
 				convexHull(reprojection2, convexHull2);
-			ModelCoefficients plane = map3d.extractFloor(map3d.cloud().makeShared());
-			gui->drawPlane(plane, 0,0,1.5);
-			PointCloud<PointXYZ>::Ptr cropedCloud = map3d.cloud().makeShared();
-			map3d.cropCloud(cropedCloud, plane);
-
 				gui->drawPolygon(convexHull1, true, r, g, b);
 				gui->drawPolygon(convexHull2, false, r, g, b);
 
-				std::cout << "PointCloud representing the Cluster: " << cloud_cluster->points.size() << " data points." << std::endl;
-				j++;
-			std::vector<pcl::PointCloud<PointXYZ>::Ptr> clusters;
-			map3d.clusterCloud(cropedCloud, clusters);
-			for (pcl::PointCloud<PointXYZ>::Ptr cluster : clusters) {
-				gui->addCluster(cluster, 3, rand()*255/RAND_MAX, rand()*255/RAND_MAX, rand()*255/RAND_MAX);
 				std::cout << "PointCloud representing the Cluster: " << cluster->points.size() << " data points." << std::endl;
 			}
 		}
