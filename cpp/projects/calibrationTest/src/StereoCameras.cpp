@@ -11,11 +11,11 @@ using namespace std;
 
 //---------------------------------------------------------------------------------------------------------------------
 StereoCameras::StereoCameras(unsigned _indexCamera1, unsigned _indexCamera2): mCamera1(_indexCamera1), mCamera2(_indexCamera2) {
-	updateGlobalRT(cv::Mat::eye(3, 3, CV_32F), cv::Mat::zeros(3,1,CV_32F));
+	updateGlobalRT(cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3,1, CV_64F));
 }
 
 StereoCameras::StereoCameras(string _pattern1, string _pattern2): mCamera1(_pattern1), mCamera2(_pattern2) {
-	updateGlobalRT(cv::Mat::eye(3, 3, CV_32F), cv::Mat::zeros(3, 1, CV_32F));
+	updateGlobalRT(cv::Mat::eye(3, 3, CV_64F), cv::Mat::zeros(3, 1, CV_64F));
 }
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -6,6 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <opencv2/opencv.hpp>
+//#include <opencv2/core/eigen.hpp>
 #include <opencv2/xfeatures2d.hpp>
 #include <fstream>
 
@@ -120,6 +121,28 @@ int main(int _argc, char** _argv) {
 			}
 
 			map3d.addPoints(cloud.makeShared());
+			//sorry but I didn't find a better way to transform between cv and eigen, there is a function eigen2cv but I have problems
+			// 666 numbers not completely the same in R as a
+			Mat R(3,3, CV_64F), T(3,1, CV_64F);
+			Eigen::Matrix4f a = map3d.lastView2MapTransformation().inverse();
+			cout  << "eigen: " << endl << a << endl;
+			R.at<double>(0, 0) = a(0, 0);
+			R.at<double>(0, 1) = a(0, 1);
+			R.at<double>(0, 2) = a(0, 2);
+			R.at<double>(1, 0) = a(1, 0);
+			R.at<double>(1, 1) = a(1, 1);
+			R.at<double>(1, 2) = a(1, 2);
+			R.at<double>(2, 0) = a(2, 0);
+			R.at<double>(2, 1) = a(2, 1);
+			R.at<double>(2, 2) = a(2, 2);
+			cout << "R: " << endl << R << endl;
+			T.at<double>(0, 0) = a(0, 3);
+			T.at<double>(1, 0) = a(1, 3);
+			T.at<double>(2, 0) = a(2, 3);
+			cout << "T: " << endl << T << endl;
+			//Eigen::Matrix<float, 4, 4> tralala = map3d.lastView2MapTransformation().inverse();
+			//eigen2cv(tralala, R);
+			
 			gui->drawMap(map3d.cloud().makeShared());
 			gui->addPointToPcViewer(cloud.makeShared());
 			
@@ -127,31 +150,24 @@ int main(int _argc, char** _argv) {
 			pcl::PointCloud<PointXYZ>::Ptr currentViewCleanedCloud;
 			currentViewCleanedCloud = map3d.voxel(map3d.filter(cloud.makeShared()));
 			pcl::PointCloud<PointXYZ>::Ptr cloudForProcessing;
-			bool useMapForClusters = false;
-			if(useMapForClusters)
+			bool useMapForClusters = true;
+			if (useMapForClusters) {
 				cloudForProcessing = map3d.cloud().makeShared();
-			else
+				stereoCameras.updateGlobalRT(R, T);
+			}
+			else {
 				cloudForProcessing = currentViewCleanedCloud;
+			}
 
 			mClusterIndices = map3d.clusterCloud(cloudForProcessing);
 
 			std::vector<ObjectCandidate> candidates;
-
+			//create candidates from indices
 			for (pcl::PointIndices indices : mClusterIndices)
 				candidates.push_back(ObjectCandidate(indices, cloudForProcessing, true));
-
+			//draw all candidates
 			for(ObjectCandidate candidate : candidates)
-			{
 				gui->drawCandidate(candidate);
-				/*if (useMapForClusters) {
-					Eigen::Matrix4f invT = map3d.lastView2MapTransformation().inverse();
-					transformPointCloud(*candidate.cloud(), clusterFromCameraView, invT);
-					for (const PointXYZ point : clusterFromCameraView)
-						points3d.push_back(Point3f(point.x, point.y, point.z));
-				}
-*/
-			}
-
 		}
 
 		double t3 = timer->getTime();
