@@ -182,7 +182,7 @@ ModelCoefficients  EnvironmentMap::extractFloor(const PointCloud<PointXYZ>::Ptr 
 
 //---------------------------------------------------------------------------------------------------------------------
 void EnvironmentMap::cropCloud(PointCloud<PointXYZ>::Ptr &_cloud, ModelCoefficients _plane, bool _upperSide) {
-	if (_cloud->size() == 0)
+	if (_cloud->size() == 0 || _plane.values.size() != 4)
 		return;
 
 	auto predicate = [&](const PointXYZ &_point) {
