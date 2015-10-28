@@ -123,7 +123,7 @@ vector<PointIndices> EnvironmentMap::clusterCloud(const PointCloud<PointXYZ>::Pt
 	for (vector<PointIndices>::const_iterator it = clusterIndices.begin(); it != clusterIndices.end(); ++it) {
 		PointCloud<PointXYZ>::Ptr cloudCluster(new PointCloud<PointXYZ>);
 		for (vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
-			cloudCluster->points.push_back(mCloud.points[*pit]);
+			cloudCluster->points.push_back(_cloud->points[*pit]);
 		}
 		cloudCluster->width = cloudCluster->points.size();
 		cloudCluster->height = 1;
@@ -139,7 +139,7 @@ PointCloud<PointXYZ> EnvironmentMap::cloud() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::lastJoinedCloud() {
+PointCloud<PointXYZ>::Ptr EnvironmentMap::lastJoinedCloud() {
 	return mLastJoinedCloud;
 }
 
@@ -162,12 +162,12 @@ ModelCoefficients  EnvironmentMap::extractFloor(const PointCloud<PointXYZ>::Ptr 
 		farthestPoints.push_back(point);
 	}
 
-	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
-	pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-	pcl::SACSegmentation<pcl::PointXYZ> seg;
+	ModelCoefficients::Ptr coefficients (new ModelCoefficients);
+	PointIndices::Ptr inliers (new PointIndices);
+	SACSegmentation<PointXYZ> seg;
 	seg.setOptimizeCoefficients (true);
-	seg.setModelType (pcl::SACMODEL_PLANE);
-	seg.setMethodType (pcl::SAC_RANSAC);
+	seg.setModelType (SACMODEL_PLANE);
+	seg.setMethodType (SAC_RANSAC);
 	seg.setDistanceThreshold (0.1);
 	seg.setInputCloud (farthestPoints.makeShared());
 	seg.segment (*inliers, *coefficients);
@@ -176,8 +176,8 @@ ModelCoefficients  EnvironmentMap::extractFloor(const PointCloud<PointXYZ>::Ptr 
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void EnvironmentMap::cropMap(pcl::ModelCoefficients _plane, bool _upperSide) {
-	if (mCloud.size() == 0)
+void EnvironmentMap::cropCloud(PointCloud<PointXYZ>::Ptr &_cloud, ModelCoefficients _plane, bool _upperSide) {
+	if (_cloud->size() == 0)
 		return;
 
 	auto predicate = [&](const PointXYZ &_point) {
@@ -189,7 +189,7 @@ void EnvironmentMap::cropMap(pcl::ModelCoefficients _plane, bool _upperSide) {
 			return _point.z > val? false:true;
 	};
 
-	mCloud.erase( std::remove_if( mCloud.begin(), mCloud.end(), predicate ), mCloud.end() );
+	_cloud->erase( std::remove_if(_cloud->begin(), _cloud->end(), predicate ), _cloud->end());
 }
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -70,7 +70,7 @@ int main(int _argc, char** _argv) {
 	params.icpMaxCorrDistDownStepIterations		= 1;
 	params.historySize							= 5;
 	params.clusterTolerance						= 0.05; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
-	params.minClusterSize						= 10;
+	params.minClusterSize						= 20;
 	params.maxClusterSize						= 200;
 	params.floorDistanceThreshold				= 0.01;
 	params.floorMaxIters						= 1000;
@@ -124,21 +124,23 @@ int main(int _argc, char** _argv) {
 			}
 
 			map3d.addPoints(cloud.makeShared());
+			gui->clearMap();
+			gui->clearPcViewer();
 			gui->drawMap(map3d.cloud().makeShared());
 			gui->addPointToPcViewer(map3d.cloud().makeShared());
 			//gui->addPointToPcViewer(, 2, 255, 0, 0);
 
 			ModelCoefficients plane = map3d.extractFloor(map3d.cloud().makeShared());
 			gui->drawPlane(plane, 0,0,1.5);
-			map3d.cropMap(plane);
+			PointCloud<PointXYZ>::Ptr cropedCloud = map3d.cloud().makeShared();
+			map3d.cropCloud(cropedCloud, plane);
 
 			std::vector<pcl::PointCloud<PointXYZ>::Ptr> clusters;
-			map3d.clusterCloud(map3d.cloud().makeShared(), clusters);
+			map3d.clusterCloud(cropedCloud, clusters);
 			for (pcl::PointCloud<PointXYZ>::Ptr cluster : clusters) {
 				gui->addCluster(cluster, 3, rand()*255/RAND_MAX, rand()*255/RAND_MAX, rand()*255/RAND_MAX);
 				std::cout << "PointCloud representing the Cluster: " << cluster->points.size() << " data points." << std::endl;
 			}
-			
 		}
 
 		double t3 = timer->getTime();
@@ -146,8 +148,7 @@ int main(int _argc, char** _argv) {
 		graph.clean();
 		graph.draw(timePlot, 0, 0, 255, Graph2d::eDrawType::Lines);
 		waitKey();
-		gui->clearPcViewer();
-		gui->clearMap();
+		
 	}
 
 	waitKey();
