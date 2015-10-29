@@ -52,6 +52,7 @@ int main(int _argc, char** _argv) {
 	
 	StereoCameras stereoCameras(string(_argv[1]) + "LargeRandom_highFPS/img_cam1_%d.jpg", string(_argv[1]) + "LargeRandom_highFPS/img_cam2_%d.jpg");
 	stereoCameras.load("stereo_D");
+	stereoCameras.roi(Rect(30,0,640-30,480), Rect(0,0,640-30,480));
 
 	Gui::init("My_gui", stereoCameras);
 	Gui* gui = Gui::get();

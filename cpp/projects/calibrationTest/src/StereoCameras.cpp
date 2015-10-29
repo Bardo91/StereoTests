@@ -84,6 +84,12 @@ Mat StereoCameras::disparity(const Mat & _frame1, const Mat & _frame2, unsigned 
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+void StereoCameras::roi(cv::Rect _leftRoi, cv::Rect _rightRoi) {
+	mLeftRoi	= _leftRoi;
+	mRightRoi	= _rightRoi;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2) {
 	// Compute keypoint only in first image
 	vector<Point2i> keypoints;
@@ -91,20 +97,28 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 
 	std::cout << "Features computed in frame1: " << keypoints.size() << std::endl;
 
+	unsigned cSquareSize = 11;
+
 	// Compute projection of epipolar lines into second image.
 	std::vector<cv::Vec3f> epilines;
 	computeEpipoarLines(keypoints, epilines);
 
 	// For each epipolar line calculate equivalent feature by template matching.
-	Rect validRegion(30, 30, _frame2.cols -30*2, _frame2.rows - 30*2);	// 666 maybe... use ROIs computed in calibration?
+	Rect secureRegion(	cSquareSize/2 + 1, 
+						cSquareSize/2 + 1, 
+						_frame2.cols - 2*(cSquareSize/2 + 1), 
+						_frame2.rows - 2*(cSquareSize/2 + 1));
+	Rect validLeft	= mLeftRoi & secureRegion;
+	Rect validRight = mRightRoi & secureRegion;
+
 	vector<Point2i> points1, points2;
 	for (unsigned i = 0; i < epilines.size(); i++){
-		if(!validRegion.contains(keypoints[i]))	// Ignore keypoint if it is outside valid region.
+		if(!validLeft.contains(keypoints[i]))	// Ignore keypoint if it is outside valid region.
 			continue;
 
 		// Calculate matching and add points
-		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i], pair<int,int>(60,400));
-		if(!validRegion.contains(matchedPoint))
+		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i], pair<int,int>(60,400), cSquareSize);
+		if(!validRight.contains(matchedPoint))
 			continue;
 
 		points1.push_back(keypoints[i]);
@@ -253,6 +267,9 @@ cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, con
 		p1.y = -1*(_epiline[2] + _epiline[0] * i)/_epiline[1];
 		sp1 = p1 - Point2i(_squareSize/2, _squareSize/2);
 		sp2 = p1 + Point2i(_squareSize/2, _squareSize/2);
+		Rect imageBound(0,0,_frame1.cols, _frame2.rows);
+		if(!imageBound.contains(sp1) || !imageBound.contains(sp2))
+			return Point2i(-1,-1);
 		// Get subimage from image 2;
 		subImage = _frame2(Rect(sp1, sp2));
 		// Compute correlation

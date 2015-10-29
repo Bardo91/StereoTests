@@ -47,6 +47,13 @@ public:
 	/// \param _blockSize: block size.
 	cv::Mat disparity(const cv::Mat &_frame1, const cv::Mat &_frame2, unsigned _disparityRange, unsigned _blockSize);
 
+	/// Set width of ROI
+	/// \param _leftWidth: width of the ROI in the left image. In left image ROI goes from Right side to left side plus (width - _leftWidth) 
+	/// \param _rightWidth: width of the ROI in the right image. In right image ROI goes from left side to right side minus (width - _leftWidth)
+	void roi(cv::Rect _leftRoi, cv::Rect _rightRoi);
+
+	/// Get ROIs
+	cv::Rect roi(bool _isLeft);
 
 	/// Calculate 3d points from given projections on frames.
 	/// \param _frame1: first image of stereo pair
@@ -111,6 +118,8 @@ private:
 	Camera mCamera1, mCamera2;
 	cv::Mat mR, mT, mE, mF;
 	cv::Mat mGlobalR, mGlobalT; //these describe the transformation from the world coordinate system, if it's used
+
+	cv::Rect mLeftRoi, mRightRoi;
 
 	bool mCalibrated = false;
 };
