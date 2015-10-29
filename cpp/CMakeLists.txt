@@ -4,4 +4,5 @@ project(StereoTests)
 add_subdirectory(lib/cjson/src)
 
 # Project directory
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_subdirectory(projects)

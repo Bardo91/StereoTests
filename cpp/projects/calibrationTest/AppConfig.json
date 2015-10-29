@@ -1,0 +1,33 @@
+{
+	"gui":
+	{
+		"name":"Stereo Detector"
+	},
+	"cameras":
+	{
+		"left":"C:/programming/CalibrationD/CalibrationD/LargeRandom_highFPS/img_cam1_%d.jpg",
+		"right":"C:/programming/CalibrationD/CalibrationD/LargeRandom_highFPS/img_cam2_%d.jpg",
+		"paramFile":"C:/programming/StereoTests/cpp/build/projects/calibrationTest/stereo_D",
+		"leftRoi":[30,2,610,480],
+		"rightRoi":[0,0,610,480],
+		"blurThreshold":0.8
+	},
+	"mapParams":
+	{
+		"voxelSize":0.02,
+		"outlierMeanK":10,
+		"outlierStdDev":0.05,
+		"outlierSetNegative":false,
+		"icpMaxTransformationEpsilon":1e-20,
+		"icpEuclideanEpsilon":1e-20,
+		"icpMaxIcpIterations":1000,
+		"icpMaxCorrespondenceDistance"0.1,
+		"historySize":2,
+		"clusterTolerance":0.035,
+		"minClusterSize":15,
+		"maxClusterSize":200,
+		"floorDistanceThreshold":0.01,
+		"floorMaxIters":1000,
+	}
+	
+}
