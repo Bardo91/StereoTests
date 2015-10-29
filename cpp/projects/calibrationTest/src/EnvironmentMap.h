@@ -70,7 +70,12 @@ public:		// Public interface
 	};
 
 	/// Basic constructor. Initialize an empty map
+	EnvironmentMap();
 	EnvironmentMap(Params _params);
+
+	void params(Params _params);
+
+	Params params() const;
 
 	/// Remove internal pointcloud
 	void clear();

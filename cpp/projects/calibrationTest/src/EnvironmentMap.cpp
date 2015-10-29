@@ -21,11 +21,20 @@ using namespace std;
 using namespace Eigen;
 
 //---------------------------------------------------------------------------------------------------------------------
+EnvironmentMap::EnvironmentMap() {
+
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 EnvironmentMap::EnvironmentMap(EnvironmentMap::Params _params) {
 	mParams = _params;
+	params(mParams);
+}
 
-	// Initialize members
-	// Init voxel class
+//---------------------------------------------------------------------------------------------------------------------
+void EnvironmentMap::params(EnvironmentMap::Params _params) {
+	mParams = _params;
+
 	mVoxelGrid.setLeafSize(_params.voxelSize, _params.voxelSize, _params.voxelSize);
 
 	// Init filtering class
@@ -43,6 +52,11 @@ EnvironmentMap::EnvironmentMap(EnvironmentMap::Params _params) {
 	mEuclideanClusterExtraction.setClusterTolerance(_params.clusterTolerance);
 	mEuclideanClusterExtraction.setMinClusterSize(_params.minClusterSize);
 	mEuclideanClusterExtraction.setMaxClusterSize(_params.maxClusterSize);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+EnvironmentMap::Params EnvironmentMap::params() const {
+	return mParams;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

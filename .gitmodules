@@ -1,0 +1,3 @@
+[submodule "cpp/lib/cjson"]
+	path = cpp/lib/cjson
+	url = https://github.com/technik/cjson.git
