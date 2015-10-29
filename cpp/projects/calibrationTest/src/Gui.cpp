@@ -113,8 +113,13 @@ void Gui::putBlurry(bool _left) {
 void Gui::drawPoints(const vector<Point2f>& _points, bool _isLeft, unsigned _r, unsigned _g, unsigned _b) {
 	Scalar color = Scalar(_b, _g, _r);
 	Point2i offset(_isLeft?0:mLeftImage.cols, 0);
-
+	
+	Rect validRegion(_isLeft? 0:mLeftImage.cols, 0, mLeftImage.cols, mLeftImage.rows);
+	cout << validRegion.x << ", " << validRegion.y << ", " << validRegion.width << ", " << validRegion.height << std::endl;
 	for (Point2i point : _points) {
+		if(!validRegion.contains(point+offset))
+			continue;
+
 		circle(mPairStereo, point+offset, 3, color);
 	}
 	imshow(mName + "_StereoViewer", mPairStereo);
@@ -150,17 +155,41 @@ void Gui::drawPolygon(const std::vector<cv::Point2f>& _polygon, bool _isLeft, un
 	Scalar color = Scalar(_b, _g, _r);
 	Point2f offset(_isLeft?0:mLeftImage.cols, 0);	
 
+	Rect validRegion(_isLeft? 0:mLeftImage.cols, 0, mLeftImage.cols, mLeftImage.rows);
+
+	std::function<void (Point2f _p1, Point2f _p2, unsigned _iter)> checkAndDraw = [&](Point2f _p1, Point2f _p2, unsigned _iter) {
+		if (_iter > 10) {
+			line(mPairStereo, _p1, _p2, color, 3);
+			return;
+		}
+
+		if (validRegion.contains(_p1)) {
+			if (validRegion.contains(_p2)) {
+				line(mPairStereo, _p1, _p2, color,3);
+			}
+			else {
+				_p2  = _p1 + (_p2 - _p1)/2;
+				checkAndDraw(_p1,_p2,_iter++);
+			}
+		} else {
+			if (validRegion.contains(_p2)) {
+				_p1  = _p2 + (_p1 - _p2)/2;
+				checkAndDraw(_p1,_p2,_iter++);
+			}
+		}		
+	};
+
 	// Draw all lines except between last and initial point.
 	for (unsigned i = 0; i < _polygon.size() - 1;i++) {
 		Point2f p1 = _polygon[i] + offset;
 		Point2f p2 = _polygon[i+1] + offset;
-		line(mPairStereo, p1, p2, color,3);
+		checkAndDraw(p1, p2, 0);
 	}
 	
 	// Draw last line
 	Point2f p1 = _polygon[0] + offset;
 	Point2f p2 = _polygon[_polygon.size()-1] + offset;
-	line(mPairStereo, p1, p2, color,3);
+	checkAndDraw(p1, p2, 0);
 
 	imshow(mName + "_StereoViewer", mPairStereo);
 }
