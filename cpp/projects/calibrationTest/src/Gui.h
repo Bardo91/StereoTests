@@ -74,12 +74,21 @@ public:		// Public interface
 	void drawPoints(const std::vector<cv::Point2f> &_points, bool _isLeft, unsigned _r=255, unsigned _g=255, unsigned _b=255);
 
 	/// Draw boxes over the stereo pair of images
-	/// \param _boxes: Points to be drawn relative to single image coordinates
+	/// \param _boxes: Boxes to be drawn
 	/// \param _isLeft: True if points belong to left image, false if belong to right image.
 	/// \param _r: Red (0-255) channel of the final desired color for the _boxes
 	/// \param _g: green (0-255) channel of the final desired color for the _boxes
 	/// \param _b: blue (0-255) channel of the final desired color for the _boxes
 	void drawBoundBoxes(const std::vector<cv::Rect> &_boxes, bool _isLeft, unsigned _r=255, unsigned _g=255, unsigned _b=255);
+
+	/// Draw box on the stereo pair of images
+	/// \param _boxes: Box to be drawn
+	/// \param _isLeft: True if points belong to left image, false if belong to right image.
+	/// \param _r: Red (0-255) channel of the final desired color for the _boxes
+	/// \param _g: green (0-255) channel of the final desired color for the _boxes
+	/// \param _b: blue (0-255) channel of the final desired color for the _boxes
+	void drawBox(const cv::Rect &_box, bool _isLeft, unsigned _r=255, unsigned _g=255, unsigned _b=255);
+
 
 	/// Draw Poligon over the stereo pair of images
 	/// \param _boxes: Points to be drawn relative to single image coordinates

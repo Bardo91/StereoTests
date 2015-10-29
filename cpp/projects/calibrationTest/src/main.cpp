@@ -88,10 +88,14 @@ int main(int _argc, char** _argv) {
 		double t0 = timer->getTime();
 		stereoCameras.frames(frame1, frame2, StereoCameras::eFrameFixing::Undistort);
 		double t1 = timer->getTime();
-		gui->updateStereoImages(frame1, frame2);
-		
 		if (frame1.rows == 0)
 			break;
+
+		gui->updateStereoImages(frame1, frame2);
+		Rect leftRoi = stereoCameras.roi(true);
+		Rect rightRoi = stereoCameras.roi(false);
+		gui->drawBox(leftRoi, true, 0,255,0);
+		gui->drawBox(rightRoi, false, 0,255,0);
 
 		cvtColor(frame1, frame1, CV_BGR2GRAY);
 		cvtColor(frame2, frame2, CV_BGR2GRAY);

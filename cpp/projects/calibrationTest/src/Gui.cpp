@@ -97,6 +97,7 @@ void Gui::updateStereoImages(const Mat & _left, const Mat & _right) {
 	imshow(mName + "_StereoViewer", mPairStereo);
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 void Gui::putBlurry(bool _left) {
 	Point2i startPoint;
 	if(_left)
@@ -131,6 +132,18 @@ void Gui::drawBoundBoxes(const vector<Rect>& _boxes, bool _isLeft, unsigned _r, 
 	imshow(mName + "_StereoViewer", mPairStereo);
 }
 
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::drawBox(const cv::Rect & _box, bool _isLeft, unsigned _r, unsigned _g, unsigned _b) {
+	Scalar color = Scalar(_b, _g, _r);
+
+	int offset = _isLeft?0:mLeftImage.cols;
+
+	Rect box = _box;
+	box.x += offset;
+	rectangle(mPairStereo, box, color);
+
+	imshow(mName + "_StereoViewer", mPairStereo);
+}
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::drawPolygon(const std::vector<cv::Point2f>& _polygon, bool _isLeft, unsigned _r, unsigned _g, unsigned _b) {

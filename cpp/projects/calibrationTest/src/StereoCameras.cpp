@@ -90,6 +90,14 @@ void StereoCameras::roi(cv::Rect _leftRoi, cv::Rect _rightRoi) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+cv::Rect StereoCameras::roi(bool _isLeft) {
+	if(_isLeft)
+		return mLeftRoi;
+	else
+		return mRightRoi;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2) {
 	// Compute keypoint only in first image
 	vector<Point2i> keypoints;
