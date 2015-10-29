@@ -144,8 +144,8 @@ PointCloud<PointXYZ>::Ptr EnvironmentMap::lastJoinedCloud() {
 	return mLastJoinedCloud;
 }
 
-Eigen::Matrix4f EnvironmentMap::lastView2MapTransformation()
-{
+//---------------------------------------------------------------------------------------------------------------------
+Eigen::Matrix4f EnvironmentMap::lastView2MapTransformation() {
 	return mLastView2MapTransformation;
 }
 
@@ -178,6 +178,26 @@ ModelCoefficients  EnvironmentMap::extractFloor(const PointCloud<PointXYZ>::Ptr 
 	seg.segment (*inliers, *coefficients);
 
 	return *coefficients;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+double EnvironmentMap::distanceToPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, const pcl::ModelCoefficients &_plane) {
+	
+	double minDist = 999999;
+	for (PointXYZ point : *_cloud) {
+		double dist =	abs(_plane.values[0]*point.x +
+							_plane.values[1]*point.y +
+							_plane.values[2]*point.z +
+							_plane.values[3]) / 
+							sqrt(	pow(_plane.values[0], 2) +
+									pow(_plane.values[1], 2) +
+									pow(_plane.values[2], 2));
+				
+		if(dist < minDist)
+			minDist = dist;
+	}
+	
+	return minDist;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

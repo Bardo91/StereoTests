@@ -179,8 +179,10 @@ int main(int _argc, char** _argv) {
 			for (pcl::PointIndices indices : mClusterIndices)
 				candidates.push_back(ObjectCandidate(indices, cloudForProcessing, true));
 			//draw all candidates
-			for(ObjectCandidate candidate : candidates)
-				gui->drawCandidate(candidate);
+			for (ObjectCandidate candidate : candidates) {
+				if(map3d.distanceToPlane(candidate.cloud(), plane) < 0.05)	// Draw only candidates close to the floor.
+					gui->drawCandidate(candidate);	
+			}
 		}
 
 		double t3 = timer->getTime();
