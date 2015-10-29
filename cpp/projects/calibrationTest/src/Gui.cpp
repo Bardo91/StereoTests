@@ -37,15 +37,29 @@ Gui * Gui::get() {
 //---------------------------------------------------------------------------------------------------------------------
 // Public interface
 //---------------------------------------------------------------------------------------------------------------------
-
 void Gui::drawMap(const PointCloud<PointXYZ>::Ptr & _map) {
-	clearMap();
 	m3dViewer->updatePointCloud(_map, "map");	// Not efficient but fast implementation	
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::drawPlane(const pcl::ModelCoefficients &_plane) {
+	m3dViewer->addPlane(_plane, "Plane_"+to_string(mPcCounter++),mViewPortMapViewer);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::drawPlane(const pcl::ModelCoefficients & _plane, double _x, double _y, double _z) {
+	m3dViewer->addPlane(_plane,_x, _y, _z, "Plane_"+to_string(mPcCounter++),mViewPortMapViewer);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::drawLine(const pcl::PointXYZ & _p1, const pcl::PointXYZ & _p2, unsigned _r, unsigned _g, unsigned _b) {
+	m3dViewer->addLine<PointXYZ, PointXYZ>(_p1, _p2, _r, _g, _b,"Line"+to_string(mPcCounter++),mViewPortMapViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::clearMap() {
 	m3dViewer->removeAllPointClouds(mViewPortMapViewer);
+	m3dViewer->removeAllShapes(mViewPortMapViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------

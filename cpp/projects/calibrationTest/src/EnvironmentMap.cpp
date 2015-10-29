@@ -5,7 +5,16 @@
 //
 
 #include "EnvironmentMap.h"
+#include "Gui.h"
+
+
 #include <opencv2/opencv.hpp>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/common/common.h>
 
 using namespace pcl;
 using namespace std;
@@ -89,7 +98,7 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::voxel(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud) {
+PointCloud<PointXYZ>::Ptr EnvironmentMap::voxel(const PointCloud<PointXYZ>::Ptr &_cloud) {
 	mVoxelGrid.setInputCloud(_cloud);
 	PointCloud<PointXYZ>::Ptr voxeled(new PointCloud<PointXYZ>);
 	mVoxelGrid.filter(*voxeled);
@@ -97,16 +106,31 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::voxel(const pcl::PointCloud<
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-vector<PointIndices> EnvironmentMap::clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud) {
+vector<PointIndices> EnvironmentMap::clusterCloud(const PointCloud<PointXYZ>::Ptr &_cloud) {
 	// Creating the KdTree object for the search method of the extraction
-	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+	search::KdTree<PointXYZ>::Ptr tree(new search::KdTree<PointXYZ>);
 	tree->setInputCloud(_cloud);
 	//vector of indices of each cluster
-	std::vector<pcl::PointIndices> clusterIndices;
+	vector<PointIndices> clusterIndices;
 	mEuclideanClusterExtraction.setSearchMethod(tree);
 	mEuclideanClusterExtraction.setInputCloud(_cloud);
 	mEuclideanClusterExtraction.extract(clusterIndices);
+	return clusterIndices;
+}
 
+//---------------------------------------------------------------------------------------------------------------------
+vector<PointIndices> EnvironmentMap::clusterCloud(const PointCloud<PointXYZ>::Ptr &_cloud, vector<PointCloud<PointXYZ>::Ptr> &_clusters) {
+	vector<PointIndices> clusterIndices = clusterCloud(_cloud);
+	for (vector<PointIndices>::const_iterator it = clusterIndices.begin(); it != clusterIndices.end(); ++it) {
+		PointCloud<PointXYZ>::Ptr cloudCluster(new PointCloud<PointXYZ>);
+		for (vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
+			cloudCluster->points.push_back(_cloud->points[*pit]);
+		}
+		cloudCluster->width = cloudCluster->points.size();
+		cloudCluster->height = 1;
+		cloudCluster->is_dense = true;
+		_clusters.push_back(cloudCluster);
+	}
 	return clusterIndices;
 }
 
@@ -115,14 +139,62 @@ PointCloud<PointXYZ> EnvironmentMap::cloud() {
 	return mCloud;
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr EnvironmentMap::lastJoinedCloud()
-{
+//---------------------------------------------------------------------------------------------------------------------
+PointCloud<PointXYZ>::Ptr EnvironmentMap::lastJoinedCloud() {
 	return mLastJoinedCloud;
 }
 
 Eigen::Matrix4f EnvironmentMap::lastView2MapTransformation()
 {
 	return mLastView2MapTransformation;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+ModelCoefficients  EnvironmentMap::extractFloor(const PointCloud<PointXYZ>::Ptr &_cloud) {
+	vector<PointCloud<PointXYZ>::Ptr> clusters;
+	clusterCloud(_cloud, clusters);
+
+	if(clusters.size() < 3)
+		return ModelCoefficients();
+
+	PointCloud<PointXYZ> farthestPoints;
+	Eigen::Vector4f pivotPt;
+	pivotPt << 0,0,0,1;
+	for (PointCloud<PointXYZ>::Ptr cluster: clusters) {
+		Eigen::Vector4f maxPt;
+		getMaxDistance(*cluster, pivotPt, maxPt);
+		PointXYZ point(maxPt(0), maxPt(1), maxPt(2));
+		farthestPoints.push_back(point);
+	}
+
+	ModelCoefficients::Ptr coefficients (new ModelCoefficients);
+	PointIndices::Ptr inliers (new PointIndices);
+	SACSegmentation<PointXYZ> seg;
+	seg.setOptimizeCoefficients (true);
+	seg.setModelType (SACMODEL_PLANE);
+	seg.setMethodType (SAC_RANSAC);
+	seg.setDistanceThreshold (0.1);
+	seg.setInputCloud (farthestPoints.makeShared());
+	seg.segment (*inliers, *coefficients);
+
+	return *coefficients;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void EnvironmentMap::cropCloud(PointCloud<PointXYZ>::Ptr &_cloud, ModelCoefficients _plane, bool _upperSide) {
+	if (_cloud->size() == 0 || _plane.values.size() != 4)
+		return;
+
+	auto predicate = [&](const PointXYZ &_point) {
+		double val = (-_plane.values[0] * _point.x - _plane.values[1] * _point.y - _plane.values[3])/_plane.values[2];
+
+		if(_upperSide)
+			return _point.z > val? true:false;
+		else
+			return _point.z > val? false:true;
+	};
+
+	_cloud->erase( std::remove_if(_cloud->begin(), _cloud->end(), predicate ), _cloud->end());
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -201,9 +273,9 @@ PointCloud<PointXYZ> EnvironmentMap::convoluteCloudsOnGrid(const PointCloud<Poin
 			outCloud.push_back(point);	// If have more than 2 clouds on history, needed probabilities. 666 TODO
 		}
 	}
-	std::cout << "Size of first: " << _cloud1.size() << std::endl;
-	std::cout << "Size of second: " << _cloud2.size() << std::endl;
-	std::cout << "Size of result: " << outCloud.size() << std::endl;
+	cout << "Size of first: " << _cloud1.size() << endl;
+	cout << "Size of second: " << _cloud2.size() << endl;
+	cout << "Size of result: " << outCloud.size() << endl;
 	return outCloud;
 }
 
@@ -218,15 +290,16 @@ bool EnvironmentMap::validTransformation(const Matrix4f & _transformation, doubl
 	float roll, pitch, yaw;
 	getEulerAngles(aff, roll, pitch, yaw);
 
-	std::cout << "Rotations: " << roll << ", " << pitch << ", " << yaw << std::endl;
-	std::cout << "Translations: " << translation(0) << ", " << translation(1) << ", " << translation(2) << std::endl;
+	cout << "Rotations: " << roll << ", " << pitch << ", " << yaw << endl;
+	cout << "Translations: " << translation(0) << ", " << translation(1) << ", " << translation(2) << endl;
 
 	if (abs(roll) < cMaxAngle && abs(pitch) < cMaxAngle && abs(yaw) < cMaxAngle  &&
 		abs(translation(0)) < cMaxTranslation && abs(translation(1)) < cMaxTranslation && abs(translation(2)) < cMaxTranslation) {
-		std::cout << "Valid point cloud rotation" << std::endl;
+		cout << "Valid point cloud rotation" << endl;
 		return true;
 	} else {
-		std::cout << "Invalid point cloud rotation" << std::endl;
+		cout << "Invalid point cloud rotation" << endl;
 		return false;
 	}
 }
+

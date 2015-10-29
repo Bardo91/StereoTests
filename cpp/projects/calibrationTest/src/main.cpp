@@ -71,9 +71,14 @@ int main(int _argc, char** _argv) {
 	params.icpMaxCorrDistDownStep				= 0.01;
 	params.icpMaxCorrDistDownStepIterations		= 1;
 	params.historySize							= 2;
-	params.clusterTolerance						= 0.05; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
-	params.minClusterSize						= 20;
+	params.clusterTolerance						= 0.035; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
+	params.minClusterSize						= 15;
 	params.maxClusterSize						= 200;
+	params.floorDistanceThreshold				= 0.01;
+	params.floorMaxIters						= 1000;
+	params.floorCameraMinAngle					= M_PI/180 * 180;
+	params.floorCameraMaxAngle					= M_PI/180 * 30;
+
 	vector<double> timePlot;
 	Graph2d graph("TimePlot");
 
@@ -121,6 +126,8 @@ int main(int _argc, char** _argv) {
 			}
 
 			map3d.addPoints(cloud.makeShared());
+			gui->clearMap();
+			gui->clearPcViewer();
 			//sorry but I didn't find a better way to transform between cv and eigen, there is a function eigen2cv but I have problems
 			Mat R(3,3, CV_64F), T(3,1, CV_64F);
 			Eigen::Matrix4f a = map3d.lastView2MapTransformation().inverse();
@@ -158,7 +165,12 @@ int main(int _argc, char** _argv) {
 				cloudForProcessing = currentViewCleanedCloud;
 			}
 
-			mClusterIndices = map3d.clusterCloud(cloudForProcessing);
+			ModelCoefficients plane = map3d.extractFloor(map3d.cloud().makeShared());
+			gui->drawPlane(plane, 0,0,1.5);
+			PointCloud<PointXYZ>::Ptr cropedCloud = cloudForProcessing;
+			map3d.cropCloud(cropedCloud, plane);
+			std::vector<pcl::PointCloud<PointXYZ>::Ptr> clusters;
+			map3d.clusterCloud(cloudForProcessing, clusters);
 
 			std::vector<ObjectCandidate> candidates;
 			//create candidates from indices
@@ -174,7 +186,7 @@ int main(int _argc, char** _argv) {
 		graph.clean();
 		graph.draw(timePlot, 0, 0, 255, Graph2d::eDrawType::Lines);
 		waitKey(0);
-		gui->clearPcViewer();
+		
 	}
 
 	waitKey();

@@ -61,6 +61,12 @@ public:		// Public interface
 		double	clusterTolerance;
 		int		minClusterSize;
 		int		maxClusterSize;
+
+		// Floor extractor
+		double			floorCameraMinAngle;
+		double			floorCameraMaxAngle;
+		double			floorDistanceThreshold;
+		unsigned		floorMaxIters;
 	};
 
 	/// Basic constructor. Initialize an empty map
@@ -69,19 +75,14 @@ public:		// Public interface
 	/// Remove internal pointcloud
 	void clear();
 
-	/// Filter internal pointcloud
-	pcl::PointCloud<pcl::PointXYZ>::Ptr filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
-
 	/// Add points into internal cloud.
 	/// \param _cloud:
 	void addPoints(const pcl::PointCloud< pcl::PointXYZ>::Ptr &_cloud);
 
-	/// voxelate current map/pointcloud
-	pcl::PointCloud<pcl::PointXYZ>::Ptr voxel(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
-
 	/// Cluster internal point cloud and returns vector with clusters
 	/// \return  
 	std::vector<pcl::PointIndices> clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
+	std::vector<pcl::PointIndices> clusterCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> &_clusters);
 
 	/// Get point cloud
 	pcl::PointCloud<pcl::PointXYZ> cloud();
@@ -90,7 +91,20 @@ public:		// Public interface
 
 	Eigen::Matrix4f lastView2MapTransformation();
 
+	/// Look for planes in the given pointcloud.
+	pcl::ModelCoefficients  extractFloor(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
+
+	/// Crop the map using a plane
+	void cropCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, pcl::ModelCoefficients _plane, bool _upperSide = true);
+
+	// Filter internal pointcloud.
+	pcl::PointCloud<pcl::PointXYZ>::Ptr filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
+
+	// voxelate current map/pointcloud.
+	pcl::PointCloud<pcl::PointXYZ>::Ptr voxel(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 private:	// Private methods
+
+	// Calculate transformation between two point cloud using ICP-NL algorithm.
 	Eigen::Matrix4f getTransformationBetweenPcs(const pcl::PointCloud<pcl::PointXYZ> &_newCloud, const pcl::PointCloud< pcl::PointXYZ> &_fixedCloud);
 	
 	// This method use the internal voxel grid to downsample the input clouds. 
@@ -99,7 +113,7 @@ private:	// Private methods
 	pcl::PointCloud<pcl::PointXYZ> convoluteCloudsOnGrid(const pcl::PointCloud<pcl::PointXYZ> &_cloud1, const pcl::PointCloud<pcl::PointXYZ> &_cloud2);
 
 	bool validTransformation(const Eigen::Matrix4f &_transformation, double _maxAngle, double _maxTranslation);
-
+	
 private:	// Members
 	Params	mParams;
 
