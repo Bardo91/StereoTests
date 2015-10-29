@@ -55,6 +55,7 @@ bool MainApplication::loadArguments(int _argc, char ** _argv) {
 	} else {
 		ifstream file;
 		file.open(string(_argv[1]));
+		assert(file.is_open());
 		return mConfig.parse(file);
 	}
 }
@@ -64,7 +65,7 @@ bool MainApplication::initCameras(){
 	mCameras = new StereoCameras(mConfig["cameras"]["left"], mConfig["cameras"]["right"]);
 	Json leftRoi = mConfig["cameras"]["leftRoi"];
 	Json rightRoi = mConfig["cameras"]["rightRoi"];
-	mCameras->roi(Rect(leftRoi[0],leftRoi[1],leftRoi[2],leftRoi[3]), Rect(rightRoi[0],rightRoi[1],rightRoi[2],rightRoi[3]));
+	mCameras->roi(Rect(leftRoi(0),leftRoi(1),leftRoi(2),leftRoi(3)), Rect(rightRoi(0),rightRoi(1),rightRoi(2),rightRoi(3)));
 	mCameras->load(mConfig["cameras"]["paramFile"]);
 	return true;
 }
@@ -177,6 +178,7 @@ bool MainApplication::stepUpdateCameraRotation() {
 	cout << "T: " << endl << T << endl;
 
 	mCameras->updateGlobalRT(R, T);	
+	return true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -202,4 +204,5 @@ bool MainApplication::stepGetCandidates(const pcl::PointCloud<pcl::PointXYZ>::Pt
 		if(mMap.distanceToPlane(candidate.cloud(), plane) < 0.05)	// Draw only candidates close to the floor.
 			mGui->drawCandidate(candidate);	
 	}
+	return true;
 }

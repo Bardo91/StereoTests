@@ -18,4 +18,6 @@ int main(int _argc, char** _argv) {
 	while (app.step()) {
 		cout << "<----------------------------- Step Number: " << stepNumber << " ----------------------------->" << endl;
 	}
+
+	system("PAUSE");
 }
