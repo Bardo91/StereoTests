@@ -6,6 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <opencv2/opencv.hpp>
+//#include <opencv2/core/eigen.hpp>
 #include <opencv2/xfeatures2d.hpp>
 #include <fstream>
 
@@ -15,6 +16,7 @@
 #include "ImageFilteringTools.h"
 #include "graph2d.h"
 #include "Gui.h"
+#include "ObjectCandidate.h"
 
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/point_cloud.h>
@@ -50,8 +52,9 @@ int main(int _argc, char** _argv) {
 	
 	StereoCameras stereoCameras(string(_argv[1]) + "LargeRandom_highFPS/img_cam1_%d.jpg", string(_argv[1]) + "LargeRandom_highFPS/img_cam2_%d.jpg");
 	stereoCameras.load("stereo_D");
+	stereoCameras.roi(Rect(30,0,640-30,480), Rect(0,0,640-30,480));
 
-	Gui::init("My_gui");
+	Gui::init("My_gui", stereoCameras);
 	Gui* gui = Gui::get();
 	
 	Mat frame1, frame2;
@@ -66,8 +69,6 @@ int main(int _argc, char** _argv) {
 	params.icpEuclideanEpsilon					= 1e-20; //seems to have no influence, implies local minimum found
 	params.icpMaxIcpIterations					= 1000; //no increase in time.. meaning we reach exit condition much sooner
 	params.icpMaxCorrespondenceDistance			= 0.1; //had it at 1 meter, now reduced it to 10 cm... results similar
-	params.icpMaxCorrDistDownStep				= 0.01;
-	params.icpMaxCorrDistDownStepIterations		= 1;
 	params.historySize							= 2;
 	params.clusterTolerance						= 0.035; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
 	params.minClusterSize						= 15;
@@ -85,10 +86,14 @@ int main(int _argc, char** _argv) {
 		double t0 = timer->getTime();
 		stereoCameras.frames(frame1, frame2, StereoCameras::eFrameFixing::Undistort);
 		double t1 = timer->getTime();
-		gui->updateStereoImages(frame1, frame2);
-		
 		if (frame1.rows == 0)
 			break;
+
+		gui->updateStereoImages(frame1, frame2);
+		Rect leftRoi = stereoCameras.roi(true);
+		Rect rightRoi = stereoCameras.roi(false);
+		gui->drawBox(leftRoi, true, 0,255,0);
+		gui->drawBox(rightRoi, false, 0,255,0);
 
 		cvtColor(frame1, frame1, CV_BGR2GRAY);
 		cvtColor(frame2, frame2, CV_BGR2GRAY);
@@ -126,6 +131,27 @@ int main(int _argc, char** _argv) {
 			map3d.addPoints(cloud.makeShared());
 			gui->clearMap();
 			gui->clearPcViewer();
+			//sorry but I didn't find a better way to transform between cv and eigen, there is a function eigen2cv but I have problems
+			Mat R(3,3, CV_64F), T(3,1, CV_64F);
+			Eigen::Matrix4f a = map3d.lastView2MapTransformation().inverse();
+			cout  << "eigen: " << endl << a << endl;
+			R.at<double>(0, 0) = a(0, 0);
+			R.at<double>(0, 1) = a(0, 1);
+			R.at<double>(0, 2) = a(0, 2);
+			R.at<double>(1, 0) = a(1, 0);
+			R.at<double>(1, 1) = a(1, 1);
+			R.at<double>(1, 2) = a(1, 2);
+			R.at<double>(2, 0) = a(2, 0);
+			R.at<double>(2, 1) = a(2, 1);
+			R.at<double>(2, 2) = a(2, 2);
+			cout << "R: " << endl << R << endl;
+			T.at<double>(0, 0) = a(0, 3);
+			T.at<double>(1, 0) = a(1, 3);
+			T.at<double>(2, 0) = a(2, 3);
+			cout << "T: " << endl << T << endl;
+			//Eigen::Matrix<float, 4, 4> tralala = map3d.lastView2MapTransformation().inverse();
+			//eigen2cv(tralala, R);
+			
 			gui->drawMap(map3d.cloud().makeShared());
 			gui->addPointToPcViewer(cloud.makeShared());
 			
@@ -134,49 +160,28 @@ int main(int _argc, char** _argv) {
 			currentViewCleanedCloud = map3d.voxel(map3d.filter(cloud.makeShared()));
 			pcl::PointCloud<PointXYZ>::Ptr cloudForProcessing;
 			bool useMapForClusters = true;
-			if(useMapForClusters)
+			if (useMapForClusters) {
 				cloudForProcessing = map3d.cloud().makeShared();
-			else
+				stereoCameras.updateGlobalRT(R, T);
+			}
+			else {
 				cloudForProcessing = currentViewCleanedCloud;
+			}
 
 			ModelCoefficients plane = map3d.extractFloor(map3d.cloud().makeShared());
 			gui->drawPlane(plane, 0,0,1.5);
 			PointCloud<PointXYZ>::Ptr cropedCloud = cloudForProcessing;
 			map3d.cropCloud(cropedCloud, plane);
-			std::vector<pcl::PointCloud<PointXYZ>::Ptr> clusters;
-			map3d.clusterCloud(cloudForProcessing, clusters);
+			mClusterIndices = map3d.clusterCloud(cropedCloud);
 
-			
-			for (pcl::PointCloud<PointXYZ>::Ptr cluster : clusters) {
-				gui->addCluster(cluster, 3, rand()*255/RAND_MAX, rand()*255/RAND_MAX, rand()*255/RAND_MAX);
-				vector<Point3f> clusterPoints;
-				if (useMapForClusters) {
-					Eigen::Matrix4f invT = map3d.lastView2MapTransformation().inverse();
-					PointCloud<PointXYZ> clusterFromCameraView;
-					transformPointCloud(*cluster, clusterFromCameraView, invT);
-					for (const PointXYZ point : clusterFromCameraView)
-						clusterPoints.push_back(Point3f(point.x, point.y, point.z));
-				}
-				else {
-					for (const PointXYZ point : *cluster)
-						clusterPoints.push_back(Point3f(point.x, point.y, point.z));
-				}
-
-				vector<Point2f> reprojection1, reprojection2;
-				projectPoints(clusterPoints, Mat::eye(3, 3, CV_64F), Mat::zeros(3, 1, CV_64F),stereoCameras.camera(0).matrix(), stereoCameras.camera(0).distCoeffs(), reprojection1);
-				projectPoints(clusterPoints, stereoCameras.rotation(), stereoCameras.translation(), stereoCameras.camera(1).matrix(), stereoCameras.camera(1).distCoeffs(), reprojection2);
-				unsigned r, g, b; r = rand() * 255 / RAND_MAX; g = rand() * 255 / RAND_MAX; b = rand() * 255 / RAND_MAX;
-				gui->addCluster(cluster, 3, r, g, b);
-				gui->drawPoints(reprojection1, true, r, g, b);
-				gui->drawPoints(reprojection2, false, r, g, b);
-				// Calculate convexHull
-				std::vector<Point2f> convexHull1, convexHull2;
-				convexHull(reprojection1, convexHull1);
-				convexHull(reprojection2, convexHull2);
-				gui->drawPolygon(convexHull1, true, r, g, b);
-				gui->drawPolygon(convexHull2, false, r, g, b);
-
-				std::cout << "PointCloud representing the Cluster: " << cluster->points.size() << " data points." << std::endl;
+			std::vector<ObjectCandidate> candidates;
+			//create candidates from indices
+			for (pcl::PointIndices indices : mClusterIndices)
+				candidates.push_back(ObjectCandidate(indices, cloudForProcessing, true));
+			//draw all candidates
+			for (ObjectCandidate candidate : candidates) {
+				if(map3d.distanceToPlane(candidate.cloud(), plane) < 0.05)	// Draw only candidates close to the floor.
+					gui->drawCandidate(candidate);	
 			}
 		}
 

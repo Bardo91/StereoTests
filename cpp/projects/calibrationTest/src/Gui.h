@@ -13,11 +13,13 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include "StereoCameras.h"
+#include "ObjectCandidate.h"
 
 
 class Gui {
 public:		// Static interface
-	static void	init(std::string _name);
+	static void	init(std::string _name, StereoCameras& _stereoCameras);
 	static void	end();
 	static Gui*	get();
 
@@ -36,6 +38,9 @@ public:		// Public interface
 
 	/// Clear map viewer.
 	void clearMap();
+
+	/// Draw the object candidate point cloud and the image reprojection
+	void drawCandidate(const ObjectCandidate & _candidate);
 
 	/// Add cluster of single object in the point cloud;
 	void addCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cluster,  unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b);
@@ -69,12 +74,21 @@ public:		// Public interface
 	void drawPoints(const std::vector<cv::Point2f> &_points, bool _isLeft, unsigned _r=255, unsigned _g=255, unsigned _b=255);
 
 	/// Draw boxes over the stereo pair of images
-	/// \param _boxes: Points to be drawn relative to single image coordinates
+	/// \param _boxes: Boxes to be drawn
 	/// \param _isLeft: True if points belong to left image, false if belong to right image.
 	/// \param _r: Red (0-255) channel of the final desired color for the _boxes
 	/// \param _g: green (0-255) channel of the final desired color for the _boxes
 	/// \param _b: blue (0-255) channel of the final desired color for the _boxes
 	void drawBoundBoxes(const std::vector<cv::Rect> &_boxes, bool _isLeft, unsigned _r=255, unsigned _g=255, unsigned _b=255);
+
+	/// Draw box on the stereo pair of images
+	/// \param _boxes: Box to be drawn
+	/// \param _isLeft: True if points belong to left image, false if belong to right image.
+	/// \param _r: Red (0-255) channel of the final desired color for the _boxes
+	/// \param _g: green (0-255) channel of the final desired color for the _boxes
+	/// \param _b: blue (0-255) channel of the final desired color for the _boxes
+	void drawBox(const cv::Rect &_box, bool _isLeft, unsigned _r=255, unsigned _g=255, unsigned _b=255);
+
 
 	/// Draw Poligon over the stereo pair of images
 	/// \param _boxes: Points to be drawn relative to single image coordinates
@@ -84,9 +98,16 @@ public:		// Public interface
 	/// \param _b: blue (0-255) channel of the final desired color for the _boxes
 	void drawPolygon(const std::vector<cv::Point2f> &_polygon, bool _isLeft, unsigned _r=255, unsigned _g=255, unsigned _b=255);
 
+	/// Reproject the pointcloud using the stereoParamteres, that are updated by the environmentmap
+	/// \param _cloud: The cloud to be projected	
+	/// \param _r: Red (0-255) channel of the final desired color for the _boxes
+	/// \param _g: green (0-255) channel of the final desired color for the _boxes
+	/// \param _b: blue (0-255) channel of the final desired color for the _boxes
+	void reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, unsigned _r = 255, unsigned _g = 255, unsigned _b = 255);
+
 
 private:	// Private methods
-	Gui(std::string _name);
+	Gui(std::string _name, StereoCameras& _stereoCameras);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr colorizePointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, int _r, int _g, int _b);
 
 private:	// Members
@@ -101,6 +122,7 @@ private:	// Members
 
 	unsigned mPcCounter = 0;	// This variable is used to generate different names between pointcloud inside the vizualizer.
 								// 666 TODO: check it.
+	StereoCameras& mStereoCameras;
 };	//	class Gui
 
 #endif	//	GUI_H_

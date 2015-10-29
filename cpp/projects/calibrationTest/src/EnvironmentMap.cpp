@@ -88,8 +88,8 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 		// Get first pointcloud
 		PointCloud<PointXYZ>::Ptr cloud1 = voxel(filter(mCloudHistory[0]));
 		PointCloud<PointXYZ> transformedCloud1;
-		Matrix4f transformation = getTransformationBetweenPcs(*cloud1, mCloud);
-		transformPointCloud(*cloud1, transformedCloud1, transformation);
+		Matrix4f transformation = getTransformationBetweenPcs(*cloud1, mCloud, mPreviousCloud2MapTransformation, transformedCloud1);
+		mPreviousCloud2MapTransformation = transformation;//transformPointCloud(*cloud1, transformedCloud1, transformation);
 		
 
 		for (unsigned i = 1; i < mParams.historySize; i++) {
@@ -97,8 +97,8 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 			PointCloud<PointXYZ>::Ptr cloud2 = voxel(filter(mCloudHistory[i]));
 
 			PointCloud<PointXYZ> transformedCloud2;
-			transformation = getTransformationBetweenPcs(*cloud2, mCloud);
-			transformPointCloud(*cloud2, transformedCloud2, transformation);
+			transformation = getTransformationBetweenPcs(*cloud2, mCloud, mPreviousCloud2MapTransformation, transformedCloud2);
+			mPreviousCloud2MapTransformation = transformation;//transformPointCloud(*cloud2, transformedCloud2, transformation);
 
 			transformedCloud1 = convoluteCloudsOnGrid(transformedCloud1, transformedCloud2);
 		}
@@ -158,8 +158,8 @@ PointCloud<PointXYZ>::Ptr EnvironmentMap::lastJoinedCloud() {
 	return mLastJoinedCloud;
 }
 
-Eigen::Matrix4f EnvironmentMap::lastView2MapTransformation()
-{
+//---------------------------------------------------------------------------------------------------------------------
+Eigen::Matrix4f EnvironmentMap::lastView2MapTransformation() {
 	return mLastView2MapTransformation;
 }
 
@@ -195,6 +195,26 @@ ModelCoefficients  EnvironmentMap::extractFloor(const PointCloud<PointXYZ>::Ptr 
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+double EnvironmentMap::distanceToPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, const pcl::ModelCoefficients &_plane) {
+	
+	double minDist = 999999;
+	for (PointXYZ point : *_cloud) {
+		double dist =	abs(_plane.values[0]*point.x +
+							_plane.values[1]*point.y +
+							_plane.values[2]*point.z +
+							_plane.values[3]) / 
+							sqrt(	pow(_plane.values[0], 2) +
+									pow(_plane.values[1], 2) +
+									pow(_plane.values[2], 2));
+				
+		if(dist < minDist)
+			minDist = dist;
+	}
+	
+	return minDist;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 void EnvironmentMap::cropCloud(PointCloud<PointXYZ>::Ptr &_cloud, ModelCoefficients _plane, bool _upperSide) {
 	if (_cloud->size() == 0 || _plane.values.size() != 4)
 		return;
@@ -212,43 +232,21 @@ void EnvironmentMap::cropCloud(PointCloud<PointXYZ>::Ptr &_cloud, ModelCoefficie
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>& _newCloud, const PointCloud<PointXYZ>& _fixedCloud) {
-	// 666 we use the transformation guess in this function, so it is not as general for any input as we like, since
-	// this general guess is in regards to the entire map (mCloud)
-	//PointCloud<PointXYZ> cloud1 = _newCloud;
-	//PointCloud<PointXYZ> cloud2 = _fixedCloud;
+Matrix4f EnvironmentMap::getTransformationBetweenPcs(const PointCloud<PointXYZ>& _newCloud, const PointCloud<PointXYZ>& _targetCloud, const Eigen::Matrix4f &_initialGuess, PointCloud<PointXYZ> &_alignedCloud) {
 	BOViL::STime *timer = BOViL::STime::get();
 	double t;
 
-	mPcJoiner.setInputSource (_newCloud.makeShared());
-	mPcJoiner.setInputTarget (_fixedCloud.makeShared());
+	mPcJoiner.setInputSource(_newCloud.makeShared());
+	mPcJoiner.setInputTarget(_targetCloud.makeShared());
 
-	Matrix4f Ti = Matrix4f::Identity (), prev, targetToSource;
-	PointCloud<PointXYZ> alignedCloud1;// = cloud1;
-	for (int i = 0; i < mParams.icpMaxCorrDistDownStepIterations; ++i) {
-		//cloud1 = alignedCloud1;
-		double t0 = timer->getTime();
-		//mPcJoiner.setInputSource (cloud1.makeShared());
-		mPcJoiner.align (alignedCloud1, mPreviousCloud2MapTransformation);
-		t = timer->getTime() - t0;
-		//accumulate transformation between each Iteration
-		Ti = mPcJoiner.getFinalTransformation () * Ti;
-
-		//if the difference between this transformation and the previous one is smaller than the threshold,  refine the process by reducing the maximal correspondence distance
-		if (fabs ((mPcJoiner.getLastIncrementalTransformation () - prev).sum ()) < mPcJoiner.getTransformationEpsilon ())
-			mPcJoiner.setMaxCorrespondenceDistance (mPcJoiner.getMaxCorrespondenceDistance () - mParams.icpMaxCorrDistDownStep);
-
-		prev = mPcJoiner.getLastIncrementalTransformation ();
-	}
+	double t0 = timer->getTime();
+	mPcJoiner.align(_alignedCloud, _initialGuess);
+	t = timer->getTime() - t0;
 
 	cout << "Time for alignment " << t << endl;
-
 	cout << "Fitness score " << mPcJoiner.getFitnessScore() << "   Has conveged? " << mPcJoiner.hasConverged() << endl;
 
-	// Get the transformation from target to source
-	targetToSource = Ti;
-	mPreviousCloud2MapTransformation = targetToSource;
-	return targetToSource;
+	return mPcJoiner.getFinalTransformation();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -284,7 +282,7 @@ PointCloud<PointXYZ> EnvironmentMap::convoluteCloudsOnGrid(const PointCloud<Poin
 		Eigen::Vector3i voxelCoord = mVoxelGrid.getGridCoordinates(point.x, point.y, point.z);
 		int index = mVoxelGrid.getCentroidIndexAt(voxelCoord);
 		if (index != -1) {
-			outCloud.push_back(point);	// If have more than 2 clouds on history, needed probabilities. 666 TODO
+			outCloud.push_back(point);
 		}
 	}
 	cout << "Size of first: " << _cloud1.size() << endl;

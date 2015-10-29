@@ -47,6 +47,13 @@ public:
 	/// \param _blockSize: block size.
 	cv::Mat disparity(const cv::Mat &_frame1, const cv::Mat &_frame2, unsigned _disparityRange, unsigned _blockSize);
 
+	/// Set width of ROI
+	/// \param _leftWidth: width of the ROI in the left image. In left image ROI goes from Right side to left side plus (width - _leftWidth) 
+	/// \param _rightWidth: width of the ROI in the right image. In right image ROI goes from left side to right side minus (width - _leftWidth)
+	void roi(cv::Rect _leftRoi, cv::Rect _rightRoi);
+
+	/// Get ROIs
+	cv::Rect roi(bool _isLeft);
 
 	/// Calculate 3d points from given projections on frames.
 	/// \param _frame1: first image of stereo pair
@@ -87,6 +94,15 @@ public:
 	/// \param _filePath: path of the file.
 	void load(std::string _filePath);
 
+	/// Set the global camera rotation and translation
+	void updateGlobalRT(const cv::Mat &_R,const cv::Mat &_T);
+
+	/// Get the global camera rotation
+	cv::Mat globalRotation() const;
+
+	/// Get the global camera translation
+	cv::Mat globalTranslation() const;
+
 private:
 	void calibrateStereo(const std::vector<std::vector<cv::Point2f>> &_imagePoints1, const std::vector<std::vector<cv::Point2f>> &_imagePoints2, cv::Size _imageSize, cv::Size _boardSize, float _squareSize);
 
@@ -101,6 +117,9 @@ private:
 private:
 	Camera mCamera1, mCamera2;
 	cv::Mat mR, mT, mE, mF;
+	cv::Mat mGlobalR, mGlobalT; //these describe the transformation from the world coordinate system, if it's used
+
+	cv::Rect mLeftRoi, mRightRoi;
 
 	bool mCalibrated = false;
 };
