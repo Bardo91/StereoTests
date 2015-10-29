@@ -51,8 +51,6 @@ public:		// Public interface
 		double	icpEuclideanEpsilon;
 		int		icpMaxIcpIterations;
 		float	icpMaxCorrespondenceDistance;
-		float	icpMaxCorrDistDownStep;
-		int		icpMaxCorrDistDownStepIterations;
 
 		// Pointcloud history filtering
 		unsigned	historySize;
@@ -105,7 +103,10 @@ public:		// Public interface
 private:	// Private methods
 
 	// Calculate transformation between two point cloud using ICP-NL algorithm.
-	Eigen::Matrix4f getTransformationBetweenPcs(const pcl::PointCloud<pcl::PointXYZ> &_newCloud, const pcl::PointCloud< pcl::PointXYZ> &_fixedCloud);
+	Eigen::Matrix4f getTransformationBetweenPcs(const pcl::PointCloud<pcl::PointXYZ> &_newCloud,
+		const pcl::PointCloud< pcl::PointXYZ> &_targetCloud,
+		const Eigen::Matrix4f &_initialGuess = Eigen::Matrix4f::Identity(),
+		pcl::PointCloud<pcl::PointXYZ> &_alignedCloud = pcl::PointCloud<pcl::PointXYZ>());
 	
 	// This method use the internal voxel grid to downsample the input clouds. 
 	// Then operate a 1x1 convolution between both: 
