@@ -151,7 +151,6 @@ int main(int _argc, char** _argv) {
 			cout << "T: " << endl << T << endl;
 			//Eigen::Matrix<float, 4, 4> tralala = map3d.lastView2MapTransformation().inverse();
 			//eigen2cv(tralala, R);
-			
 			gui->drawMap(map3d.cloud().makeShared());
 			gui->addPointToPcViewer(cloud.makeShared());
 			

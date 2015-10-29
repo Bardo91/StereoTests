@@ -7,7 +7,6 @@
 #include "EnvironmentMap.h"
 #include "Gui.h"
 
-
 #include <opencv2/opencv.hpp>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/sample_consensus/method_types.h>
@@ -65,32 +64,37 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 	if (mCloud.size() == 0) {
 		mCloud += *voxel(filter(_cloud));
 		mLastJoinedCloud = mCloud.makeShared();
+		//mCloud.sensor_origin_ = Vector4f(0, 0, 0);
+		//mCloud.sensor_orientation_ = Quaternionf(1, 0, 0, 0);
 	}
 
 	// Storing and processing history of point clouds.
-	mCloudHistory.push_back(_cloud);
-	
+	//temporary cleaned cloud for calculation of the transformation. We do not want to voxel in the camera coordinate system
+	//becase we lose some points when rotating it to the map and voxeling there. That's why we rotate the original cloud
+	PointCloud<PointXYZ>::Ptr filtered_cloud = filter(_cloud);
+	PointCloud<PointXYZ> filtered_cloudWCS;
+	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), mCloud, mPreviousCloud2MapTransformation); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
+	transformPointCloud(*filtered_cloud, filtered_cloudWCS, transformation);
+
+	mCloudHistory.push_back(voxel(filtered_cloudWCS.makeShared()));
+	(*mCloudHistory.rbegin())->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
+	(*mCloudHistory.rbegin())->sensor_origin_ = transformation.col(3);
+	//666 fix this, probably not needed anymore, because it should be in mCloudHistory
+	mLastView2MapTransformation = transformation; //needed for gui reprojection of map points
+	mPreviousCloud2MapTransformation = transformation;//transformPointCloud(*cloud1, transformedCloud1, transformation);
+
+
 	if (mCloudHistory.size() >= mParams.historySize) {
 		// Get first pointcloud
-		PointCloud<PointXYZ>::Ptr cloud1 = voxel(filter(mCloudHistory[0]));
-		PointCloud<PointXYZ> transformedCloud1;
-		Matrix4f transformation = getTransformationBetweenPcs(*cloud1, mCloud, mPreviousCloud2MapTransformation, transformedCloud1);
-		mPreviousCloud2MapTransformation = transformation;//transformPointCloud(*cloud1, transformedCloud1, transformation);
-		
+		PointCloud<PointXYZ> convolutedSum = *mCloudHistory[0];
 
-		for (unsigned i = 1; i < mParams.historySize; i++) {
+		for (unsigned i = 1; i < mParams.historySize; i++) 
 			// Now we consider only 2 clouds on history, if want to increase it, need to define points with probabilities.
-			PointCloud<PointXYZ>::Ptr cloud2 = voxel(filter(mCloudHistory[i]));
+			convolutedSum = convoluteCloudsOnGrid(convolutedSum, *mCloudHistory[i]);
 
-			PointCloud<PointXYZ> transformedCloud2;
-			transformation = getTransformationBetweenPcs(*cloud2, mCloud, mPreviousCloud2MapTransformation, transformedCloud2);
-			mPreviousCloud2MapTransformation = transformation;//transformPointCloud(*cloud2, transformedCloud2, transformation);
 
-			transformedCloud1 = convoluteCloudsOnGrid(transformedCloud1, transformedCloud2);
-		}
-		mLastJoinedCloud = transformedCloud1.makeShared();
-		mLastView2MapTransformation = transformation; //needed for gui reprojection of map points
-		mCloud += transformedCloud1;
+		mLastJoinedCloud = convolutedSum.makeShared();	
+		mCloud += convolutedSum;
 		mCloud = *voxel(mCloud.makeShared());
 		// Finally discart oldest cloud
 		mCloudHistory.pop_front();
