@@ -7,6 +7,8 @@
 
 #include "mainApplication.h"
 
+#include <opencv2/opencv.hpp>
+
 int main(int _argc, char** _argv) {
 	if (_argc < 2) {
 		std::cerr << "Not enough input arguments" << std::endl;
@@ -15,8 +17,10 @@ int main(int _argc, char** _argv) {
 	MainApplication app(_argc, _argv);
 
 	unsigned stepNumber = 0;
-	while (app.step()) {
+	while (true) {
+		app.step();
 		cout << "<----------------------------- Step Number: " << stepNumber << " ----------------------------->" << endl;
+		cv::waitKey();
 	}
 
 	system("PAUSE");

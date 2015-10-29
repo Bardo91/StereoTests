@@ -37,7 +37,7 @@ bool MainApplication::step() {
 	std::vector<cv::Point3f> points3d;
 	if(!stepTriangulatePoints(frame1, frame2, points3d)) return false;
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr newCloud;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr newCloud(new pcl::PointCloud<pcl::PointXYZ>);
 	if(!stepUpdateMap(points3d, newCloud)) return false;
 
 	if(!stepUpdateCameraRotation()) return false;
@@ -65,7 +65,8 @@ bool MainApplication::initCameras(){
 	mCameras = new StereoCameras(mConfig["cameras"]["left"], mConfig["cameras"]["right"]);
 	Json leftRoi = mConfig["cameras"]["leftRoi"];
 	Json rightRoi = mConfig["cameras"]["rightRoi"];
-	mCameras->roi(Rect(leftRoi(0),leftRoi(1),leftRoi(2),leftRoi(3)), Rect(rightRoi(0),rightRoi(1),rightRoi(2),rightRoi(3)));
+	mCameras->roi(	Rect(leftRoi["x"],leftRoi["y"],leftRoi["width"],leftRoi["height"]), 
+					Rect(rightRoi["x"],rightRoi["y"],rightRoi["width"],rightRoi["height"]));
 	mCameras->load(mConfig["cameras"]["paramFile"]);
 	return true;
 }
@@ -115,8 +116,8 @@ bool MainApplication::stepGetImages(cv::Mat & _frame1, cv::Mat & _frame2) {
 	cvtColor(_frame1, _frame1, CV_BGR2GRAY);
 	cvtColor(_frame2, _frame2, CV_BGR2GRAY);
 
-	bool isBlurry1 = isBlurry(_frame1, mConfig["blurThreshold"]);
-	bool isBlurry2 = isBlurry(_frame2, mConfig["blurThreshold"]);
+	bool isBlurry1 = isBlurry(_frame1, mConfig["cameras"]["blurThreshold"]);
+	bool isBlurry2 = isBlurry(_frame2, mConfig["cameras"]["blurThreshold"]);
 	if(isBlurry1) 
 		mGui->putBlurry(true);
 	if(isBlurry2) 

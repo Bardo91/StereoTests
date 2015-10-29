@@ -115,7 +115,7 @@ void Gui::drawPoints(const vector<Point2f>& _points, bool _isLeft, unsigned _r, 
 	Point2i offset(_isLeft?0:mLeftImage.cols, 0);
 	
 	Rect validRegion(_isLeft? 0:mLeftImage.cols, 0, mLeftImage.cols, mLeftImage.rows);
-	cout << validRegion.x << ", " << validRegion.y << ", " << validRegion.width << ", " << validRegion.height << std::endl;
+	//cout << validRegion.x << ", " << validRegion.y << ", " << validRegion.width << ", " << validRegion.height << std::endl;
 	for (Point2i point : _points) {
 		if(!validRegion.contains(point+offset))
 			continue;

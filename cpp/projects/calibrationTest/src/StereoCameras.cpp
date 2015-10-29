@@ -56,10 +56,10 @@ void StereoCameras::frames(Mat & _frame1, Mat & _frame2,  eFrameFixing _fixes) {
 
 		// Undirstort and rectify images
 		Mat rectifiedFrame1, rectifiedFrame2;
-		cout << rmap[0][0] << endl;
-		cout << rmap[0][1] << endl;
-		cout << rmap[1][0] << endl;
-		cout << rmap[1][1] << endl;
+		//cout << rmap[0][0] << endl;
+		//cout << rmap[0][1] << endl;
+		//cout << rmap[1][0] << endl;
+		//cout << rmap[1][1] << endl;
 
 		remap(_frame1, _frame1, rmap[0][0], rmap[0][1], INTER_LINEAR);
 		remap(_frame2, _frame2, rmap[1][0], rmap[1][1], INTER_LINEAR);
