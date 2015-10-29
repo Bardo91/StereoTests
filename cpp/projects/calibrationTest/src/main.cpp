@@ -122,7 +122,6 @@ int main(int _argc, char** _argv) {
 
 			map3d.addPoints(cloud.makeShared());
 			//sorry but I didn't find a better way to transform between cv and eigen, there is a function eigen2cv but I have problems
-			// 666 numbers not completely the same in R as a
 			Mat R(3,3, CV_64F), T(3,1, CV_64F);
 			Eigen::Matrix4f a = map3d.lastView2MapTransformation().inverse();
 			cout  << "eigen: " << endl << a << endl;
