@@ -22,8 +22,8 @@ using namespace std;
 MainApplication::MainApplication(int _argc, char ** _argv) {
 	bool result = true;
 	result &= loadArguments(_argc, _argv);
-	result &= initGui();
 	result &= initCameras();
+	result &= initGui();
 	result &= init3dMap();
 
 	assert(result);
@@ -60,20 +60,20 @@ bool MainApplication::loadArguments(int _argc, char ** _argv) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::initGui() {
-	Gui::init(mConfig["gui"]["name"]);
-	mGui = Gui::get();
-	return mGui != nullptr ? true: false;
+bool MainApplication::initCameras(){
+	mCameras = new StereoCameras(mConfig["cameras"]["left"], mConfig["cameras"]["right"]);
+	Json leftRoi = mConfig["cameras"]["leftRoi"];
+	Json rightRoi = mConfig["cameras"]["rightRoi"];
+	mCameras->roi(Rect(leftRoi[0],leftRoi[1],leftRoi[2],leftRoi[3]), Rect(rightRoi[0],rightRoi[1],rightRoi[2],rightRoi[3]));
+	mCameras->load(mConfig["cameras"]["paramFile"]);
+	return true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::initCameras(){
-	StereoCameras stereoCameras(mConfig["cameras"]["left"], mConfig["cameras"]["right"]);
-	Json leftRoi = mConfig["cameras"]["leftRoi"];
-	Json rightRoi = mConfig["cameras"]["rightRoi"];
-	stereoCameras.roi(Rect(leftRoi[0],leftRoi[1],leftRoi[2],leftRoi[3]), Rect(rightRoi[0],rightRoi[1],rightRoi[2],rightRoi[3]));
-	stereoCameras.load(mConfig["cameras"]["paramFile"]);
-	return true;
+bool MainApplication::initGui() {
+	Gui::init(mConfig["gui"]["name"], *mCameras);
+	mGui = Gui::get();
+	return mGui != nullptr ? true: false;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -101,13 +101,13 @@ bool MainApplication::init3dMap(){
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepGetImages(cv::Mat & _frame1, cv::Mat & _frame2) {
-	mCameras.frames(_frame1, _frame2, StereoCameras::eFrameFixing::Undistort);
+	mCameras->frames(_frame1, _frame2, StereoCameras::eFrameFixing::Undistort);
 	if (_frame1.rows == 0)
 		return false;
 
 	mGui->updateStereoImages(_frame1, _frame2);
-	Rect leftRoi = mCameras.roi(true);
-	Rect rightRoi = mCameras.roi(false);
+	Rect leftRoi = mCameras->roi(true);
+	Rect rightRoi = mCameras->roi(false);
 	mGui->drawBox(leftRoi, true, 0,255,0);
 	mGui->drawBox(rightRoi, false, 0,255,0);
 
@@ -129,7 +129,7 @@ bool MainApplication::stepGetImages(cv::Mat & _frame1, cv::Mat & _frame2) {
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point3f> &_points3d){
-	_points3d = mCameras.pointCloud(_frame1, _frame2);	
+	_points3d = mCameras->pointCloud(_frame1, _frame2);	
 
 	return _points3d.size() != 0? true:false;
 }
@@ -147,11 +147,11 @@ bool MainApplication::stepUpdateMap(const vector<Point3f> &_points3d, PointCloud
 		}
 	}
 
-	mMap.addPoints(_cloud->makeShared());
+	mMap.addPoints(_cloud);
 	mGui->clearMap();
 	mGui->clearPcViewer();
 	mGui->drawMap(mMap.cloud().makeShared());
-	mGui->addPointToPcViewer(_cloud->makeShared());
+	mGui->addPointToPcViewer(_cloud);
 	return true;
 }
 
@@ -176,14 +176,14 @@ bool MainApplication::stepUpdateCameraRotation() {
 	T.at<double>(2, 0) = a(2, 3);
 	cout << "T: " << endl << T << endl;
 
-	mCameras.updateGlobalRT(R, T);	
+	mCameras->updateGlobalRT(R, T);	
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepGetCandidates(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_newCloud){
 	std::vector<pcl::PointIndices> mClusterIndices;
 	pcl::PointCloud<PointXYZ>::Ptr currentViewCleanedCloud;
-	currentViewCleanedCloud = mMap.voxel(mMap.filter(_newCloud.makeShared()));
+	currentViewCleanedCloud = mMap.voxel(mMap.filter(_newCloud));
 	pcl::PointCloud<PointXYZ>::Ptr cloudForProcessing;
 	cloudForProcessing = mMap.cloud().makeShared();
 

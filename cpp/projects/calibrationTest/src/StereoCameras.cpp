@@ -269,10 +269,10 @@ cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, con
 	int minX = _point.x - _disparityRange.second;
 	minX = minX < _disparityRange.first ? _disparityRange.first : minX;
 	int maxX = _point.x > (_frame2.cols - _squareSize/2) ? (_frame2.cols -_squareSize/2 -1 ):_point.x;
-	for(unsigned i = minX ; i < maxX ;i++){
+	for(int i = minX ; i < maxX ;i++){
 		// Compute point over epiline
 		p1.x = i;
-		p1.y = -1*(_epiline[2] + _epiline[0] * i)/_epiline[1];
+		p1.y = int(-1*(_epiline[2] + _epiline[0] * i)/_epiline[1]);
 		sp1 = p1 - Point2i(_squareSize/2, _squareSize/2);
 		sp2 = p1 + Point2i(_squareSize/2, _squareSize/2);
 		Rect imageBound(0,0,_frame1.cols, _frame2.rows);
@@ -283,8 +283,8 @@ cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, con
 		// Compute correlation
 
 		double val = 0;
-		for(unsigned row = 0; row < subImage.rows; row++){
-			for(unsigned col = 0; col < subImage.cols; col++){
+		for(int row = 0; row < subImage.rows; row++){
+			for(int col = 0; col < subImage.cols; col++){
 				val += pow(double(subImage.at<uchar>(row, col)) - double(imgTemplate.at<uchar>(row, col)),2);
 			}
 		}
@@ -318,7 +318,7 @@ vector<Point3f> StereoCameras::triangulate(const vector<Point2i> &_points1, cons
 	triangulatePoints(mCamera1.matrix()*I, mCamera2.matrix()*extrinsicMatrix, cam1pnts, cam2pnts, pnts3D);
 
 	vector<Point3f> points3d;
-	for (unsigned i = 0 ; i < pnts3D.cols ; i++) {
+	for (int i = 0 ; i < pnts3D.cols ; i++) {
 		float w = (float) pnts3D.at<double>(3,i);
 		float x = (float) pnts3D.at<double>(0,i)/w;
 		float y = (float) pnts3D.at<double>(1,i)/w;

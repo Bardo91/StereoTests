@@ -23,8 +23,8 @@ public:
 	bool step	();
 private:
 	bool loadArguments	(int _argc, char** _argv);
-	bool initGui		();
 	bool initCameras	();
+	bool initGui		();
 	bool init3dMap		();
 
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
@@ -34,7 +34,7 @@ private:
 	bool stepGetCandidates(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_newCloud);
 
 private:
-	StereoCameras	mCameras;
+	StereoCameras	*mCameras;
 	EnvironmentMap	mMap;
 	Gui				*mGui;
 
