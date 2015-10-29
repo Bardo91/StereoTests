@@ -169,8 +169,7 @@ int main(int _argc, char** _argv) {
 			gui->drawPlane(plane, 0,0,1.5);
 			PointCloud<PointXYZ>::Ptr cropedCloud = cloudForProcessing;
 			map3d.cropCloud(cropedCloud, plane);
-			std::vector<pcl::PointCloud<PointXYZ>::Ptr> clusters;
-			map3d.clusterCloud(cloudForProcessing, clusters);
+			mClusterIndices = map3d.clusterCloud(cropedCloud);
 
 			std::vector<ObjectCandidate> candidates;
 			//create candidates from indices
