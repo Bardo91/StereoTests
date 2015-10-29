@@ -69,8 +69,6 @@ int main(int _argc, char** _argv) {
 	params.icpEuclideanEpsilon					= 1e-20; //seems to have no influence, implies local minimum found
 	params.icpMaxIcpIterations					= 1000; //no increase in time.. meaning we reach exit condition much sooner
 	params.icpMaxCorrespondenceDistance			= 0.1; //had it at 1 meter, now reduced it to 10 cm... results similar
-	params.icpMaxCorrDistDownStep				= 0.01;
-	params.icpMaxCorrDistDownStepIterations		= 1;
 	params.historySize							= 2;
 	params.clusterTolerance						= 0.035; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
 	params.minClusterSize						= 15;
