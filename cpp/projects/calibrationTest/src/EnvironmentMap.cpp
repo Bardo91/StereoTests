@@ -205,6 +205,11 @@ void EnvironmentMap::addPointsAccurate(const PointCloud<PointXYZ>::Ptr & _cloud)
 		mLastJoinedCloud = convolutedSum.makeShared();
 		mCloud += convolutedSum;
 		mCloud = *voxel(mCloud.makeShared());
+		
+		// Store last position of the camera.
+		mCloud.sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
+		mCloud.sensor_origin_ = transformation.col(3);
+
 		// Finally discart oldest cloud
 		mCloudHistory.pop_front();
 	}

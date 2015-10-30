@@ -28,13 +28,17 @@ public:		// Public interface
 	/// \param _map: pcl point cloud that is wanted to be drawn.
 	void drawMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_map);
 
-	/// Draw a plane into de map
+	/// Draw a plane into de map.
 	void drawPlane(const pcl::ModelCoefficients &_plane);
 	void drawPlane(const pcl::ModelCoefficients &_plane, double _x, double _y, double _z);
 
-	/// Draw a plane into de map
+	/// Draw a plane into de map.
 	void drawLine(const pcl::PointXYZ &_p1, const pcl::PointXYZ &_p2, unsigned _r = 255, unsigned _g =255, unsigned _b = 255);
 
+	/// Draw a camera shape on the map.
+	/// \param _pos: Camera position.
+	///	\param _ori: Camera orientation.
+	void drawCamera(const Eigen::Matrix3f &_orientation, const Eigen::Vector4f &_position);
 
 	/// Clear map viewer.
 	void clearMap();

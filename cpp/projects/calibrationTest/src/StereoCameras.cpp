@@ -6,6 +6,8 @@
 
 #include "StereoCameras.h"
 
+#include "Gui.h"
+
 using namespace cv;
 using namespace std;
 
@@ -263,21 +265,25 @@ cv::Point2i StereoCameras::findMatch(const Mat &_frame1, const Mat &_frame2, con
 	Mat imgTemplate = _frame1(Rect(	Point2i(_point.x - _squareSize/2, _point.y - _squareSize/2),
 									Point2i(_point.x + _squareSize/2, _point.y + _squareSize/2)));
 	double minVal = _squareSize*_squareSize*255*255;
-	Point2i maxLoc, p1, sp1, sp2;
+	Point2i maxLoc(-1,-1), p1;
 	Mat subImage;
 
 	int minX = _point.x - _disparityRange.second;
-	minX = minX < _disparityRange.first ? _disparityRange.first : minX;
-	int maxX = _point.x > (_frame2.cols - _squareSize/2) ? (_frame2.cols -_squareSize/2 -1 ):_point.x;
+	minX = minX < 0 ? 0 : minX;
+	int maxX = _point.x - _disparityRange.first;
+	maxX = maxX < 0 ? 0 : maxX;
+	maxX = maxX + _squareSize/2 + 1 > _frame1.cols ? maxX - (_squareSize/2 + 1) : maxX;
 	for(int i = minX ; i < maxX ;i++){
 		// Compute point over epiline
 		p1.x = i;
 		p1.y = int(-1*(_epiline[2] + _epiline[0] * i)/_epiline[1]);
+
+		Point2i sp1, sp2;
 		sp1 = p1 - Point2i(_squareSize/2, _squareSize/2);
 		sp2 = p1 + Point2i(_squareSize/2, _squareSize/2);
 		Rect imageBound(0,0,_frame1.cols, _frame2.rows);
 		if(!imageBound.contains(sp1) || !imageBound.contains(sp2))
-			return Point2i(-1,-1);
+			continue;
 		// Get subimage from image 2;
 		subImage = _frame2(Rect(sp1, sp2));
 		// Compute correlation
