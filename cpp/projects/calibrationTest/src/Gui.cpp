@@ -2,17 +2,18 @@
 //
 //
 //
+#include "Gui.h"
 
 #include <string>
 #include <cassert>
+#include <pcl/common/transforms.h>
 
-#include "Gui.h"
 
 using namespace cv;
 using namespace std;
 using namespace pcl;
 using namespace pcl::visualization;
-
+using namespace Eigen;
 //---------------------------------------------------------------------------------------------------------------------
 // Static initialization
 Gui* Gui::mInstance = nullptr;
@@ -54,6 +55,51 @@ void Gui::drawPlane(const pcl::ModelCoefficients & _plane, double _x, double _y,
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::drawLine(const pcl::PointXYZ & _p1, const pcl::PointXYZ & _p2, unsigned _r, unsigned _g, unsigned _b) {
 	m3dViewer->addLine<PointXYZ, PointXYZ>(_p1, _p2, _r, _g, _b,"Line"+to_string(mPcCounter++),mViewPortMapViewer);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f & _position) {
+	// Create a pointcloud vertically oriented in the origin
+	pcl::PointCloud<pcl::PointXYZ> camera;
+	camera.push_back(PointXYZ(0.05, 0.05, 0));
+	camera.push_back(PointXYZ(-0.05, 0.05, 0));
+	camera.push_back(PointXYZ(-0.05, -0.05, 0));
+	camera.push_back(PointXYZ(0.05, -0.05, 0));
+	camera.push_back(PointXYZ(0.2, 0.2, 0.4));
+	camera.push_back(PointXYZ(-0.2, 0.2, 0.4));
+	camera.push_back(PointXYZ(-0.2, -0.2, 0.4));
+	camera.push_back(PointXYZ(0.2, -0.2, 0.4));
+
+	// Rotate and move camara to the desired position and orientation.
+	Matrix4f transformation;
+	transformation.col(3) = _position;
+	transformation.block<3,3>(0,0) = _orientation;
+
+	pcl::PointCloud<pcl::PointXYZ> cameraRotated;
+	transformPointCloud(camera, cameraRotated, transformation);
+
+	// Draw camera
+	PointXYZ p1 = camera[3];
+	for (unsigned i = 0; i < 4; i++) {
+		PointXYZ p2 = camera[i];
+		drawLine(p1, p2);
+		p1 = p2;
+	}
+
+	p1 = camera[4];
+	for (unsigned i = 4; i < 8; i++) {
+		PointXYZ p2 = camera[i];
+		drawLine(p1, p2);
+		p1 = p2;
+	}
+
+	for (unsigned i = 0; i < 4; i++) {
+		PointXYZ p1 = camera[i];
+		PointXYZ p2 = camera[i+4];
+		drawLine(p1, p2);
+	}
+
+
 }
 
 //---------------------------------------------------------------------------------------------------------------------
