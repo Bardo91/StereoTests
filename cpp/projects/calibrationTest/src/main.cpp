@@ -19,7 +19,7 @@ int main(int _argc, char** _argv) {
 	unsigned stepNumber = 0;
 	while (true) {
 		app.step();
-		cout << "<----------------------------- Step Number: " << stepNumber << " ----------------------------->" << endl;
+		cout << "<----------------------------- Step Number: " << stepNumber++ << " ----------------------------->" << endl;
 		cv::waitKey();
 	}
 

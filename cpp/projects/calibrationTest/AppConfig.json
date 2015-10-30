@@ -13,14 +13,14 @@
 			"x":30,
 			"y":0,
 			"width":610,
-			"height"480
+			"height":480
 		},
 		"rightRoi":
 		{
 			"x":0,
 			"y":0,
 			"width":610,
-			"height"480
+			"height":480
 		},
 		"blurThreshold":0.8
 	},
