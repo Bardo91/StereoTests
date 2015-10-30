@@ -40,11 +40,15 @@ if(${PCL_FOUND} AND ${VTK_FOUND} AND ${Boost_FOUND} AND ${FLANN_FOUND})
 	add_definitions(${PCL_DEFINITIONS})
 endif()
 
+# Copy configuration file
+file(COPY AppConfig.json DESTINATION ${CMAKE_BINARY_DIR}/projects/calibrationTest)
+
 # Add Executable
 add_executable(calibrationTest ${BAR_TASK_SOURCE_FILES})
 
 target_include_directories(calibrationTest PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(calibrationTest PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_include_directories(calibrationTest PUBLIC ${PROJECT_SOURCE_DIR}/../lib/cjson/src)
+target_link_libraries(calibrationTest LINK_PUBLIC cjson)
 target_link_libraries(calibrationTest LINK_PUBLIC ${OpenCV_LIBS})
 target_link_libraries(calibrationTest LINK_PUBLIC ${PCL_LIBRARIES})
-
