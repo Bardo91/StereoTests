@@ -71,31 +71,33 @@ void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f
 	camera.push_back(PointXYZ(0.2, -0.2, 0.4));
 
 	// Rotate and move camara to the desired position and orientation.
-	Matrix4f transformation;
-	transformation.col(3) = _position;
-	transformation.block<3,3>(0,0) = _orientation;
+	Matrix4f transformation = Matrix4f::Zero();
+	transformation << _orientation;
+	transformation.col(3) << _position(0), _position(1), _position(2), 1;
+
+	std::cout << transformation << std::endl;
 
 	pcl::PointCloud<pcl::PointXYZ> cameraRotated;
 	transformPointCloud(camera, cameraRotated, transformation);
 
 	// Draw camera
-	PointXYZ p1 = camera[3];
+	PointXYZ p1 = cameraRotated[3];
 	for (unsigned i = 0; i < 4; i++) {
-		PointXYZ p2 = camera[i];
+		PointXYZ p2 = cameraRotated[i];
 		drawLine(p1, p2);
 		p1 = p2;
 	}
 
-	p1 = camera[4];
+	p1 = cameraRotated[4];
 	for (unsigned i = 4; i < 8; i++) {
-		PointXYZ p2 = camera[i];
+		PointXYZ p2 = cameraRotated[i];
 		drawLine(p1, p2);
 		p1 = p2;
 	}
 
 	for (unsigned i = 0; i < 4; i++) {
-		PointXYZ p1 = camera[i];
-		PointXYZ p2 = camera[i+4];
+		PointXYZ p1 = cameraRotated[i];
+		PointXYZ p2 = cameraRotated[i+4];
 		drawLine(p1, p2);
 	}
 
