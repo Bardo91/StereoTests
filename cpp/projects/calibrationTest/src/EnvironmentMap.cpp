@@ -75,10 +75,10 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr & _cloud) {
 	PointCloud<PointXYZ> filtered_cloudWCS;
 	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), mCloud, mPreviousCloud2MapTransformation); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
 	transformPointCloud(*filtered_cloud, filtered_cloudWCS, transformation);
-
-	mCloudHistory.push_back(voxel(filtered_cloudWCS.makeShared()));
-	(*mCloudHistory.rbegin())->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
-	(*mCloudHistory.rbegin())->sensor_origin_ = transformation.col(3);
+	PointCloud<PointXYZ>::Ptr voxeledFiltered_cloudWCS = voxel(filtered_cloudWCS.makeShared());
+	voxeledFiltered_cloudWCS->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
+	voxeledFiltered_cloudWCS->sensor_origin_ = transformation.col(3);
+	mCloudHistory.push_back(voxeledFiltered_cloudWCS);
 	//666 fix this, probably not needed anymore, because it should be in mCloudHistory
 	mLastView2MapTransformation = transformation; //needed for gui reprojection of map points
 	mPreviousCloud2MapTransformation = transformation;//transformPointCloud(*cloud1, transformedCloud1, transformation);
