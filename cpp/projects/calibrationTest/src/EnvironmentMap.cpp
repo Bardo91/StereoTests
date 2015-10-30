@@ -114,6 +114,9 @@ void EnvironmentMap::addPointsSimple(const PointCloud<PointXYZ>::Ptr & _cloud) {
 		transformCloudtoTargetCloudAndAddToHistory(_cloud, mCloud.makeShared());
 	}
 
+	addOrientationAndOriginDataToMap(*mCloudHistory.rbegin());
+
+
 	if (mCloudHistory.size() >= mParams.historySize) {
 		cout << "Map extended" << endl;
 		mCloud += convoluteCloudsInQueue(mCloudHistory);
@@ -236,6 +239,12 @@ pcl::PointCloud<pcl::PointXYZ> EnvironmentMap::convoluteCloudsInQueue(std::deque
 	for (unsigned i = 1; i < _cloudQueue.size(); i++)
 		convolutedSum = convoluteCloudsOnGrid(convolutedSum, *_cloudQueue[i]);
 	return convolutedSum;
+}
+
+void EnvironmentMap::addOrientationAndOriginDataToMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud)
+{
+	mCloud.sensor_orientation_ = _cloud->sensor_orientation_;
+	mCloud.sensor_origin_ = _cloud->sensor_origin_;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
