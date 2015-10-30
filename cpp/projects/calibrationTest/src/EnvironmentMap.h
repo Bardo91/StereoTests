@@ -36,6 +36,7 @@
 
 class EnvironmentMap {
 public:		// Public interface
+	enum eHistoryCalculation {Simple = 0, Sequential, Accurate};
 	/// Internal structure to configure algorithms
 	struct Params {
 		// Voxeling parameters.
@@ -80,7 +81,7 @@ public:		// Public interface
 
 	/// Add points into internal cloud.
 	/// \param _cloud:
-	void addPoints(const pcl::PointCloud< pcl::PointXYZ>::Ptr &_cloud);
+	void addPoints(const pcl::PointCloud< pcl::PointXYZ>::Ptr &_cloud, enum eHistoryCalculation _calculation);
 
 	/// Cluster internal point cloud and returns vector with clusters
 	/// \return  
@@ -139,6 +140,11 @@ private:	// Members
 
 	Eigen::Matrix4f mPreviousCloud2MapTransformation = Eigen::Matrix4f::Identity();
 	Eigen::Matrix4f mLastView2MapTransformation = Eigen::Matrix4f::Identity();
+
+	//history calculation options
+	void addPointsSimple(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud);
+	void addPointsSequential(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud);
+	void addPointsAccurate(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud);
 };	// class EnvironmentMap
 
 #endif	//	ENVIRONMENTMAP_H_

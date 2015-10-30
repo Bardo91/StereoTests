@@ -149,7 +149,7 @@ bool MainApplication::stepUpdateMap(const vector<Point3f> &_points3d, PointCloud
 		}
 	}
 
-	mMap.addPoints(_cloud);
+	mMap.addPoints(_cloud, mMap.Simple);
 	mGui->clearMap();
 	mGui->clearPcViewer();
 	mGui->drawMap(mMap.cloud().makeShared());
