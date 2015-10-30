@@ -179,6 +179,8 @@ bool MainApplication::stepUpdateCameraRotation() {
 	cout << "T: " << endl << T << endl;
 
 	mCameras->updateGlobalRT(R, T);	
+	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
+
 	return true;
 }
 
