@@ -37,12 +37,11 @@ bool MainApplication::step() {
 	std::vector<cv::Point3f> points3d;
 	if(!stepTriangulatePoints(frame1, frame2, points3d)) return false;
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr newCloud(new pcl::PointCloud<pcl::PointXYZ>);
-	if(!stepUpdateMap(points3d, newCloud)) return false;
+	if(!stepUpdateMap(points3d)) return false;
 
 	if(!stepUpdateCameraRotation()) return false;
 
-	if(!stepGetCandidates(newCloud)) return false;
+	if(!stepGetCandidates()) return false;
 
 	return true;
 }
@@ -137,23 +136,24 @@ bool MainApplication::stepTriangulatePoints(const cv::Mat &_frame1, const cv::Ma
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepUpdateMap(const vector<Point3f> &_points3d, PointCloud<PointXYZ>::Ptr &_cloud){
+bool MainApplication::stepUpdateMap(const vector<Point3f> &_points3d){
+	PointCloud<PointXYZ>::Ptr cloud (new PointCloud<PointXYZ>());
 	for (unsigned i = 0; i < _points3d.size(); i++) {
 		if (_points3d[i].x > -3 && _points3d[i].x < 3) {
 			if (_points3d[i].y > -3 && _points3d[i].y < 3) {
 				if (_points3d[i].z > 0.65 && _points3d[i].z < 1.5) {
 					PointXYZ point(_points3d[i].x, _points3d[i].y, _points3d[i].z);
-					_cloud->push_back(point);
+					cloud->push_back(point);
 				}
 			}
 		}
 	}
 
-	mMap.addPoints(_cloud);
+	mMap.addPoints(cloud);
 	mGui->clearMap();
 	mGui->clearPcViewer();
 	mGui->drawMap(mMap.cloud().makeShared());
-	mGui->addPointToPcViewer(_cloud);
+	mGui->addPointToPcViewer(cloud);
 	return true;
 }
 
@@ -183,23 +183,19 @@ bool MainApplication::stepUpdateCameraRotation() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepGetCandidates(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_newCloud){
-	std::vector<pcl::PointIndices> mClusterIndices;
-	pcl::PointCloud<PointXYZ>::Ptr currentViewCleanedCloud;
-	currentViewCleanedCloud = mMap.voxel(mMap.filter(_newCloud));
-	pcl::PointCloud<PointXYZ>::Ptr cloudForProcessing;
-	cloudForProcessing = mMap.cloud().makeShared();
-
+bool MainApplication::stepGetCandidates(){
 	ModelCoefficients plane = mMap.extractFloor(mMap.cloud().makeShared());
 	mGui->drawPlane(plane, 0,0,1.5);
-	PointCloud<PointXYZ>::Ptr cropedCloud = cloudForProcessing;
+	PointCloud<PointXYZ>::Ptr cropedCloud = mMap.cloud().makeShared();
 	mMap.cropCloud(cropedCloud, plane);
+
+	std::vector<pcl::PointIndices> mClusterIndices;
 	mClusterIndices = mMap.clusterCloud(cropedCloud);
 
 	std::vector<ObjectCandidate> candidates;
 	//create candidates from indices
 	for (pcl::PointIndices indices : mClusterIndices)
-		candidates.push_back(ObjectCandidate(indices, cloudForProcessing, true));
+		candidates.push_back(ObjectCandidate(indices, cropedCloud, true));
 	//draw all candidates
 	for (ObjectCandidate candidate : candidates) {
 		if(mMap.distanceToPlane(candidate.cloud(), plane) < 0.05)	// Draw only candidates close to the floor.
