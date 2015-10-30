@@ -92,71 +92,34 @@ void EnvironmentMap::addPoints(const PointCloud<PointXYZ>::Ptr &_cloud, enum eHi
 
 //---------------------------------------------------------------------------------------------------------------------
 void EnvironmentMap::addPointsSimple(const PointCloud<PointXYZ>::Ptr & _cloud) {
-	// Store First cloud as reference
-	// 666 we store the actual first cloud instead of considering history, this means we accept the noise from the first cloud
 	if (mCloud.size() == 0) {
 		if (mCloudHistory.size() == 0) {
+			// Store First cloud as reference
 			cout << "This is the first point cloud, no map yet, adding to history" << endl;
 			PointCloud<PointXYZ>::Ptr firstCloud = voxel(filter(_cloud));
 			firstCloud->sensor_origin_ = Vector4f::Zero();
 			firstCloud->sensor_orientation_ = Quaternionf::Identity();
 			mCloudHistory.push_back(firstCloud);
 		}
+		// tranform clouds to history until there are enough to make first map from history
 		else if (mCloudHistory.size() < mParams.historySize) {
-			printf("This is point cloud Nr. %d, no map yet, adding to history", mCloudHistory.size() + 1);
-			PointCloud<PointXYZ>::Ptr filtered_cloud = filter(_cloud);
-			PointCloud<PointXYZ> filtered_cloudWCS;
-			Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), *mCloudHistory[0], mPreviousCloud2MapTransformation); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
-			transformPointCloud(*filtered_cloud, filtered_cloudWCS, transformation);
-			PointCloud<PointXYZ>::Ptr voxeledFiltered_cloudWCS = voxel(filtered_cloudWCS.makeShared());
-			voxeledFiltered_cloudWCS->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
-			voxeledFiltered_cloudWCS->sensor_origin_ = transformation.col(3);
-			mCloudHistory.push_back(voxeledFiltered_cloudWCS);
-
-			if (mCloudHistory.size() == mParams.historySize) {
-				PointCloud<PointXYZ> convolutedSum = *mCloudHistory[0];
-				for (unsigned i = 1; i < mParams.historySize; i++)
-					convolutedSum = convoluteCloudsOnGrid(convolutedSum, *mCloudHistory[i]);
-				mCloud = convolutedSum;
-				mCloudHistory.pop_front();
-				mLastJoinedCloud = mCloud.makeShared(); //666 not used anywhere yet
-			}
-
+			printf("This is point cloud Nr. %d of %d needed for map.\n", mCloudHistory.size() + 1, mParams.historySize);
+			transformCloudtoTargetCloudAndAddToHistory(_cloud, mCloudHistory[0]);
 		}
 	}
 	else {
-
 		// Storing and processing history of point clouds.
 		//temporary cleaned cloud for calculation of the transformation. We do not want to voxel in the camera coordinate system
 		//becase we lose some points when rotating it to the map and voxeling there. That's why we rotate the original cloud
-		PointCloud<PointXYZ>::Ptr filtered_cloud = filter(_cloud);
-		PointCloud<PointXYZ> filtered_cloudWCS;
-		Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), mCloud, mPreviousCloud2MapTransformation); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
-		transformPointCloud(*filtered_cloud, filtered_cloudWCS, transformation);
-		PointCloud<PointXYZ>::Ptr voxeledFiltered_cloudWCS = voxel(filtered_cloudWCS.makeShared());
-		voxeledFiltered_cloudWCS->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
-		voxeledFiltered_cloudWCS->sensor_origin_ = transformation.col(3);
-		mCloudHistory.push_back(voxeledFiltered_cloudWCS);
-		//666 fix this, probably not needed anymore, because it should be in mCloudHistory
-		mLastView2MapTransformation = transformation; //needed for gui reprojection of map points
-		mPreviousCloud2MapTransformation = transformation;//transformPointCloud(*cloud1, transformedCloud1, transformation);
+		transformCloudtoTargetCloudAndAddToHistory(_cloud, mCloud.makeShared());
+	}
 
-
-		if (mCloudHistory.size() >= mParams.historySize) {
-			// Get first pointcloud
-			PointCloud<PointXYZ> convolutedSum = *mCloudHistory[0];
-
-			for (unsigned i = 1; i < mParams.historySize; i++)
-				// Now we consider only 2 clouds on history, if want to increase it, need to define points with probabilities.
-				convolutedSum = convoluteCloudsOnGrid(convolutedSum, *mCloudHistory[i]);
-
-
-			mLastJoinedCloud = convolutedSum.makeShared();
-			mCloud += convolutedSum;
-			mCloud = *voxel(mCloud.makeShared());
-			// Finally discart oldest cloud
-			mCloudHistory.pop_front();
-		}
+	if (mCloudHistory.size() >= mParams.historySize) {
+		cout << "Map extended" << endl;
+		mCloud += convoluteCloudsInQueue(mCloudHistory);
+		mCloud = *voxel(mCloud.makeShared());
+		// Finally discart oldest cloud
+		mCloudHistory.pop_front();
 	}
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -245,6 +208,29 @@ void EnvironmentMap::addPointsAccurate(const PointCloud<PointXYZ>::Ptr & _cloud)
 		// Finally discart oldest cloud
 		mCloudHistory.pop_front();
 	}
+}
+
+void EnvironmentMap::transformCloudtoTargetCloudAndAddToHistory(const PointCloud<PointXYZ>::Ptr & _cloud, const PointCloud<PointXYZ>::Ptr & _target)
+{
+	PointCloud<PointXYZ>::Ptr filtered_cloud = filter(_cloud);
+	PointCloud<PointXYZ> filtered_cloudWCS;
+	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), *_target, mPreviousCloud2MapTransformation); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
+	transformPointCloud(*filtered_cloud, filtered_cloudWCS, transformation);
+	PointCloud<PointXYZ>::Ptr voxeledFiltered_cloudWCS = voxel(filtered_cloudWCS.makeShared());
+	voxeledFiltered_cloudWCS->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
+	voxeledFiltered_cloudWCS->sensor_origin_ = transformation.col(3);
+	mCloudHistory.push_back(voxeledFiltered_cloudWCS);
+
+	mLastView2MapTransformation = transformation; //needed for gui reprojection of map points
+	mPreviousCloud2MapTransformation = transformation;//transformPointCloud(*cloud1, transformedCloud1, transformation);
+}
+
+pcl::PointCloud<pcl::PointXYZ> EnvironmentMap::convoluteCloudsInQueue(std::deque<pcl::PointCloud<pcl::PointXYZ>::Ptr> _cloudQueue)
+{
+	PointCloud<PointXYZ> convolutedSum = *_cloudQueue[0];
+	for (unsigned i = 1; i < _cloudQueue.size(); i++)
+		convolutedSum = convoluteCloudsOnGrid(convolutedSum, *_cloudQueue[i]);
+	return convolutedSum;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

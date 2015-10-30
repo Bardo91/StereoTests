@@ -191,6 +191,8 @@ bool MainApplication::stepGetCandidates(const pcl::PointCloud<pcl::PointXYZ>::Pt
 	cloudForProcessing = mMap.cloud().makeShared();
 
 	ModelCoefficients plane = mMap.extractFloor(mMap.cloud().makeShared());
+	if (plane.values.size() == 0)
+		return false;
 	mGui->drawPlane(plane, 0,0,1.5);
 	PointCloud<PointXYZ>::Ptr cropedCloud = cloudForProcessing;
 	mMap.cropCloud(cropedCloud, plane);

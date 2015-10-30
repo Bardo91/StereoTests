@@ -145,6 +145,8 @@ private:	// Members
 	void addPointsSimple(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud);
 	void addPointsSequential(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud);
 	void addPointsAccurate(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud);
+	void transformCloudtoTargetCloudAndAddToHistory(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr & _target);
+	pcl::PointCloud<pcl::PointXYZ> convoluteCloudsInQueue(std::deque<pcl::PointCloud<pcl::PointXYZ>::Ptr> _cloudQueue);
 };	// class EnvironmentMap
 
 #endif	//	ENVIRONMENTMAP_H_
