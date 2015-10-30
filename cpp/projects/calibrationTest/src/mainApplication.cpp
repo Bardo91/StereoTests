@@ -149,7 +149,7 @@ bool MainApplication::stepUpdateMap(const vector<Point3f> &_points3d){
 		}
 	}
 
-	mMap.addPoints(_cloud, mMap.Simple);
+	mMap.addPoints(cloud, mMap.Simple);
 	mGui->clearMap();
 	mGui->clearPcViewer();
 	mGui->drawMap(mMap.cloud().makeShared());
@@ -179,7 +179,7 @@ bool MainApplication::stepUpdateCameraRotation() {
 	cout << "T: " << endl << T << endl;
 
 	mCameras->updateGlobalRT(R, T);	
-	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
+	mGui->drawCamera(a.block<3,3>(0,0), a.col(3));
 
 	return true;
 }
