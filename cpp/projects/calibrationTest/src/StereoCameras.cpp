@@ -121,19 +121,78 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 	Rect validLeft	= mLeftRoi & secureRegion;
 	Rect validRight = mRightRoi & secureRegion;
 
+
+	const unsigned cNumProcs = 8;
+	vector<vector<Point2i>> vpoints1(cNumProcs), vpoints2(cNumProcs);
+
+	class ParallelMatcher : public cv::ParallelLoopBody{
+	public:
+		ParallelMatcher(const Mat &_frame1, 
+						const Mat &_frame2, 
+						const vector<Point2i> &_kps,
+						const vector<Vec3f> &_epis,
+						const pair<int, int> &_disparityRange,
+						const int &_squareSize, 
+						vector<vector<Point2i>> &_points1,
+						vector<vector<Point2i>> &_points2,
+						Rect _vl,
+						Rect _vr,
+						StereoCameras *_cameras) :	frame1(_frame1),
+													frame2(_frame2),
+													kps(_kps),
+													epis(_epis),
+													disparityRange(_disparityRange),
+													squareSize(_squareSize),
+													points1(_points1),
+													points2(_points2),
+													validLeft(_vl),
+													validRight(_vr),
+													cameras(_cameras){};
+
+		virtual void operator()(const cv::Range& range) const{
+			int ini = epis.size()*range.start/8;
+			int end = epis.size()*(range.start+1)/8;
+
+			for (unsigned i = ini; i < end; i++){
+				//std::cout << "Computing: " << i << std::endl;
+				if(!validLeft.contains(kps[i]))	// Ignore keypoint if it is outside valid region.
+					continue;
+
+				// Calculate matching and add points
+				Point2i matchedPoint = cameras->findMatch(frame1, frame2, kps[i], epis[i], disparityRange, squareSize);
+				if(!validRight.contains(matchedPoint))
+					continue;
+
+				points1[range.start].push_back(kps[i]);
+				points2[range.start].push_back(matchedPoint);
+			}
+		}
+
+	private:
+		const Mat &frame1, &frame2;
+		const vector<Point2i> &kps;
+		const vector<Vec3f> &epis;
+		const pair<int, int> &disparityRange;
+		const int &squareSize;
+		vector<vector<Point2i>> &points1;
+		vector<vector<Point2i>> &points2;
+		Rect validLeft;
+		Rect validRight;
+		StereoCameras *cameras;
+	};
+
+	parallel_for_(Range(0,cNumProcs), ParallelMatcher(_frame1, _frame2, keypoints, epilines, pair<int, int>(60,400), cSquareSize, vpoints1, vpoints2, validLeft, validRight, this));
+
 	vector<Point2i> points1, points2;
-	for (unsigned i = 0; i < epilines.size(); i++){
-		if(!validLeft.contains(keypoints[i]))	// Ignore keypoint if it is outside valid region.
-			continue;
 
-		// Calculate matching and add points
-		Point2i matchedPoint = findMatch(_frame1, _frame2, keypoints[i], epilines[i], pair<int,int>(60,400), cSquareSize);
-		if(!validRight.contains(matchedPoint))
-			continue;
-
-		points1.push_back(keypoints[i]);
-		points2.push_back(matchedPoint);
+	for (vector<Point2i> v : vpoints1) {
+		points1.insert(points1.end(), v.begin(), v.end());
 	}
+
+	for (vector<Point2i> v : vpoints2) {
+		points2.insert(points2.end(), v.begin(), v.end());
+	}
+
 	std::cout << "Features matched: " << points1.size() << std::endl;
 	// Triangulate points using features in both images.
 	vector<Point3f> points3d = triangulate(points1, points2);
