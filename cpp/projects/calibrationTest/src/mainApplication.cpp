@@ -48,14 +48,14 @@ bool MainApplication::step() {
 
 	tGetImages.push_back(t1-t0);
 	tTriangulate.push_back(tGetImages[tGetImages.size()-1] + t2-t1);
-	tUpdateCamera.push_back(tTriangulate[tTriangulate.size()-1] + t3-t2);
-	tUpdCam.push_back(tUpdateCamera[tUpdateCamera.size()-1] + t4-t3);
+	tUpdateMap.push_back(tTriangulate[tTriangulate.size()-1] + t3-t2);
+	tUpdCam.push_back(tUpdateMap[tUpdateMap.size()-1] + t4-t3);
 	tCandidates.push_back(tUpdCam[tUpdCam.size()-1] + t5-t4);
 
 	mTimePlot.clean();
 	mTimePlot.draw(tGetImages	, 255, 0, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
 	mTimePlot.draw(tTriangulate	, 0, 255, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
-	mTimePlot.draw(tUpdateCamera, 0, 0, 255,	BOViL::plot::Graph2d::eDrawType::Lines);
+	mTimePlot.draw(tUpdateMap, 0, 0, 255,	BOViL::plot::Graph2d::eDrawType::Lines);
 	mTimePlot.draw(tUpdCam		, 255, 255, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
 	mTimePlot.draw(tCandidates	, 0, 255, 255,	BOViL::plot::Graph2d::eDrawType::Lines);
 	mTimePlot.show();
