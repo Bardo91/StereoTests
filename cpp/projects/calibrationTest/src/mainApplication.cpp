@@ -19,12 +19,13 @@ using namespace pcl;
 using namespace std;
 
 //---------------------------------------------------------------------------------------------------------------------
-MainApplication::MainApplication(int _argc, char ** _argv) {
+MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time") {
 	bool result = true;
 	result &= loadArguments(_argc, _argv);
 	result &= initCameras();
 	result &= initGui();
 	result &= init3dMap();
+	mTimer = BOViL::STime::get();
 
 	assert(result);
 }
@@ -32,17 +33,32 @@ MainApplication::MainApplication(int _argc, char ** _argv) {
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::step() {
 	Mat frame1, frame2;
+	double t0 = mTimer->getTime();
 	if(!stepGetImages(frame1, frame2)) return false;
-
+	double t1 = mTimer->getTime();
 	std::vector<cv::Point3f> points3d;
 	if(!stepTriangulatePoints(frame1, frame2, points3d)) return false;
-
+	double t2 = mTimer->getTime();
 	if(!stepUpdateMap(points3d)) return false;
-
+	double t3 = mTimer->getTime();
 	if(!stepUpdateCameraRotation()) return false;
-
+	double t4 = mTimer->getTime();
 	if(!stepGetCandidates()) return false;
+	double t5 = mTimer->getTime();
 
+	tGetImages.push_back(t1-t0);
+	tTriangulate.push_back(tGetImages[tGetImages.size()-1] + t2-t1);
+	tUpdateCamera.push_back(tTriangulate[tTriangulate.size()-1] + t3-t2);
+	tUpdCam.push_back(tUpdateCamera[tUpdateCamera.size()-1] + t4-t3);
+	tCandidates.push_back(tUpdCam[tUpdCam.size()-1] + t5-t4);
+
+	mTimePlot.clean();
+	mTimePlot.draw(tGetImages	, 255, 0, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
+	mTimePlot.draw(tTriangulate	, 0, 255, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
+	mTimePlot.draw(tUpdateCamera, 0, 0, 255,	BOViL::plot::Graph2d::eDrawType::Lines);
+	mTimePlot.draw(tUpdCam		, 255, 255, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
+	mTimePlot.draw(tCandidates	, 0, 255, 255,	BOViL::plot::Graph2d::eDrawType::Lines);
+	mTimePlot.show();
 	return true;
 }
 

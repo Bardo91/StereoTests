@@ -11,6 +11,8 @@
 #include "Gui.h"
 #include "EnvironmentMap.h"
 #include "StereoCameras.h"
+#include "TimeTools.h"
+#include "graph2d.h"
 
 #include <cjson/json.h>
 #include <pcl/point_cloud.h>
@@ -37,6 +39,9 @@ private:
 	StereoCameras	*mCameras;
 	EnvironmentMap	mMap;
 	Gui				*mGui;
+	BOViL::plot::Graph2d mTimePlot;
+	std::vector<double> tGetImages, tTriangulate, tUpdateCamera, tUpdCam, tCandidates;
+	BOViL::STime *mTimer;
 
 	cjson::Json mConfig;
 };
