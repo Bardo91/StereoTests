@@ -22,7 +22,14 @@
 			"width":610,
 			"height":480
 		},
-		"blurThreshold":0.8
+		"blurThreshold":0.8,
+		"disparityRange":
+		{
+			"min":60,
+			"max":400
+		}, 
+		"templateSquareSize":11,
+		"maxReprojectionError":3
 	},
 	"mapParams":
 	{

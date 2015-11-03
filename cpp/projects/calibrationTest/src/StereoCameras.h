@@ -59,7 +59,7 @@ public:
 	/// \param _frame1: first image of stereo pair
 	/// \param _frame2: second image of stereo pair
 	/// \return array of 3d points
-	std::vector<cv::Point3f> pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2);
+	std::vector<cv::Point3f> pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2, std::pair<int, int> _disparityRange, int _squareSize, int _maxReprojectionError);
 
 	/// Get one of the cameras.
 	/// \param _index: 0 for first camera; 1 for the second one.

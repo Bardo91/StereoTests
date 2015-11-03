@@ -100,24 +100,22 @@ cv::Rect StereoCameras::roi(bool _isLeft) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2) {
+vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2, pair<int, int> _disparityRange, int _squareSize, int _maxReprojectionError) {
 	// Compute keypoint only in first image
 	vector<Point2i> keypoints;
 	computeFeatures(_frame1, keypoints);
 
 	std::cout << "Features computed in frame1: " << keypoints.size() << std::endl;
 
-	unsigned cSquareSize = 11;
-
 	// Compute projection of epipolar lines into second image.
 	std::vector<cv::Vec3f> epilines;
 	computeEpipoarLines(keypoints, epilines);
 
 	// For each epipolar line calculate equivalent feature by template matching.
-	Rect secureRegion(	cSquareSize/2 + 1, 
-						cSquareSize/2 + 1, 
-						_frame2.cols - 2*(cSquareSize/2 + 1), 
-						_frame2.rows - 2*(cSquareSize/2 + 1));
+	Rect secureRegion(	_squareSize/2 + 1, 
+						_squareSize/2 + 1, 
+						_frame2.cols - 2*(_squareSize/2 + 1), 
+						_frame2.rows - 2*(_squareSize/2 + 1));
 	Rect validLeft	= mLeftRoi & secureRegion;
 	Rect validRight = mRightRoi & secureRegion;
 
@@ -126,7 +124,7 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 	vector<vector<Point2i>> vpoints1(cNumProcs), vpoints2(cNumProcs);
 
 	// Match features using ParallelFeatureMatcher Class
-	parallel_for_(Range(0,cNumProcs), ParallelFeatureMatcher(_frame1, _frame2, keypoints, epilines, pair<int, int>(60,400), cSquareSize, vpoints1, vpoints2, validLeft, validRight));
+	parallel_for_(Range(0,cNumProcs), ParallelFeatureMatcher(_frame1, _frame2, keypoints, epilines, _disparityRange, _squareSize, vpoints1, vpoints2, validLeft, validRight));
 
 	vector<Point2i> points1, points2;
 
@@ -143,7 +141,7 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 	vector<Point3f> points3d = triangulate(points1, points2);
 	std::cout << "Points triangulated: " << points3d.size() << std::endl;
 	// Filter points using reprojection.
-	vector<Point3f> points3dFiltered = filterPoints(_frame1, _frame2, points1, points2, points3d, 3);
+	vector<Point3f> points3dFiltered = filterPoints(_frame1, _frame2, points1, points2, points3d, _maxReprojectionError);
 	std::cout << "Points Filtered: " << points3dFiltered.size() << std::endl;
 
 	return points3dFiltered;

@@ -166,7 +166,10 @@ bool MainApplication::stepGetImages(cv::Mat & _frame1, cv::Mat & _frame2) {
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point3f> &_points3d){
-	_points3d = mCameras->pointCloud(_frame1, _frame2);	
+	pair<int,int> disparityRange(mConfig["cameras"]["disparityRange"]["min"], mConfig["cameras"]["disparityRange"]["max"]);
+	int squareSize =  mConfig["cameras"]["templateSquareSize"];
+	int maxReprojectionError = mConfig["cameras"]["maxReprojectionError"];
+	_points3d = mCameras->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);	
 
 	return _points3d.size() != 0? true:false;
 }
