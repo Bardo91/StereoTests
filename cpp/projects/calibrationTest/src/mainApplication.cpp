@@ -150,12 +150,11 @@ bool MainApplication::stepUpdateMap(const vector<Point3f> &_points3d){
 	}
 	cout << "Points in selected range: " << cloud->size() << endl;
 
-	mMap.addPoints(cloud, mMap.Simple);
 	mGui->clearMap();
 	mGui->clearPcViewer();
+	mMap.addPoints(cloud, mMap.Simple);
 	mGui->drawMap(mMap.cloud().makeShared());
 	mGui->addPointToPcViewer(cloud);
-	mGui->drawCloudWithSensorDataToPcViewer(mMap.lastJoinedCloud()); // drawing of the last point cloud that has been added to the map. This is the result of the convolution filtering in addPoints. 
 	mGui->spinOnce();
 	return true;
 }
@@ -180,7 +179,6 @@ bool MainApplication::stepUpdateCameraRotation() {
 	T.at<double>(1, 0) = a(1, 3);
 	T.at<double>(2, 0) = a(2, 3);
 	//cout << "T: " << endl << T << endl;
-
 	mCameras->updateGlobalRT(R, T);	
 	mGui->drawCamera(a.block<3,3>(0,0), a.col(3));
 

@@ -101,7 +101,7 @@ void EnvironmentMap::addPointsSimple(const PointCloud<PointXYZ>::Ptr & _cloud) {
 			firstCloud->sensor_orientation_ = Quaternionf::Identity();
 			mCloudHistory.push_back(firstCloud);
 		}
-		// tranform clouds to history until there are enough to make first map from history
+		// transform clouds to history until there are enough to make first map from history
 		else if (mCloudHistory.size() < mParams.historySize) {
 			printf("This is point cloud Nr. %d of %d needed for map.\n", mCloudHistory.size() + 1, mParams.historySize);
 			transformCloudtoTargetCloudAndAddToHistory(_cloud, mCloudHistory[0]);
@@ -110,7 +110,7 @@ void EnvironmentMap::addPointsSimple(const PointCloud<PointXYZ>::Ptr & _cloud) {
 	else {
 		// Storing and processing history of point clouds.
 		//temporary cleaned cloud for calculation of the transformation. We do not want to voxel in the camera coordinate system
-		//becase we lose some points when rotating it to the map and voxeling there. That's why we rotate the original cloud
+		//because we lose some points when rotating it to the map and voxeling there. That's why we rotate the original cloud
 		transformCloudtoTargetCloudAndAddToHistory(_cloud, mCloud.makeShared());
 	}
 
@@ -118,10 +118,13 @@ void EnvironmentMap::addPointsSimple(const PointCloud<PointXYZ>::Ptr & _cloud) {
 
 	if (mCloudHistory.size() >= mParams.historySize) {
 		cout << "Map extended" << endl;
-		mLastJoinedCloud = convoluteCloudsInQueue(mCloudHistory).makeShared();
-		mLastJoinedCloud->sensor_orientation_ = mCloud.sensor_orientation_;
-		mLastJoinedCloud->sensor_origin_ = mCloud.sensor_origin_;
-		mCloud += *mLastJoinedCloud;
+		pcl::PointCloud<pcl::PointXYZ>::Ptr	lastJoinedCloud;
+		lastJoinedCloud = convoluteCloudsInQueue(mCloudHistory).makeShared();
+		lastJoinedCloud->sensor_orientation_ = mCloud.sensor_orientation_;
+		lastJoinedCloud->sensor_origin_ = mCloud.sensor_origin_;
+		mCloud += *lastJoinedCloud;
+		// drawing of the last point cloud that has been added to the map.
+		Gui::get()->drawCloudWithSensorDataToPcViewer(lastJoinedCloud);
 		mCloud = *voxel(mCloud.makeShared());
 		// Finally discard oldest cloud
 		mCloudHistory.pop_front();
@@ -133,7 +136,6 @@ void EnvironmentMap::addPointsSequential(const PointCloud<PointXYZ>::Ptr & _clou
 	// 666 we store the actual first cloud instead of considering history, this means we accept the noise from the first cloud
 	if (mCloud.size() == 0) {
 		mCloud += *voxel(filter(_cloud));
-		mLastJoinedCloud = mCloud.makeShared();
 		//mCloud.sensor_origin_ = Vector4f(0, 0, 0);
 		//mCloud.sensor_orientation_ = Quaternionf(1, 0, 0, 0);
 	}
@@ -162,8 +164,6 @@ void EnvironmentMap::addPointsSequential(const PointCloud<PointXYZ>::Ptr & _clou
 			// Now we consider only 2 clouds on history, if want to increase it, need to define points with probabilities.
 			convolutedSum = convoluteCloudsOnGrid(convolutedSum, *mCloudHistory[i]);
 
-
-		mLastJoinedCloud = convolutedSum.makeShared();
 		mCloud += convolutedSum;
 		mCloud = *voxel(mCloud.makeShared());
 		// Finally discart oldest cloud
@@ -177,7 +177,6 @@ void EnvironmentMap::addPointsAccurate(const PointCloud<PointXYZ>::Ptr & _cloud)
 	// 666 we store the actual first cloud instead of considering history, this means we accept the noise from the first cloud
 	if (mCloud.size() == 0) {
 		mCloud += *voxel(filter(_cloud));
-		mLastJoinedCloud = mCloud.makeShared();
 		//mCloud.sensor_origin_ = Vector4f(0, 0, 0);
 		//mCloud.sensor_orientation_ = Quaternionf(1, 0, 0, 0);
 	}
@@ -207,7 +206,7 @@ void EnvironmentMap::addPointsAccurate(const PointCloud<PointXYZ>::Ptr & _cloud)
 			convolutedSum = convoluteCloudsOnGrid(convolutedSum, *mCloudHistory[i]);
 
 
-		mLastJoinedCloud = convolutedSum.makeShared();
+
 		mCloud += convolutedSum;
 		mCloud = *voxel(mCloud.makeShared());
 		
@@ -289,11 +288,6 @@ vector<PointIndices> EnvironmentMap::clusterCloud(const PointCloud<PointXYZ>::Pt
 //---------------------------------------------------------------------------------------------------------------------
 PointCloud<PointXYZ> EnvironmentMap::cloud() {
 	return mCloud;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-PointCloud<PointXYZ>::Ptr EnvironmentMap::lastJoinedCloud() {
-	return mLastJoinedCloud;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -91,7 +91,6 @@ public:		// Public interface
 	/// Get point cloud
 	pcl::PointCloud<pcl::PointXYZ> cloud();
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr lastJoinedCloud();
 
 	Eigen::Matrix4f lastView2MapTransformation();
 
@@ -128,7 +127,6 @@ private:	// Members
 
 	std::deque<pcl::PointCloud<pcl::PointXYZ>::Ptr>		mCloudHistory;
 	pcl::PointCloud<pcl::PointXYZ>						mCloud;
-	pcl::PointCloud<pcl::PointXYZ>::Ptr					mLastJoinedCloud;
 	pcl::VoxelGrid<pcl::PointXYZ>						mVoxelGrid;
 	pcl::StatisticalOutlierRemoval<pcl::PointXYZ>		mOutlierRemoval;
 	pcl::IterativeClosestPointNonLinear<pcl::PointXYZ, pcl::PointXYZ>	mPcJoiner;
