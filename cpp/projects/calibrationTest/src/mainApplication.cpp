@@ -148,6 +148,7 @@ bool MainApplication::stepUpdateMap(const vector<Point3f> &_points3d){
 			}
 		}
 	}
+	cout << "Points in selected range: " << cloud->size() << endl;
 
 	mMap.addPoints(cloud, mMap.Simple);
 	mGui->clearMap();
