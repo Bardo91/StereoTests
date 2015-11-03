@@ -56,6 +56,9 @@ public:
 	/// Get a new frame from the camera
 	cv::Mat frame(bool _undistort = false);
 
+	/// Undistort given image using internal parameters
+	cv::Mat undistort(const cv::Mat &_frame);
+
 	/// Return true if camera is calibrated.
 	bool isCalibrated() const;
 

@@ -6,6 +6,9 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "mainApplication.h"
+#include "TimeTools.h"
+#include "graph2d.h"
+
 
 #include <opencv2/opencv.hpp>
 
@@ -14,12 +17,14 @@ int main(int _argc, char** _argv) {
 		std::cerr << "Not enough input arguments" << std::endl;
 	}
 
+	
 	MainApplication app(_argc, _argv);
 
 	unsigned stepNumber = 0;
 	while (true) {
-		app.step();
 		cout << "<----------------------------- Step Number: " << stepNumber++ << " ----------------------------->" << endl;
+		
+		app.step();
 		cv::waitKey();
 	}
 

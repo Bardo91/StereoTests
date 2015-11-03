@@ -19,12 +19,13 @@ using namespace pcl;
 using namespace std;
 
 //---------------------------------------------------------------------------------------------------------------------
-MainApplication::MainApplication(int _argc, char ** _argv) {
+MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time") {
 	bool result = true;
 	result &= loadArguments(_argc, _argv);
 	result &= initCameras();
 	result &= initGui();
 	result &= init3dMap();
+	mTimer = BOViL::STime::get();
 
 	assert(result);
 }
@@ -32,17 +33,32 @@ MainApplication::MainApplication(int _argc, char ** _argv) {
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::step() {
 	Mat frame1, frame2;
+	double t0 = mTimer->getTime();
 	if(!stepGetImages(frame1, frame2)) return false;
-
-	std::vector<cv::Point3f> points3d;
-	if(!stepTriangulatePoints(frame1, frame2, points3d)) return false;
-
-	if(!stepUpdateMap(points3d)) return false;
-
+	double t1 = mTimer->getTime();
+	PointCloud<PointXYZ>::Ptr cloud;
+	if(!stepTriangulatePoints(frame1, frame2, cloud)) return false;
+	double t2 = mTimer->getTime();
+	if(!stepUpdateMap(cloud)) return false;
+	double t3 = mTimer->getTime();
 	if(!stepUpdateCameraRotation()) return false;
-
+	double t4 = mTimer->getTime();
 	if(!stepGetCandidates()) return false;
+	double t5 = mTimer->getTime();
 
+	tGetImages.push_back(t1-t0);
+	tTriangulate.push_back(tGetImages[tGetImages.size()-1] + t2-t1);
+	tUpdateMap.push_back(tTriangulate[tTriangulate.size()-1] + t3-t2);
+	tUpdCam.push_back(tUpdateMap[tUpdateMap.size()-1] + t4-t3);
+	tCandidates.push_back(tUpdCam[tUpdCam.size()-1] + t5-t4);
+
+	mTimePlot.clean();
+	mTimePlot.draw(tGetImages	, 255, 0, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
+	mTimePlot.draw(tTriangulate	, 0, 255, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
+	mTimePlot.draw(tUpdateMap, 0, 0, 255,	BOViL::plot::Graph2d::eDrawType::Lines);
+	mTimePlot.draw(tUpdCam		, 255, 255, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
+	mTimePlot.draw(tCandidates	, 0, 255, 255,	BOViL::plot::Graph2d::eDrawType::Lines);
+	mTimePlot.show();
 	return true;
 }
 
@@ -67,6 +83,7 @@ bool MainApplication::initCameras(){
 	mCameras->roi(	Rect(leftRoi["x"],leftRoi["y"],leftRoi["width"],leftRoi["height"]), 
 					Rect(rightRoi["x"],rightRoi["y"],rightRoi["width"],rightRoi["height"]));
 	mCameras->load(mConfig["cameras"]["paramFile"]);
+	mCameras->rangeZ(mConfig["cameras"]["pointRanges"]["z"]["min"], mConfig["cameras"]["pointRanges"]["z"]["max"]);
 	return true;
 }
 
@@ -102,59 +119,69 @@ bool MainApplication::init3dMap(){
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepGetImages(cv::Mat & _frame1, cv::Mat & _frame2) {
-	mCameras->frames(_frame1, _frame2, StereoCameras::eFrameFixing::Undistort);
-	if (_frame1.rows == 0)
-		return false;
+	bool isBlurry1, isBlurry2;
 
-	mGui->updateStereoImages(_frame1, _frame2);
-	Rect leftRoi = mCameras->roi(true);
-	Rect rightRoi = mCameras->roi(false);
-	mGui->drawBox(leftRoi, true, 0,255,0);
-	mGui->drawBox(rightRoi, false, 0,255,0);
-
-	cvtColor(_frame1, _frame1, CV_BGR2GRAY);
-	cvtColor(_frame2, _frame2, CV_BGR2GRAY);
-
-	bool isBlurry1 = isBlurry(_frame1, mConfig["cameras"]["blurThreshold"]);
-	bool isBlurry2 = isBlurry(_frame2, mConfig["cameras"]["blurThreshold"]);
-	if(isBlurry1) 
-		mGui->putBlurry(true);
-	if(isBlurry2) 
-		mGui->putBlurry(false);
+	_frame1 = mCameras->camera(0).frame();
+	if (_frame1.rows != 0) {
+		isBlurry1  = isBlurry(_frame1, mConfig["cameras"]["blurThreshold"]);
+	}else{ return false; }
 	
-	if(isBlurry1 || isBlurry2)
+	_frame2 = mCameras->camera(1).frame();
+	if (_frame2.rows != 0) {
+		isBlurry2  = isBlurry(_frame2, mConfig["cameras"]["blurThreshold"]);
+	}else{ return false; }
+
+	if (isBlurry1 || isBlurry2) {	// Splitted only for drawing purposes... 666 Dont like it too much.
+		mGui->updateStereoImages(_frame1, _frame2);
+		
+		if(isBlurry1) 
+			mGui->putBlurry(true);
+		if(isBlurry2) 
+			mGui->putBlurry(false);
+
+		Rect leftRoi = mCameras->roi(true);
+		Rect rightRoi = mCameras->roi(false);
+		mGui->drawBox(leftRoi, true, 0,255,0);
+		mGui->drawBox(rightRoi, false, 0,255,0);
+
+		cvtColor(_frame1, _frame1, CV_BGR2GRAY);
+		cvtColor(_frame2, _frame2, CV_BGR2GRAY);
+		
 		return false;
+	} else {
+		_frame1 = mCameras->camera(0).undistort(_frame1);
+		_frame2 = mCameras->camera(1).undistort(_frame2);
 
-	return true;
-}
+		mGui->updateStereoImages(_frame1, _frame2);
+		Rect leftRoi = mCameras->roi(true);
+		Rect rightRoi = mCameras->roi(false);
+		mGui->drawBox(leftRoi, true, 0,255,0);
+		mGui->drawBox(rightRoi, false, 0,255,0);
 
-//---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point3f> &_points3d){
-	_points3d = mCameras->pointCloud(_frame1, _frame2);	
-
-	return _points3d.size() != 0? true:false;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepUpdateMap(const vector<Point3f> &_points3d){
-	PointCloud<PointXYZ>::Ptr cloud (new PointCloud<PointXYZ>());
-	for (unsigned i = 0; i < _points3d.size(); i++) {
-		if (_points3d[i].x > -3 && _points3d[i].x < 3) {
-			if (_points3d[i].y > -3 && _points3d[i].y < 3) {
-				if (_points3d[i].z > 0.65 && _points3d[i].z < 1.5) {
-					PointXYZ point(_points3d[i].x, _points3d[i].y, _points3d[i].z);
-					cloud->push_back(point);
-				}
-			}
-		}
+		cvtColor(_frame1, _frame1, CV_BGR2GRAY);
+		cvtColor(_frame2, _frame2, CV_BGR2GRAY);
+		
+		return true;
 	}
-	cout << "Points in selected range: " << cloud->size() << endl;
+}
 
+//---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, PointCloud<PointXYZ>::Ptr &_points3d){
+	pair<int,int> disparityRange(mConfig["cameras"]["disparityRange"]["min"], mConfig["cameras"]["disparityRange"]["max"]);
+	int squareSize =  mConfig["cameras"]["templateSquareSize"];
+	int maxReprojectionError = mConfig["cameras"]["maxReprojectionError"];
+	_points3d = mCameras->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);	
+
+	return _points3d->size() != 0? true:false;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud){
 	mGui->clearMap();
 	mGui->clearPcViewer();
 	mMap.addPoints(cloud, mMap.Simple);
 	mGui->drawMap(mMap.cloud().makeShared());
-	mGui->addPointToPcViewer(cloud);
+	mGui->addPointToPcViewer(_cloud);
 	mGui->spinOnce();
 	return true;
 }

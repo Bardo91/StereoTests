@@ -11,6 +11,8 @@
 #include "Gui.h"
 #include "EnvironmentMap.h"
 #include "StereoCameras.h"
+#include "TimeTools.h"
+#include "graph2d.h"
 
 #include <cjson/json.h>
 #include <pcl/point_cloud.h>
@@ -28,8 +30,8 @@ private:
 	bool init3dMap		();
 
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
-	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point3f> &_points3d);
-	bool stepUpdateMap(const std::vector<cv::Point3f> &_points3d);
+	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
+	bool stepUpdateMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
 	bool stepUpdateCameraRotation();
 	bool stepGetCandidates();
 
@@ -37,6 +39,9 @@ private:
 	StereoCameras	*mCameras;
 	EnvironmentMap	mMap;
 	Gui				*mGui;
+	BOViL::plot::Graph2d mTimePlot;
+	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates;
+	BOViL::STime *mTimer;
 
 	cjson::Json mConfig;
 };

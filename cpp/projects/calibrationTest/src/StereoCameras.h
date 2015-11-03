@@ -10,6 +10,8 @@
 
 #include "Camera.h"
 
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include <opencv2/opencv.hpp>
 #include <vector>
 
@@ -59,7 +61,7 @@ public:
 	/// \param _frame1: first image of stereo pair
 	/// \param _frame2: second image of stereo pair
 	/// \return array of 3d points
-	std::vector<cv::Point3f> pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2, std::pair<int, int> _disparityRange, int _squareSize, int _maxReprojectionError);
 
 	/// Get one of the cameras.
 	/// \param _index: 0 for first camera; 1 for the second one.
@@ -103,23 +105,28 @@ public:
 	/// Get the global camera translation
 	cv::Mat globalTranslation() const;
 
+	/// Set allowed range on Z for 3d points
+	void rangeZ(double _min, double _max);
+
 private:
 	void calibrateStereo(const std::vector<std::vector<cv::Point2f>> &_imagePoints1, const std::vector<std::vector<cv::Point2f>> &_imagePoints2, cv::Size _imageSize, cv::Size _boardSize, float _squareSize);
 
 	void computeFeatures(const cv::Mat &_frame, std::vector<cv::Point2i> &_features);
 	void computeEpipoarLines(const std::vector<cv::Point2i> &_points, std::vector<cv::Vec3f> &_epilines);
 
-	cv::Point2i findMatch(const cv::Mat &_frame1, const cv::Mat &_frame2, const cv::Point2i &_point, const cv::Vec3f &_epiline, const std::pair<int, int> _disparityRange, const int _squareSize = 11);
-
 	std::vector<cv::Point3f> triangulate(const std::vector<cv::Point2i> &_points1, const std::vector<cv::Point2i> &_points2);
 
 	std::vector<cv::Point3f> filterPoints(const cv::Mat &_frame1, const cv::Mat &_frame2, const std::vector<cv::Point2i> &_points1, const std::vector<cv::Point2i> &_points2, const std::vector<cv::Point3f> &_points3d, int _maxReprojectionError);
+
 private:
 	Camera mCamera1, mCamera2;
 	cv::Mat mR, mT, mE, mF;
 	cv::Mat mGlobalR, mGlobalT; //these describe the transformation from the world coordinate system, if it's used
 
 	cv::Rect mLeftRoi, mRightRoi;
+
+	// Allowed range for 3d points.
+	double mMinZ, mMaxZ;
 
 	bool mCalibrated = false;
 };
