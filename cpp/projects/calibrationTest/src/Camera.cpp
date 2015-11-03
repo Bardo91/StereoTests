@@ -111,9 +111,17 @@ Mat Camera::frame(bool _undistort) {
 	mDriver >> frame;
 
 	if (frame.rows != 0 && _undistort && mCalibrated) {
-		undistort(frame, undistorted, mMatrix, mDistCoeffs);
+		undistorted = undistort(frame);
+		return undistorted;
 	}
 
+	return frame;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+cv::Mat Camera::undistort(const cv::Mat & _frame) {
+	Mat undistorted;
+	cv::undistort(_frame, undistorted, mMatrix, mDistCoeffs);;
 	return undistorted;
 }
 
