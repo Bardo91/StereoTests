@@ -223,7 +223,7 @@ bool MainApplication::stepGetCandidates(){
 
 	std::vector<pcl::PointIndices> mClusterIndices;
 	mClusterIndices = mMap.clusterCloud(cropedCloud);
-
+	mGui->addCluster(mMap.cloud().makeShared(), 1, 255, 255, 255);	// 666 Do it properly using addMap method.
 	std::vector<ObjectCandidate> candidates;
 	//create candidates from indices
 	for (pcl::PointIndices indices : mClusterIndices)
@@ -233,5 +233,6 @@ bool MainApplication::stepGetCandidates(){
 		if(mMap.distanceToPlane(candidate.cloud(), plane) < 0.05)	// Draw only candidates close to the floor.
 			mGui->drawCandidate(candidate);	
 	}
+
 	return true;
 }
