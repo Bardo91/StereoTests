@@ -30,8 +30,8 @@ private:
 	bool init3dMap		();
 
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
-	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point3f> &_points3d);
-	bool stepUpdateMap(const std::vector<cv::Point3f> &_points3d);
+	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
+	bool stepUpdateMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
 	bool stepUpdateCameraRotation();
 	bool stepGetCandidates();
 

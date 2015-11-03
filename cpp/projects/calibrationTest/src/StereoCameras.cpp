@@ -10,6 +10,7 @@
 
 using namespace cv;
 using namespace std;
+using namespace pcl;
 
 //---------------------------------------------------------------------------------------------------------------------
 StereoCameras::StereoCameras(unsigned _indexCamera1, unsigned _indexCamera2): mCamera1(_indexCamera1), mCamera2(_indexCamera2) {
@@ -58,10 +59,6 @@ void StereoCameras::frames(Mat & _frame1, Mat & _frame2,  eFrameFixing _fixes) {
 
 		// Undirstort and rectify images
 		Mat rectifiedFrame1, rectifiedFrame2;
-		//cout << rmap[0][0] << endl;
-		//cout << rmap[0][1] << endl;
-		//cout << rmap[1][0] << endl;
-		//cout << rmap[1][1] << endl;
 
 		remap(_frame1, _frame1, rmap[0][0], rmap[0][1], INTER_LINEAR);
 		remap(_frame2, _frame2, rmap[1][0], rmap[1][1], INTER_LINEAR);
@@ -100,7 +97,7 @@ cv::Rect StereoCameras::roi(bool _isLeft) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2, pair<int, int> _disparityRange, int _squareSize, int _maxReprojectionError) {
+PointCloud<PointXYZ>::Ptr StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2, pair<int, int> _disparityRange, int _squareSize, int _maxReprojectionError) {
 	// Compute keypoint only in first image
 	vector<Point2i> keypoints;
 	computeFeatures(_frame1, keypoints);
@@ -144,7 +141,16 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 	vector<Point3f> points3dFiltered = filterPoints(_frame1, _frame2, points1, points2, points3d, _maxReprojectionError);
 	std::cout << "Points Filtered: " << points3dFiltered.size() << std::endl;
 
-	return points3dFiltered;
+	// Filter points by range.
+	PointCloud<PointXYZ>::Ptr cloud (new PointCloud<PointXYZ>());
+	for (unsigned i = 0; i < points3dFiltered.size(); i++) {
+		if (points3dFiltered[i].z > mMinZ && points3dFiltered[i].z < mMaxZ) {
+			PointXYZ point(points3dFiltered[i].x, points3dFiltered[i].y, points3dFiltered[i].z);
+			cloud->push_back(point);
+		}
+	}
+
+	return cloud;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -221,6 +227,11 @@ cv::Mat StereoCameras::globalRotation() const
 cv::Mat StereoCameras::globalTranslation() const
 {
 	return mGlobalT;
+}
+
+void StereoCameras::rangeZ(double _min, double _max){ 
+	mMinZ = _min;
+	mMaxZ = _max;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

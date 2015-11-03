@@ -36,10 +36,10 @@ bool MainApplication::step() {
 	double t0 = mTimer->getTime();
 	if(!stepGetImages(frame1, frame2)) return false;
 	double t1 = mTimer->getTime();
-	std::vector<cv::Point3f> points3d;
-	if(!stepTriangulatePoints(frame1, frame2, points3d)) return false;
+	PointCloud<PointXYZ>::Ptr cloud;
+	if(!stepTriangulatePoints(frame1, frame2, cloud)) return false;
 	double t2 = mTimer->getTime();
-	if(!stepUpdateMap(points3d)) return false;
+	if(!stepUpdateMap(cloud)) return false;
 	double t3 = mTimer->getTime();
 	if(!stepUpdateCameraRotation()) return false;
 	double t4 = mTimer->getTime();
@@ -83,6 +83,7 @@ bool MainApplication::initCameras(){
 	mCameras->roi(	Rect(leftRoi["x"],leftRoi["y"],leftRoi["width"],leftRoi["height"]), 
 					Rect(rightRoi["x"],rightRoi["y"],rightRoi["width"],rightRoi["height"]));
 	mCameras->load(mConfig["cameras"]["paramFile"]);
+	mCameras->rangeZ(mConfig["cameras"]["pointRanges"]["z"]["min"], mConfig["cameras"]["pointRanges"]["z"]["max"]);
 	return true;
 }
 
@@ -165,34 +166,22 @@ bool MainApplication::stepGetImages(cv::Mat & _frame1, cv::Mat & _frame2) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, std::vector<cv::Point3f> &_points3d){
+bool MainApplication::stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, PointCloud<PointXYZ>::Ptr &_points3d){
 	pair<int,int> disparityRange(mConfig["cameras"]["disparityRange"]["min"], mConfig["cameras"]["disparityRange"]["max"]);
 	int squareSize =  mConfig["cameras"]["templateSquareSize"];
 	int maxReprojectionError = mConfig["cameras"]["maxReprojectionError"];
 	_points3d = mCameras->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);	
 
-	return _points3d.size() != 0? true:false;
+	return _points3d->size() != 0? true:false;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepUpdateMap(const vector<Point3f> &_points3d){
-	PointCloud<PointXYZ>::Ptr cloud (new PointCloud<PointXYZ>());
-	for (unsigned i = 0; i < _points3d.size(); i++) {
-		if (_points3d[i].x > -3 && _points3d[i].x < 3) {
-			if (_points3d[i].y > -3 && _points3d[i].y < 3) {
-				if (_points3d[i].z > 0.65 && _points3d[i].z < 1.5) {
-					PointXYZ point(_points3d[i].x, _points3d[i].y, _points3d[i].z);
-					cloud->push_back(point);
-				}
-			}
-		}
-	}
-
-	mMap.addPoints(cloud, mMap.Simple);
+bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud){
+	mMap.addPoints(_cloud, mMap.Simple);
 	mGui->clearMap();
 	mGui->clearPcViewer();
 	mGui->drawMap(mMap.cloud().makeShared());
-	mGui->addPointToPcViewer(cloud);
+	mGui->addPointToPcViewer(_cloud);
 	return true;
 }
 
