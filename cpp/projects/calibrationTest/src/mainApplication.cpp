@@ -179,7 +179,7 @@ bool MainApplication::stepTriangulatePoints(const cv::Mat &_frame1, const cv::Ma
 bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud){
 	mGui->clearMap();
 	mGui->clearPcViewer();
-	mMap.addPoints(cloud, mMap.Simple);
+	mMap.addPoints(_cloud, mMap.Simple);
 	mGui->drawMap(mMap.cloud().makeShared());
 	mGui->addPointToPcViewer(_cloud);
 	mGui->spinOnce();
