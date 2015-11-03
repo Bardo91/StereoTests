@@ -137,10 +137,9 @@ vector<Point3f> StereoCameras::pointCloud(const cv::Mat &_frame1, const cv::Mat 
 	std::cout << "Features matched: " << points1.size() << std::endl;
 	// Triangulate points using features in both images.
 	vector<Point3f> points3d = triangulate(points1, points2);
-	std::cout << "Points triangulated: " << points3d.size() << std::endl;
 	// Filter points using reprojection.
 	vector<Point3f> points3dFiltered = filterPoints(_frame1, _frame2, points1, points2, points3d, 3);
-	std::cout << "Points Filtered: " << points3dFiltered.size() << std::endl;
+	std::cout << "Points Filtered with reprojection: " << points3dFiltered.size() << std::endl;
 
 	return points3dFiltered;
 }

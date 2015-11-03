@@ -109,6 +109,11 @@ public:		// Public interface
 	/// \param _b: blue (0-255) channel of the final desired color for the _boxes
 	void reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, unsigned _r = 255, unsigned _g = 255, unsigned _b = 255);
 
+	/// needed to update the viewer
+	void spinOnce();
+
+	/// the input cloud should have sensor orientation and origin info. Using the inverse of that we transform the point cloud to the current camera view and show it there
+	void drawCloudWithSensorDataToPcViewer(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 
 private:	// Private methods
 	Gui(std::string _name, StereoCameras& _stereoCameras);

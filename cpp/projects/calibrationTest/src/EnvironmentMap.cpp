@@ -116,12 +116,14 @@ void EnvironmentMap::addPointsSimple(const PointCloud<PointXYZ>::Ptr & _cloud) {
 
 	addOrientationAndOriginDataToMap(*mCloudHistory.rbegin());
 
-
 	if (mCloudHistory.size() >= mParams.historySize) {
 		cout << "Map extended" << endl;
-		mCloud += convoluteCloudsInQueue(mCloudHistory);
+		mLastJoinedCloud = convoluteCloudsInQueue(mCloudHistory).makeShared();
+		mLastJoinedCloud->sensor_orientation_ = mCloud.sensor_orientation_;
+		mLastJoinedCloud->sensor_origin_ = mCloud.sensor_origin_;
+		mCloud += *mLastJoinedCloud;
 		mCloud = *voxel(mCloud.makeShared());
-		// Finally discart oldest cloud
+		// Finally discard oldest cloud
 		mCloudHistory.pop_front();
 	}
 }

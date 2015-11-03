@@ -70,12 +70,12 @@ void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f
 	camera.push_back(PointXYZ(-0.2, -0.2, 0.4));
 	camera.push_back(PointXYZ(0.2, -0.2, 0.4));
 
-	// Rotate and move camara to the desired position and orientation.
+	// Rotate and move camera to the desired position and orientation.
 	Matrix4f transformation = Matrix4f::Zero();
 	transformation << _orientation;
 	transformation.col(3) << _position(0), _position(1), _position(2), 1;
 
-	std::cout << transformation << std::endl;
+	//std::cout << transformation << std::endl;
 
 	pcl::PointCloud<pcl::PointXYZ> cameraRotated;
 	transformPointCloud(camera, cameraRotated, transformation);
@@ -262,9 +262,24 @@ void Gui::reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, unsig
 	drawPolygon(convexHull2, false, _r, _g, _b);
 }
 
+void Gui::spinOnce()
+{
+	m3dViewer->spinOnce();
+}
+
 //---------------------------------------------------------------------------------------------------------------------
 // Private methods
 //---------------------------------------------------------------------------------------------------------------------
+
+void Gui::drawCloudWithSensorDataToPcViewer(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud)
+{
+	if (_cloud) {
+		PointCloud<PointXYZ> transformed;
+		transformPointCloud(*_cloud, transformed, -(_cloud->sensor_origin_.block<3,1>(0,0)), _cloud->sensor_orientation_.inverse());
+		addPointToPcViewer(transformed.makeShared(), 3, 255, 10, 10);
+	}
+		
+}
 
 Gui::Gui(string _name, StereoCameras& _stereoCameras): mName(_name), m3dViewer(new PCLVisualizer (mName)), mStereoCameras(_stereoCameras) {
 	m3dViewer->initCameraParameters ();
