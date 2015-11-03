@@ -118,30 +118,50 @@ bool MainApplication::init3dMap(){
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepGetImages(cv::Mat & _frame1, cv::Mat & _frame2) {
-	mCameras->frames(_frame1, _frame2, StereoCameras::eFrameFixing::Undistort);
-	if (_frame1.rows == 0)
-		return false;
+	bool isBlurry1, isBlurry2;
 
-	mGui->updateStereoImages(_frame1, _frame2);
-	Rect leftRoi = mCameras->roi(true);
-	Rect rightRoi = mCameras->roi(false);
-	mGui->drawBox(leftRoi, true, 0,255,0);
-	mGui->drawBox(rightRoi, false, 0,255,0);
-
-	cvtColor(_frame1, _frame1, CV_BGR2GRAY);
-	cvtColor(_frame2, _frame2, CV_BGR2GRAY);
-
-	bool isBlurry1 = isBlurry(_frame1, mConfig["cameras"]["blurThreshold"]);
-	bool isBlurry2 = isBlurry(_frame2, mConfig["cameras"]["blurThreshold"]);
-	if(isBlurry1) 
-		mGui->putBlurry(true);
-	if(isBlurry2) 
-		mGui->putBlurry(false);
+	_frame1 = mCameras->camera(0).frame();
+	if (_frame1.rows != 0) {
+		isBlurry1  = isBlurry(_frame1, mConfig["cameras"]["blurThreshold"]);
+	}else{ return false; }
 	
-	if(isBlurry1 || isBlurry2)
-		return false;
+	_frame2 = mCameras->camera(1).frame();
+	if (_frame2.rows != 0) {
+		isBlurry2  = isBlurry(_frame2, mConfig["cameras"]["blurThreshold"]);
+	}else{ return false; }
 
-	return true;
+	if (isBlurry1 || isBlurry2) {	// Splitted only for drawing purposes... 666 Dont like it too much.
+		mGui->updateStereoImages(_frame1, _frame2);
+		
+		if(isBlurry1) 
+			mGui->putBlurry(true);
+		if(isBlurry2) 
+			mGui->putBlurry(false);
+
+		Rect leftRoi = mCameras->roi(true);
+		Rect rightRoi = mCameras->roi(false);
+		mGui->drawBox(leftRoi, true, 0,255,0);
+		mGui->drawBox(rightRoi, false, 0,255,0);
+
+		cvtColor(_frame1, _frame1, CV_BGR2GRAY);
+		cvtColor(_frame2, _frame2, CV_BGR2GRAY);
+		
+		return false;
+	} else {
+		_frame1 = mCameras->camera(0).undistort(_frame1);
+		_frame2 = mCameras->camera(1).undistort(_frame2);
+
+		mGui->updateStereoImages(_frame1, _frame2);
+		Rect leftRoi = mCameras->roi(true);
+		Rect rightRoi = mCameras->roi(false);
+		mGui->drawBox(leftRoi, true, 0,255,0);
+		mGui->drawBox(rightRoi, false, 0,255,0);
+
+		cvtColor(_frame1, _frame1, CV_BGR2GRAY);
+		cvtColor(_frame2, _frame2, CV_BGR2GRAY);
+		
+		return true;
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
