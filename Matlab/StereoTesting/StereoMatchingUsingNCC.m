@@ -8,8 +8,8 @@ I2 = imread('testImages/img_cam2_4.jpg');
 figure(1)
 imshow([I1,I2])
 
-maxReprojectionError = 1; %1 is good for harris
-harrisMinQuality = 0.000001; %going lower gives many more features, they are usefull
+maxReprojectionError = 0.5; %1 is good for harris
+harrisMinQuality = 0.0001; %going lower gives many more features, they are usefull
 harrisFilterSize = 3; %3 is minimum and gives the most features
 mserThresholdDelta = 1; %(0 100] intensity step size between regions in %. Less gives more regions
 mserRegionAreaRange = [5 5000];
@@ -90,7 +90,7 @@ plotCamera('Location',[0 0 0],'Orientation',eye(3),'Opacity',0, 'Size', 50, ...
     'Color', 'r', 'Label', '1')
 hold on
 grid on
-plotCamera('Location',stereoParams.TranslationOfCamera2, 'Orientation',...
+plotCamera('Location',-stereoParams.TranslationOfCamera2, 'Orientation',...
     stereoParams.RotationOfCamera2, 'Opacity',0, 'Size', 50, ...
     'Color', 'b', 'Label', '2')
 showPointCloud(points3D, 'VerticalAxis', 'Y','VerticalAxisDir', 'down', 'MarkerSize', 45);

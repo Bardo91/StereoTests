@@ -1,5 +1,5 @@
 close all
-load calibrationparametersC.mat
+%load calibrationparametersC.mat
 
 % Read in the stereo pair of images.
 I1 = imread('C:\Users\GRVC\Desktop\OnBoardStereoMultiTools_1/cam1_img760.jpg');

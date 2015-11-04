@@ -92,8 +92,6 @@ public:		// Public interface
 	pcl::PointCloud<pcl::PointXYZ> cloud();
 
 
-	Eigen::Matrix4f lastView2MapTransformation();
-
 	/// Look for planes in the given pointcloud.
 	pcl::ModelCoefficients  extractFloor(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 
@@ -108,6 +106,10 @@ public:		// Public interface
 
 	/// voxelate current map/pointcloud.
 	pcl::PointCloud<pcl::PointXYZ>::Ptr voxel(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
+
+	/// point clouds can have orientation and origin data inside, but sometimes we need the Matrix4f form. 
+	/// This function returns that matrix
+	Eigen::Matrix4f transformationFromSensor(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 private:	// Private methods
 	// Calculate transformation between two point cloud using ICP-NL algorithm.
 	Eigen::Matrix4f getTransformationBetweenPcs(const pcl::PointCloud<pcl::PointXYZ> &_newCloud,
@@ -136,13 +138,11 @@ private:	// Members
 	const double cMaxAngle			= M_PI/180*1;	// 1º
 	const double cMaxTranslation	= 5;			// 10 mm 
 
-	Eigen::Matrix4f mLastView2MapTransformation = Eigen::Matrix4f::Identity();
-
 	//history calculation options
 	void addPointsSimple(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud);
 	void addPointsSequential(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud);
 	void addPointsAccurate(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud);
-	void transformCloudtoTargetCloudAndAddToHistory(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr & _target);
+	void transformCloudtoTargetCloudAndAddToHistory(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr & _target, const Eigen::Matrix4f &_guess);
 	pcl::PointCloud<pcl::PointXYZ> convoluteCloudsInQueue(std::deque<pcl::PointCloud<pcl::PointXYZ>::Ptr> _cloudQueue);
 	void addOrientationAndOriginDataToMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud);
 	Eigen::Vector3f originInverse(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
