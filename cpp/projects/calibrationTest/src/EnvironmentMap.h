@@ -136,7 +136,6 @@ private:	// Members
 	const double cMaxAngle			= M_PI/180*1;	// 1º
 	const double cMaxTranslation	= 5;			// 10 mm 
 
-	Eigen::Matrix4f mPreviousCloud2MapTransformation = Eigen::Matrix4f::Identity();
 	Eigen::Matrix4f mLastView2MapTransformation = Eigen::Matrix4f::Identity();
 
 	//history calculation options
@@ -146,6 +145,8 @@ private:	// Members
 	void transformCloudtoTargetCloudAndAddToHistory(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr & _target);
 	pcl::PointCloud<pcl::PointXYZ> convoluteCloudsInQueue(std::deque<pcl::PointCloud<pcl::PointXYZ>::Ptr> _cloudQueue);
 	void addOrientationAndOriginDataToMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cloud);
+	Eigen::Vector3f originInverse(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
+	Eigen::Quaternionf sensorInverse(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 };	// class EnvironmentMap
 
 #endif	//	ENVIRONMENTMAP_H_

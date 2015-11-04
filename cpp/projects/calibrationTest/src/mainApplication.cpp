@@ -207,7 +207,7 @@ bool MainApplication::stepUpdateCameraRotation() {
 	T.at<double>(2, 0) = a(2, 3);
 	//cout << "T: " << endl << T << endl;
 	mCameras->updateGlobalRT(R, T);	
-	mGui->drawCamera(a.block<3,3>(0,0), a.col(3));
+	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
 
 	return true;
 }

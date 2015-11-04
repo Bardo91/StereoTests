@@ -268,20 +268,6 @@ void Gui::spinOnce()
 	m3dViewer->spinOnce();
 }
 
-//---------------------------------------------------------------------------------------------------------------------
-// Private methods
-//---------------------------------------------------------------------------------------------------------------------
-
-void Gui::drawCloudWithSensorDataToPcViewer(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud)
-{
-	if (_cloud) {
-		PointCloud<PointXYZ> transformed;
-		transformPointCloud(*_cloud, transformed, -(_cloud->sensor_origin_.block<3,1>(0,0)), _cloud->sensor_orientation_.inverse());
-		addPointToPcViewer(transformed.makeShared(), 3, 255, 10, 10);
-	}
-		
-}
-
 Gui::Gui(string _name, StereoCameras& _stereoCameras): mName(_name), m3dViewer(new PCLVisualizer (mName)), mStereoCameras(_stereoCameras) {
 	m3dViewer->initCameraParameters ();
 	m3dViewer->addCoordinateSystem (0.5);
