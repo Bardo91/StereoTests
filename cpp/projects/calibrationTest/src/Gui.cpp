@@ -275,7 +275,7 @@ void Gui::drawCloudWithSensorDataToPcViewer(const pcl::PointCloud<pcl::PointXYZ>
 {
 	if (_cloud) {
 		PointCloud<PointXYZ> transformed;
-		transformPointCloud(*_cloud, transformed, -(_cloud->sensor_origin_.block<3,1>(0,0)), _cloud->sensor_orientation_.inverse());
+		transformPointCloud(*_cloud, transformed, -(_cloud->sensor_orientation_.inverse()*_cloud->sensor_origin_.block<3,1>(0,0)), _cloud->sensor_orientation_.inverse());
 		addPointToPcViewer(transformed.makeShared(), 3, 255, 10, 10);
 	}
 		

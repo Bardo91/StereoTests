@@ -114,19 +114,25 @@ void EnvironmentMap::addPointsSimple(const PointCloud<PointXYZ>::Ptr & _cloud) {
 		transformCloudtoTargetCloudAndAddToHistory(_cloud, mCloud.makeShared());
 	}
 
-	addOrientationAndOriginDataToMap(*mCloudHistory.rbegin());
+	addOrientationAndOriginDataToMap(mCloudHistory.back());
 
 	if (mCloudHistory.size() >= mParams.historySize) {
 		cout << "Map extended" << endl;
 		pcl::PointCloud<pcl::PointXYZ>::Ptr	lastJoinedCloud;
 		lastJoinedCloud = convoluteCloudsInQueue(mCloudHistory).makeShared();
 		mCloud += *lastJoinedCloud;
+		PointCloud<PointXYZ> test;
+		PointCloud<PointXYZ> PointCloudCameraCS;
+		Matrix4f tran = mLastView2MapTransformation.inverse();
+		cout << "MlastView : " << endl << mLastView2MapTransformation << endl;
+		cout << "Inverse:" << endl << tran << endl;
+		//lastJoinedCloud->sensor_orientation_ = Quaternionf(tran.block<3, 3>(0, 0));
+		//lastJoinedCloud->sensor_origin_ = tran.col(3);
 		lastJoinedCloud->sensor_orientation_ = mCloud.sensor_orientation_;
 		lastJoinedCloud->sensor_origin_ = mCloud.sensor_origin_;
 		// drawing of the last point cloud that has been added to the map.
-		PointCloud<PointXYZ> test;
-		Matrix4f tran = mLastView2MapTransformation.inverse();
 		transformPointCloud(*lastJoinedCloud, test, tran);
+		//transformPointCloud(*lastJoinedCloud,PointCloudCameraCS,)
 		Gui::get()->drawCloudWithSensorDataToPcViewer(lastJoinedCloud);
 		Gui::get()->addPointToPcViewer(test.makeShared(), 3, 1, 255, 1);
 		mCloud = *voxel(mCloud.makeShared());
