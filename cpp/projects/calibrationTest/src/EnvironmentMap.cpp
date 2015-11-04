@@ -145,7 +145,7 @@ void EnvironmentMap::addPointsSequential(const PointCloud<PointXYZ>::Ptr & _clou
 	//becase we lose some points when rotating it to the map and voxeling there. That's why we rotate the original cloud
 	PointCloud<PointXYZ>::Ptr filtered_cloud = filter(_cloud);
 	PointCloud<PointXYZ> filtered_cloudWCS;
-	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), mCloud, mPreviousCloud2MapTransformation); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
+	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), mCloud, mLastView2MapTransformation); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
 	transformPointCloud(*filtered_cloud, filtered_cloudWCS, transformation);
 	PointCloud<PointXYZ>::Ptr voxeledFiltered_cloudWCS = voxel(filtered_cloudWCS.makeShared());
 	voxeledFiltered_cloudWCS->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
@@ -153,7 +153,6 @@ void EnvironmentMap::addPointsSequential(const PointCloud<PointXYZ>::Ptr & _clou
 	mCloudHistory.push_back(voxeledFiltered_cloudWCS);
 	//666 fix this, probably not needed anymore, because it should be in mCloudHistory
 	mLastView2MapTransformation = transformation; //needed for gui reprojection of map points
-	mPreviousCloud2MapTransformation = transformation;//transformPointCloud(*cloud1, transformedCloud1, transformation);
 
 
 	if (mCloudHistory.size() >= mParams.historySize) {
@@ -186,7 +185,7 @@ void EnvironmentMap::addPointsAccurate(const PointCloud<PointXYZ>::Ptr & _cloud)
 	//becase we lose some points when rotating it to the map and voxeling there. That's why we rotate the original cloud
 	PointCloud<PointXYZ>::Ptr filtered_cloud = filter(_cloud);
 	PointCloud<PointXYZ> filtered_cloudWCS;
-	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), mCloud, mPreviousCloud2MapTransformation); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
+	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), mCloud, mLastView2MapTransformation); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
 	transformPointCloud(*filtered_cloud, filtered_cloudWCS, transformation);
 	PointCloud<PointXYZ>::Ptr voxeledFiltered_cloudWCS = voxel(filtered_cloudWCS.makeShared());
 	voxeledFiltered_cloudWCS->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
@@ -194,7 +193,6 @@ void EnvironmentMap::addPointsAccurate(const PointCloud<PointXYZ>::Ptr & _cloud)
 	mCloudHistory.push_back(voxeledFiltered_cloudWCS);
 	//666 fix this, probably not needed anymore, because it should be in mCloudHistory
 	mLastView2MapTransformation = transformation; //needed for gui reprojection of map points
-	mPreviousCloud2MapTransformation = transformation;//transformPointCloud(*cloud1, transformedCloud1, transformation);
 
 
 	if (mCloudHistory.size() >= mParams.historySize) {
@@ -223,7 +221,7 @@ void EnvironmentMap::transformCloudtoTargetCloudAndAddToHistory(const PointCloud
 {
 	PointCloud<PointXYZ>::Ptr filtered_cloud = filter(_cloud);
 	PointCloud<PointXYZ> filtered_cloudWCS;
-	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), *_target, mPreviousCloud2MapTransformation); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
+	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), *_target, mLastView2MapTransformation); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
 	transformPointCloud(*filtered_cloud, filtered_cloudWCS, transformation);
 	PointCloud<PointXYZ>::Ptr voxeledFiltered_cloudWCS = voxel(filtered_cloudWCS.makeShared());
 	voxeledFiltered_cloudWCS->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
@@ -231,7 +229,6 @@ void EnvironmentMap::transformCloudtoTargetCloudAndAddToHistory(const PointCloud
 	mCloudHistory.push_back(voxeledFiltered_cloudWCS);
 
 	mLastView2MapTransformation = transformation; //needed for gui reprojection of map points
-	mPreviousCloud2MapTransformation = transformation;//transformPointCloud(*cloud1, transformedCloud1, transformation);
 }
 
 pcl::PointCloud<pcl::PointXYZ> EnvironmentMap::convoluteCloudsInQueue(std::deque<pcl::PointCloud<pcl::PointXYZ>::Ptr> _cloudQueue)

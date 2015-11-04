@@ -136,7 +136,6 @@ private:	// Members
 	const double cMaxAngle			= M_PI/180*1;	// 1º
 	const double cMaxTranslation	= 5;			// 10 mm 
 
-	Eigen::Matrix4f mPreviousCloud2MapTransformation = Eigen::Matrix4f::Identity();
 	Eigen::Matrix4f mLastView2MapTransformation = Eigen::Matrix4f::Identity();
 
 	//history calculation options
