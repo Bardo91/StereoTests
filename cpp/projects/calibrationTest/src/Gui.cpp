@@ -39,7 +39,8 @@ Gui * Gui::get() {
 // Public interface
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::drawMap(const PointCloud<PointXYZ>::Ptr & _map) {
-	m3dViewer->updatePointCloud(_map, "map");	// Not efficient but fast implementation	
+	m3dViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_map, 255,0,0), "map", mViewPortMapViewer);	// Not efficient but fast implementation	
+	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, 2, "map",mViewPortMapViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -113,7 +114,7 @@ void Gui::clearMap() {
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::drawCandidate(const ObjectCandidate & _candidate)
 {
-	addCluster(_candidate.cloud(), 3, _candidate.R(), _candidate.G(), _candidate.B());
+	addCluster(_candidate.cloud(), 4, _candidate.R(), _candidate.G(), _candidate.B());
 	reprojectCloud(_candidate.cloud(), _candidate.R(), _candidate.G(), _candidate.B());
 }
 
