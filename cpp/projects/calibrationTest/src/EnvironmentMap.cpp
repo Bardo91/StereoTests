@@ -121,23 +121,13 @@ void EnvironmentMap::addPointsSimple(const PointCloud<PointXYZ>::Ptr & _cloud) {
 		pcl::PointCloud<pcl::PointXYZ>::Ptr	lastJoinedCloud;
 		lastJoinedCloud = convoluteCloudsInQueue(mCloudHistory).makeShared();
 		mCloud += *lastJoinedCloud;
-		PointCloud<PointXYZ> test;
-		PointCloud<PointXYZ> PointCloudCameraCS;
-		Matrix4f tran = mLastView2MapTransformation.inverse();
-		cout << "MlastView : " << endl << mLastView2MapTransformation << endl;
-		cout << "Inverse:" << endl << tran << endl;
-		//lastJoinedCloud->sensor_orientation_ = Quaternionf(tran.block<3, 3>(0, 0));
-		//lastJoinedCloud->sensor_origin_ = tran.col(3);
-		lastJoinedCloud->sensor_orientation_ = mCloud.sensor_orientation_;
-		lastJoinedCloud->sensor_origin_ = mCloud.sensor_origin_;
-		// drawing of the last point cloud that has been added to the map.
-		transformPointCloud(*lastJoinedCloud, test, tran);
-		//transformPointCloud(*lastJoinedCloud,PointCloudCameraCS,)
-		Gui::get()->drawCloudWithSensorDataToPcViewer(lastJoinedCloud);
-		Gui::get()->addPointToPcViewer(test.makeShared(), 3, 1, 255, 1);
 		mCloud = *voxel(mCloud.makeShared());
 		// Finally discard oldest cloud
 		mCloudHistory.pop_front();
+		// drawing of the last point cloud that has been added to the map.
+		PointCloud<PointXYZ> PointCloudCameraCS;
+		transformPointCloud(*lastJoinedCloud, PointCloudCameraCS, originInverse(mCloud.makeShared()),sensorInverse(mCloud.makeShared()));
+		Gui::get()->addPointToPcViewer(PointCloudCameraCS.makeShared(), 3, 255, 10, 10);	
 	}
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -256,6 +246,19 @@ void EnvironmentMap::addOrientationAndOriginDataToMap(const pcl::PointCloud<pcl:
 {
 	mCloud.sensor_orientation_ = _cloud->sensor_orientation_;
 	mCloud.sensor_origin_ = _cloud->sensor_origin_;
+}
+
+Eigen::Vector3f EnvironmentMap::originInverse(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud)
+{
+	//Vector4f output = -(_cloud->sensor_orientation_.inverse()*_cloud->sensor_origin_);
+	Vector3f output = -(_cloud->sensor_orientation_.inverse()*_cloud->sensor_origin_.block<3, 1>(0, 0));
+	return output;
+}
+
+Eigen::Quaternionf EnvironmentMap::sensorInverse(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud)
+{
+	//return _cloud->sensor_orientation_.inverse();
+	return _cloud->sensor_orientation_.conjugate();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
