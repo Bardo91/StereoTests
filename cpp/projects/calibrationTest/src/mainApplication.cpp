@@ -132,7 +132,7 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 		isBlurry2  = isBlurry(_frame2, mConfig["cameras"]["blurThreshold"]);
 	}else{ return false; }
 
-	if (isBlurry1 || isBlurry2) {	// Splitted only for drawing purposes... 666 Dont like it too much.
+	if (isBlurry1 || isBlurry2) {
 		mGui->updateStereoImages(_frame1, _frame2);
 		
 		if(isBlurry1) 

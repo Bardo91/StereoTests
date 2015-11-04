@@ -219,7 +219,7 @@ void EnvironmentMap::transformCloudtoTargetCloudAndAddToHistory(const PointCloud
 {
 	PointCloud<PointXYZ>::Ptr filtered_cloud = filter(_cloud);
 	PointCloud<PointXYZ> filtered_cloudWCS;
-	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), *_target, _guess); //666 mPreviousCloud2MapTransformation needs to be from cloudHistory.orientation
+	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), *_target, _guess);
 	transformPointCloud(*filtered_cloud, filtered_cloudWCS, transformation);
 	PointCloud<PointXYZ>::Ptr voxeledFiltered_cloudWCS = voxel(filtered_cloudWCS.makeShared());
 	voxeledFiltered_cloudWCS->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
