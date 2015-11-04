@@ -17,6 +17,7 @@ using namespace cjson;
 using namespace cv;
 using namespace pcl;
 using namespace std;
+using namespace Eigen;
 
 //---------------------------------------------------------------------------------------------------------------------
 MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time") {
@@ -118,7 +119,7 @@ bool MainApplication::init3dMap(){
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepGetImages(cv::Mat & _frame1, cv::Mat & _frame2) {
+bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 	bool isBlurry1, isBlurry2;
 
 	_frame1 = mCameras->camera(0).frame();
@@ -166,7 +167,7 @@ bool MainApplication::stepGetImages(cv::Mat & _frame1, cv::Mat & _frame2) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, PointCloud<PointXYZ>::Ptr &_points3d){
+bool MainApplication::stepTriangulatePoints(const Mat &_frame1, const Mat &_frame2, PointCloud<PointXYZ>::Ptr &_points3d){
 	pair<int,int> disparityRange(mConfig["cameras"]["disparityRange"]["min"], mConfig["cameras"]["disparityRange"]["max"]);
 	int squareSize =  mConfig["cameras"]["templateSquareSize"];
 	int maxReprojectionError = mConfig["cameras"]["maxReprojectionError"];
@@ -189,23 +190,15 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud){
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepUpdateCameraRotation() {
 	//sorry but I didn't find a better way to transform between cv and eigen, there is a function eigen2cv but I have problems
-	Mat R(3,3, CV_64F), T(3,1, CV_64F);
-	Eigen::Matrix4f a = mMap.lastView2MapTransformation().inverse();
-	//cout  << "eigen: " << endl << a << endl;
-	R.at<double>(0, 0) = a(0, 0);
-	R.at<double>(0, 1) = a(0, 1);
-	R.at<double>(0, 2) = a(0, 2);
-	R.at<double>(1, 0) = a(1, 0);
-	R.at<double>(1, 1) = a(1, 1);
-	R.at<double>(1, 2) = a(1, 2);
-	R.at<double>(2, 0) = a(2, 0);
-	R.at<double>(2, 1) = a(2, 1);
-	R.at<double>(2, 2) = a(2, 2);
-	//cout << "R: " << endl << R << endl;
-	T.at<double>(0, 0) = a(0, 3);
-	T.at<double>(1, 0) = a(1, 3);
-	T.at<double>(2, 0) = a(2, 3);
-	//cout << "T: " << endl << T << endl;
+	Mat R(3,3, CV_32F), T(3,1, CV_32F);
+	Matrix<float,3,3, RowMajor> rotation	= mMap.cloud().sensor_orientation_.conjugate().matrix();
+	Matrix<float,3,1> translation			= -(rotation*mMap.cloud().sensor_origin_.block<3, 1>(0, 0));
+	memcpy(R.data, rotation.data(),		sizeof(float)*9);
+	memcpy(T.data, translation.data(),	sizeof(float)*3);
+
+	R.convertTo(R, CV_64F);
+	T.convertTo(T, CV_64F);
+
 	mCameras->updateGlobalRT(R, T);	
 	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
 
@@ -221,11 +214,11 @@ bool MainApplication::stepGetCandidates(){
 	PointCloud<PointXYZ>::Ptr cropedCloud = mMap.cloud().makeShared();
 	mMap.cropCloud(cropedCloud, plane);
 
-	std::vector<pcl::PointIndices> mClusterIndices;
+	vector<PointIndices> mClusterIndices;
 	mClusterIndices = mMap.clusterCloud(cropedCloud);
-	std::vector<ObjectCandidate> candidates;
+	vector<ObjectCandidate> candidates;
 	//create candidates from indices
-	for (pcl::PointIndices indices : mClusterIndices)
+	for (PointIndices indices : mClusterIndices)
 		candidates.push_back(ObjectCandidate(indices, cropedCloud, true));
 	//draw all candidates
 	for (ObjectCandidate candidate : candidates) {
