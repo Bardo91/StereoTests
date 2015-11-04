@@ -190,23 +190,7 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud){
 bool MainApplication::stepUpdateCameraRotation() {
 	//sorry but I didn't find a better way to transform between cv and eigen, there is a function eigen2cv but I have problems
 	Mat R(3,3, CV_64F), T(3,1, CV_64F);
-	Eigen::Matrix4f a = mMap.lastView2MapTransformation().inverse();
 	//cout  << "eigen: " << endl << a << endl;
-	R.at<double>(0, 0) = a(0, 0);
-	R.at<double>(0, 1) = a(0, 1);
-	R.at<double>(0, 2) = a(0, 2);
-	R.at<double>(1, 0) = a(1, 0);
-	R.at<double>(1, 1) = a(1, 1);
-	R.at<double>(1, 2) = a(1, 2);
-	R.at<double>(2, 0) = a(2, 0);
-	R.at<double>(2, 1) = a(2, 1);
-	R.at<double>(2, 2) = a(2, 2);
-	//cout << "R: " << endl << R << endl;
-	T.at<double>(0, 0) = a(0, 3);
-	T.at<double>(1, 0) = a(1, 3);
-	T.at<double>(2, 0) = a(2, 3);
-	//cout << "T: " << endl << T << endl;
-	mCameras->updateGlobalRT(R, T);	
 	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
 
 	return true;
