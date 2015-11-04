@@ -309,7 +309,7 @@ ModelCoefficients  EnvironmentMap::extractFloor(const PointCloud<PointXYZ>::Ptr 
 	vector<PointCloud<PointXYZ>::Ptr> clusters;
 	clusterCloud(_cloud, clusters);
 
-	if(clusters.size() < 3)
+	if(clusters.size() < 4)
 		return ModelCoefficients();
 
 	PointCloud<PointXYZ> farthestPoints;
