@@ -120,11 +120,15 @@ void EnvironmentMap::addPointsSimple(const PointCloud<PointXYZ>::Ptr & _cloud) {
 		cout << "Map extended" << endl;
 		pcl::PointCloud<pcl::PointXYZ>::Ptr	lastJoinedCloud;
 		lastJoinedCloud = convoluteCloudsInQueue(mCloudHistory).makeShared();
+		mCloud += *lastJoinedCloud;
 		lastJoinedCloud->sensor_orientation_ = mCloud.sensor_orientation_;
 		lastJoinedCloud->sensor_origin_ = mCloud.sensor_origin_;
-		mCloud += *lastJoinedCloud;
 		// drawing of the last point cloud that has been added to the map.
+		PointCloud<PointXYZ> test;
+		Matrix4f tran = mLastView2MapTransformation.inverse();
+		transformPointCloud(*lastJoinedCloud, test, tran);
 		Gui::get()->drawCloudWithSensorDataToPcViewer(lastJoinedCloud);
+		Gui::get()->addPointToPcViewer(test.makeShared(), 3, 1, 255, 1);
 		mCloud = *voxel(mCloud.makeShared());
 		// Finally discard oldest cloud
 		mCloudHistory.pop_front();
