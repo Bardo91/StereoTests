@@ -25,8 +25,12 @@ RecognitionSystem::RecognitionSystem(cjson::Json _configFile) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void RecognitionSystem::categorize(ObjectCandidate & _candidate) {
+std::vector<std::pair<unsigned, float>> RecognitionSystem::categorize(const cv::Mat &_view) {
+	// For now, only one region.
+	vector<Rect> regions;
+	regions.push_back(Rect(0,0,_view.cols, _view.rows));
 
+	return mBow.evaluate(_view, regions);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -53,16 +57,18 @@ cv::ml::SVM::Types RecognitionSystem::decodeSvmType(std::string _string){
 	}
 	else {
 		assert(false);
+		return  ml::SVM::Types::EPS_SVR;	// 666 never reach this.
 	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 cv::ml::SVM::KernelTypes RecognitionSystem::decodeKernelType(std::string _string) {
-	if (_string == "c_svc") {
+	if (_string == "RBF") {
 		return ml::SVM::KernelTypes::RBF;
 	}
 	else {
 		assert(false);
+		return  ml::SVM::KernelTypes::RBF;	// 666 never reach this.
 	}
 }
 
@@ -73,10 +79,10 @@ void RecognitionSystem::setModel(cjson::Json _params) {
 		model.setParams(_params["c"], _params["gamma"], decodeSvmType(_params["svmType"]), decodeKernelType(_params["kernel"]));
 	}
 	else if (_params["name"] = "LDA") {
-
+		// 666 fill this too.
 	}
 	else {
-		assert();
+		assert(false);
 	}
 }
 

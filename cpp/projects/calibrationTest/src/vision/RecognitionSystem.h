@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <cjson/Json.h>
+#include <opencv2/opencv.hpp>
 
 // Forward declaration
 class ObjectCandidate;
@@ -24,7 +25,7 @@ class RecognitionSystem {
 public:		// Public interface.
 	RecognitionSystem(cjson::Json _configFile);
 
-	void categorize(ObjectCandidate &_candidate);
+	std::vector<std::pair<unsigned, float>> categorize(const cv::Mat &_newView);
 
 private:	// Private methods.
 	void setBowParams(cjson::Json _params);
