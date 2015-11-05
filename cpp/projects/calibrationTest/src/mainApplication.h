@@ -8,11 +8,12 @@
 #ifndef MAINAPPLICATION_H_
 #define MAINAPPLICATION_H_
 
+#include "graph2d.h"
 #include "Gui.h"
 #include "EnvironmentMap.h"
+#include "vision/RecognitionSystem.h"
 #include "StereoCameras.h"
 #include "TimeTools.h"
-#include "graph2d.h"
 
 #include <cjson/json.h>
 #include <pcl/point_cloud.h>
@@ -23,11 +24,13 @@ class MainApplication {
 public:
 	MainApplication	(int _argc, char** _argv);
 	bool step	();
+
 private:
-	bool loadArguments	(int _argc, char** _argv);
-	bool initCameras	();
-	bool initGui		();
-	bool init3dMap		();
+	bool loadArguments			(int _argc, char** _argv);
+	bool initCameras			();
+	bool initGui				();
+	bool init3dMap				();
+	bool initRecognitionSystem	();
 
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
 	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
@@ -36,9 +39,11 @@ private:
 	bool stepGetCandidates();
 
 private:
-	StereoCameras	*mCameras;
-	EnvironmentMap	mMap;
-	Gui				*mGui;
+	StereoCameras		*mCameras;
+	EnvironmentMap		mMap;
+	Gui					*mGui;
+	RecognitionSystem	*mRecognitionSystem;
+
 	BOViL::plot::Graph2d mTimePlot;
 	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates;
 	BOViL::STime *mTimer;
