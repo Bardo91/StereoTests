@@ -63,6 +63,9 @@ public:
 	/// \return array of 3d points
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pointCloud(const cv::Mat &_frame1, const cv::Mat &_frame2, std::pair<int, int> _disparityRange, int _squareSize, int _maxReprojectionError);
 
+	/// Project 3d points into 2d world of the camera using global coordinates.
+	std::vector<cv::Point2f> project3dPointsWCS(const std::vector<cv::Point3f> &_points, bool _isLeftCamera);
+
 	/// Get one of the cameras.
 	/// \param _index: 0 for first camera; 1 for the second one.
 	/// \return reference to one of the cameras.
