@@ -67,7 +67,7 @@ namespace algorithm {
 	class BoW {
 	public:
 		struct Params {
-			enum class eExtractorType {SIFT, SURF, FAST, ORB};
+			enum class eExtractorType {SIFT, SURF, FAST, ORB, MSER};
 			enum class eDescriptorType {SIFT, SURF, ORB};
 
 			unsigned imageSizeTrain;
