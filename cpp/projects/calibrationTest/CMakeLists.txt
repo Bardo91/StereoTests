@@ -20,7 +20,7 @@ macro(GroupSources curdir)
 	endforeach()
 endmacro()
 
-GroupSources(code)
+GroupSources(src)
 
 # Compiler specific options
 if(CMAKE_COMPILER_IS_GNUCXX)
