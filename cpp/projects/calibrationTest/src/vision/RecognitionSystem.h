@@ -24,7 +24,7 @@ class RecognitionSystem {
 public:		// Public interface.
 	RecognitionSystem(cjson::Json _configFile);
 
-	void cathegorize(ObjectCandidate &_candidate);
+	void categorize(ObjectCandidate &_candidate);
 
 private:	// Private methods.
 	void setBowParams(cjson::Json _params);
@@ -36,7 +36,7 @@ private:	// Private methods.
 
 private:	// Private members.
 	algorithm::BoW	mBow;
-	BoW::Params		mBowParams;
+	algorithm::BoW::Params		mBowParams;
 };
 
 

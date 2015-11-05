@@ -8,6 +8,7 @@
 
 #include "RecognitionSystem.h"
 
+#include <cassert>
 
 using namespace algorithm;
 using namespace cjson;
@@ -24,7 +25,7 @@ RecognitionSystem::RecognitionSystem(cjson::Json _configFile) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void RecognitionSystem::cathegorize(ObjectCandidate & _candidate) {
+void RecognitionSystem::categorize(ObjectCandidate & _candidate) {
 
 }
 
@@ -52,7 +53,6 @@ cv::ml::SVM::Types RecognitionSystem::decodeSvmType(std::string _string){
 	}
 	else {
 		assert(false);
-		return ;
 	}
 }
 
@@ -63,7 +63,6 @@ cv::ml::SVM::KernelTypes RecognitionSystem::decodeKernelType(std::string _string
 	}
 	else {
 		assert(false);
-		return ;
 	}
 }
 
