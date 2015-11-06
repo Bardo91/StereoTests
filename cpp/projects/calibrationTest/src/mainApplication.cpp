@@ -26,6 +26,8 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 	result &= initCameras();
 	result &= initGui();
 	result &= init3dMap();
+	result &= initRecognitionSystem();
+
 	mTimer = BOViL::STime::get();
 
 	assert(result);
@@ -116,6 +118,15 @@ bool MainApplication::init3dMap(){
 	mMap.params(params);
 
 	return true;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::initRecognitionSystem() {
+	if (mConfig.contains("recognitionSystem")) {
+		mRecognitionSystem = new RecognitionSystem(mConfig["recognitionSystem"]);
+		return true;
+	}else
+		return false;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

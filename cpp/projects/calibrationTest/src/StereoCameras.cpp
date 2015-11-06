@@ -153,6 +153,20 @@ PointCloud<PointXYZ>::Ptr StereoCameras::pointCloud(const cv::Mat &_frame1, cons
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+std::vector<cv::Point2f> StereoCameras::project3dPointsWCS(const std::vector<cv::Point3f>& _points, bool _isLeftCamera) {
+	std::vector<cv::Point2f> points2d;
+
+	if (_isLeftCamera) {
+		projectPoints(_points, mGlobalR, mGlobalT, camera(0).matrix(), camera(0).distCoeffs(), points2d);
+	}
+	else {
+		projectPoints(_points, mR*mGlobalR, mT + mR*mGlobalT,  camera(1).matrix(), camera(1).distCoeffs(), points2d);
+
+	}
+	return points2d;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 Camera & StereoCameras::camera(unsigned _index) {
 	assert(_index < 2);
 	if(_index == 0)
