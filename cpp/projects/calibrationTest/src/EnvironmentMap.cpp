@@ -231,7 +231,7 @@ void EnvironmentMap::transformCloudtoTargetCloudAndAddToHistory(const PointCloud
 	PointCloud<PointXYZ>::Ptr voxeledFiltered_cloudWCS = voxel(filtered_cloudWCS.makeShared());
 	cout << "The filtered cloud has: " << filtered_cloudWCS.size() << "points" << endl;
 	cout << "The voxeled cloud has: " << voxeledFiltered_cloudWCS->size() << "points" << endl;
-	cout << "The guess of the transformation is" << endl << _guess << endl << "And the result is:" << transformation << endl;
+	cout << "The guess of the transformation is" << endl << _guess << endl << "And the result is:"<< endl  << transformation << endl;
 	voxeledFiltered_cloudWCS->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
 	voxeledFiltered_cloudWCS->sensor_origin_ = transformation.col(3);
 	mCloudHistory.push_back(voxeledFiltered_cloudWCS);

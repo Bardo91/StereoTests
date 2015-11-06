@@ -28,13 +28,13 @@
 			"min":60,
 			"max":400
 		}, 
-		"templateSquareSize":11,
+		"templateSquareSize":21,
 		"maxReprojectionError":3,
 		"pointRanges":
 		{
 			"x":{"min":-3, "max":3},
 			"y":{"min":-3, "max":3},
-			"z":{"min":0.65, "max":1.5}
+			"z":{"min":0.4, "max":1.5}
 		}
 	},
 	"mapParams":
@@ -48,7 +48,7 @@
 		"icpMaxIcpIterations":1000,
 		"icpMaxCorrespondenceDistance":0.1,
 		"historySize":2,
-		"clusterTolerance":0.035,
+		"clusterAffiliationMaxDistance":0.035,
 		"minClusterSize":15,
 		"maxClusterSize":200,
 		"floorDistanceThreshold":0.01,
