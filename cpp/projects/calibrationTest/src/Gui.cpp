@@ -66,10 +66,10 @@ void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f
 	camera.push_back(PointXYZ(-0.05, 0.05, 0));
 	camera.push_back(PointXYZ(-0.05, -0.05, 0));
 	camera.push_back(PointXYZ(0.05, -0.05, 0));
-	camera.push_back(PointXYZ(0.2, 0.2, 0.4));
-	camera.push_back(PointXYZ(-0.2, 0.2, 0.4));
-	camera.push_back(PointXYZ(-0.2, -0.2, 0.4));
-	camera.push_back(PointXYZ(0.2, -0.2, 0.4));
+	camera.push_back(PointXYZ(0.1, 0.1, 0.2));
+	camera.push_back(PointXYZ(-0.1, 0.1, 0.2));
+	camera.push_back(PointXYZ(-0.1, -0.1, 0.2));
+	camera.push_back(PointXYZ(0.1, -0.1, 0.2));
 
 	// Rotate and move camera to the desired position and orientation.
 	Matrix4f transformation = Matrix4f::Zero();
@@ -270,18 +270,18 @@ void Gui::spinOnce()
 
 Gui::Gui(string _name, StereoCameras& _stereoCameras): mName(_name), m3dViewer(new PCLVisualizer (mName)), mStereoCameras(_stereoCameras) {
 	m3dViewer->initCameraParameters ();
-	m3dViewer->addCoordinateSystem (0.5);
+	m3dViewer->addCoordinateSystem (0.25);
 	// Set up mapViewer
 	m3dViewer->createViewPort (0.0, 0.0, 0.5, 1.0, mViewPortMapViewer);
 	m3dViewer->setBackgroundColor (0, 0, 0, mViewPortMapViewer);
-	m3dViewer->addCoordinateSystem (0.5,"XYZ_map", mViewPortMapViewer);
+	m3dViewer->addCoordinateSystem (0.25,"XYZ_map", mViewPortMapViewer);
 	PointCloud<PointXYZ>::Ptr emptyCloud(new PointCloud<PointXYZ>);
 	m3dViewer->addPointCloud(emptyCloud, "map",mViewPortMapViewer);
 	m3dViewer->addText ("Map Viewer", 10, 10, "MapViewer text", mViewPortMapViewer);
 	// Set up pc viewer
 	m3dViewer->createViewPort (0.5, 0.0, 1.0, 1.0, mViewportPcViewer);
 	m3dViewer->setBackgroundColor (0.1, 0.1, 0.1, mViewportPcViewer);
-	m3dViewer->addCoordinateSystem (0.5,"XYZ_pc",mViewportPcViewer);
+	m3dViewer->addCoordinateSystem (0.25,"XYZ_pc",mViewportPcViewer);
 	m3dViewer->addText ("Cloud Viewer", 10, 10, "PcViewer text", mViewportPcViewer);
 
 	// Set up stereo viewer
