@@ -111,7 +111,14 @@ void EnvironmentMap::addPointsSimple(const PointCloud<PointXYZ>::Ptr & _cloud) {
 		// Storing and processing history of point clouds.
 		//temporary cleaned cloud for calculation of the transformation. We do not want to voxel in the camera coordinate system
 		//because we lose some points when rotating it to the map and voxeling there. That's why we rotate the original cloud
-		transformCloudtoTargetCloudAndAddToHistory(_cloud, mCloud.makeShared(), transformationFromSensor(mCloudHistory.back()));
+		// solving cloud history 1
+		Matrix4f guess;
+		if (mCloudHistory.size() == 0)
+			guess = transformationFromSensor(mCloud.makeShared());
+		else
+			guess = transformationFromSensor(mCloudHistory.back());
+
+		transformCloudtoTargetCloudAndAddToHistory(_cloud, mCloud.makeShared(), guess);
 	}
 
 	addOrientationAndOriginDataToMap(mCloudHistory.back());
@@ -210,7 +217,7 @@ void EnvironmentMap::addPointsAccurate(const PointCloud<PointXYZ>::Ptr & _cloud)
 		mCloud.sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
 		mCloud.sensor_origin_ = transformation.col(3);
 
-		// Finally discart oldest cloud
+		// Finally discard oldest cloud
 		mCloudHistory.pop_front();
 	}
 }
@@ -222,6 +229,8 @@ void EnvironmentMap::transformCloudtoTargetCloudAndAddToHistory(const PointCloud
 	Matrix4f transformation = getTransformationBetweenPcs(*voxel(filtered_cloud), *_target, _guess);
 	transformPointCloud(*filtered_cloud, filtered_cloudWCS, transformation);
 	PointCloud<PointXYZ>::Ptr voxeledFiltered_cloudWCS = voxel(filtered_cloudWCS.makeShared());
+	cout << "The filtered cloud has: " << filtered_cloudWCS.size() << "points" << endl;
+	cout << "The voxeled cloud has: " << voxeledFiltered_cloudWCS->size() << "points" << endl;
 	voxeledFiltered_cloudWCS->sensor_orientation_ = Quaternionf(transformation.block<3, 3>(0, 0));
 	voxeledFiltered_cloudWCS->sensor_origin_ = transformation.col(3);
 	mCloudHistory.push_back(voxeledFiltered_cloudWCS);

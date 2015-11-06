@@ -107,7 +107,7 @@ bool MainApplication::init3dMap(){
 	params.icpMaxIcpIterations					= mConfig["mapParams"]["icpMaxIcpIterations"];			//1000; //no increase in time.. meaning we reach exit condition much sooner
 	params.icpMaxCorrespondenceDistance			= mConfig["mapParams"]["icpMaxCorrespondenceDistance"]; //0.1; //had it at 1 meter, now reduced it to 10 cm... results similar
 	params.historySize							= (int) mConfig["mapParams"]["historySize"];			//2;
-	params.clusterTolerance						= mConfig["mapParams"]["clusterTolerance"];				//0.035; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
+	params.clusterTolerance						= mConfig["mapParams"]["clusterAffiliationMaxDistance"];				//0.035; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
 	params.minClusterSize						= mConfig["mapParams"]["minClusterSize"];				//15;
 	params.maxClusterSize						= mConfig["mapParams"]["maxClusterSize"];				//200;
 	params.floorDistanceThreshold				= mConfig["mapParams"]["floorDistanceThreshold"];		//0.01;
