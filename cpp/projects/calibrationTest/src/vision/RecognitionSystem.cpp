@@ -19,7 +19,7 @@ using namespace std;
 // Public interface
 //---------------------------------------------------------------------------------------------------------------------
 RecognitionSystem::RecognitionSystem(cjson::Json _configFile) {
-	setBowParams(_configFile["bowParams"]);
+	setBowParams(_configFile["bovwParams"]);
 	setModel(_configFile["mlModel"]);
 	setFeatures(_configFile["features"]);
 }
@@ -76,7 +76,7 @@ cv::ml::SVM::KernelTypes RecognitionSystem::decodeKernelType(std::string _string
 void RecognitionSystem::setModel(cjson::Json _params) {
 	if (_params["name"] == "SVM") {
 		SvmModel model;
-		model.setParams(_params["c"], _params["gamma"], decodeSvmType(_params["svmType"]), decodeKernelType(_params["kernel"]));
+		model.setParams(_params["params"]["c"], _params["params"]["gamma"], decodeSvmType(_params["params"]["svmType"]), decodeKernelType(_params["params"]["kernel"]));
 	}
 	else if (_params["name"] = "LDA") {
 		// 666 fill this too.
