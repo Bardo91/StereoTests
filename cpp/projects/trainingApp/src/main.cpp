@@ -12,7 +12,7 @@ using namespace std;
 
 //---------------------------------------------------------------------------------------------------------------------
 int main(int _argc, char ** _argv) {
-	BoW model;
+	BoW bow;
 
 	BoW::Params params;
 	params.extractorType = BoW::Params::eExtractorType::SIFT;
@@ -22,10 +22,13 @@ int main(int _argc, char ** _argv) {
 	params.scaleFactor = 0.5;
 	params.vocSize = 500;
 
-	model.params(params);
+	bow.params(params);
 
+	SvmModel svm;
+	svm.setParams(0.1,2,cv::ml::SVM::Types::C_SVC, cv::ml::SVM::KernelTypes::RBF, true);
+	bow.model(svm);
 
 	string imageTemplate = "";
 	string gtFile = "";
-	model.train(imageTemplate, gtFile);
+	bow.train(imageTemplate, gtFile);
 }
