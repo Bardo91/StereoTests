@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 project(StereoTests)
 
 # Collect all sources
-file(GLOB_RECURSE TRAININGAPP_SOURCE_FILES "src/*.cpp" "src/*.h" "src/*.inl")
+file(GLOB_RECURSE TRAININGAPP_SOURCE_FILES "src/*.cpp" "src/*.h" "src/*.inl" "../objectsMap/src/vision/ml/BoW.h" "../objectsMap/src/vision/ml/BoW.cpp" "../objectsMap/src/vision/ml/Lda.h" "../objectsMap/src/vision/ml/Lda.cpp")
 
 # Clasify sources according to folder structure.
 # This creates a nice layout for the project in visual studio
@@ -35,7 +35,6 @@ LINK_DIRECTORIES(${OpenCV_LIB_DIR})
 add_executable(trainingApp ${TRAININGAPP_SOURCE_FILES})
 
 target_include_directories(trainingApp PUBLIC ${PROJECT_SOURCE_DIR}/src)
-target_include_directories(trainingApp PUBLIC ${PROJECT_SOURCE_DIR}/../calibrationTest/src)
 target_include_directories(trainingApp PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(trainingApp LINK_PUBLIC ${OpenCV_LIBS})
 
