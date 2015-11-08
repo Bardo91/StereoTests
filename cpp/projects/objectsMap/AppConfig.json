@@ -48,7 +48,7 @@
 		"icpMaxIcpIterations":1000,
 		"icpMaxCorrespondenceDistance":0.1,
 		"historySize":2,
-		"clusterTolerance":0.035,
+		"clusterAffiliationMaxDistance":0.035,
 		"minClusterSize":15,
 		"maxClusterSize":200,
 		"floorDistanceThreshold":0.01,
@@ -67,9 +67,9 @@
 			"params":
 			{
 				"c":0.1,
-				"gamma":1,
+				"gamma":1.0,
 				"svmType":"c_svc",
-				"kernel":"rbf"
+				"kernel":"RBF"
 			},
 			"modelPath":""
 		}, 
