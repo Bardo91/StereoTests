@@ -116,6 +116,7 @@ void Gui::drawCandidate(const ObjectCandidate & _candidate)
 {
 	addCluster(_candidate.cloud(), 4, _candidate.R(), _candidate.G(), _candidate.B());
 	reprojectCloud(_candidate.cloud(), _candidate.R(), _candidate.G(), _candidate.B());
+	drawCathegory(_candidate);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -244,6 +245,23 @@ void Gui::drawPolygon(const std::vector<cv::Point2f>& _polygon, bool _isLeft, un
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+Rect boundRect(vector<Point2f> _points2d) {
+	int minX=99999, minY=999999, maxX=0, maxY=0;
+	for (Point2f point : _points2d) {
+		if(point.x < minX)
+			minX = point.x;
+		if(point.y < minY)
+			minY = point.y;
+		if(point.x > maxX)
+			maxX = point.x;
+		if(point.y > maxY)
+			maxY = point.y;
+	}
+
+	return Rect(minX, minY, maxX-minX, maxY-minY);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 void Gui::reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, unsigned _r, unsigned _g, unsigned _b)
 {
 	vector<Point3f> points3d;
@@ -262,11 +280,36 @@ void Gui::reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, unsig
 	drawPolygon(convexHull2, false, _r, _g, _b);
 }
 
-void Gui::spinOnce()
-{
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::drawCathegory(const ObjectCandidate & _candidate) {
+	vector<Point3f> points3d;
+	for (const PointXYZ point : *_candidate.cloud())
+		points3d.push_back(Point3f(point.x, point.y, point.z));
+	vector<Point2f> reprojection1 = mStereoCameras.project3dPointsWCS(points3d, true);
+	vector<Point2f> reprojection2 = mStereoCameras.project3dPointsWCS(points3d, false);
+
+	Rect bb1 = boundRect(reprojection1);
+	Rect bb2 = boundRect(reprojection2);
+	drawBox(bb1, true, _candidate.R() ,_candidate.G(), _candidate.B());
+	drawBox(bb2, false,  _candidate.R() ,_candidate.G(), _candidate.B());
+	
+	Point2i startPointLeft = Point2i(bb1.x, bb1.y);
+	Point2i startPointRight = Point2i(bb2.x + mLeftImage.cols, bb2.y);
+
+	std::pair<unsigned, float> cathegory = _candidate.cathegory();
+
+	string text = to_string(cathegory.first) + ": " + to_string(cathegory.second);
+	putText(mPairStereo, text, startPointLeft, FONT_HERSHEY_PLAIN, 1, Scalar(_candidate.B() ,_candidate.G(), _candidate.R()),1);
+	putText(mPairStereo, text, startPointRight, FONT_HERSHEY_PLAIN, 1, Scalar(_candidate.B() ,_candidate.G(), _candidate.R()),1);
+	
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::spinOnce() {
 	m3dViewer->spinOnce();
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 Gui::Gui(string _name, StereoCameras& _stereoCameras): mName(_name), m3dViewer(new PCLVisualizer (mName)), mStereoCameras(_stereoCameras) {
 	m3dViewer->initCameraParameters ();
 	m3dViewer->addCoordinateSystem (0.25);

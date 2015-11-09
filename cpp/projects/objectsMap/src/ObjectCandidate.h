@@ -30,6 +30,8 @@ public:
 	unsigned B() const;
 
 
+	void addView(cv::Mat _view, std::vector<std::pair<unsigned, float>> _cathegories);
+	std::pair<unsigned, float>  cathegory() const;
 
 private:
 	pcl::PointIndices mPointIndices;
@@ -37,7 +39,7 @@ private:
 	unsigned mR, mG, mB;
 
 	std::vector<cv::Mat> mViewHistory;
-	std::vector<std::vector<std::pair<int, double>>> mCathegoryHistory;
+	std::vector<std::vector<std::pair<unsigned, float>>> mCathegoryHistory;
 };
 
 #endif

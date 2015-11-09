@@ -109,6 +109,8 @@ public:		// Public interface
 	/// \param _b: blue (0-255) channel of the final desired color for the _boxes
 	void reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, unsigned _r = 255, unsigned _g = 255, unsigned _b = 255);
 
+	void drawCathegory(const ObjectCandidate &_candidate);
+
 	/// needed to update the viewer
 	void spinOnce();
 

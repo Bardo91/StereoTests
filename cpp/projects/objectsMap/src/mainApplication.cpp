@@ -240,3 +240,46 @@ bool MainApplication::stepGetCandidates(vector<ObjectCandidate> &_candidates){
 
 	return true;
 }
+
+Rect boundBox(vector<Point2f> _points2d) {
+	int minX=99999, minY=999999, maxX=0, maxY=0;
+	for (Point2f point : _points2d) {
+		if(point.x < minX)
+			minX = point.x;
+		if(point.y < minY)
+			minY = point.y;
+		if(point.x > maxX)
+			maxX = point.x;
+		if(point.y > maxY)
+			maxY = point.y;
+	}
+
+	return Rect(minX, minY, maxX-minX, maxY-minY);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _candidates, const cv::Mat &_frame1,const  cv::Mat &_frame2) {
+	if(_candidates.size() == 0)
+		return false;
+
+	for (ObjectCandidate &candidate : _candidates) {
+		vector<Point3f> points3d;
+		for (PointXYZ pointpcl : *candidate.cloud()) {
+			Point3f point(pointpcl.x, pointpcl.y, pointpcl.z);
+			points3d.push_back(point);
+		}
+		vector<Point2f> reprojection1 = mCameras->project3dPointsWCS(points3d, true);
+		vector<Point2f> reprojection2 = mCameras->project3dPointsWCS(points3d, false);
+
+
+		Mat view = _frame1(boundBox(reprojection1));
+		std::vector<std::pair<unsigned, float>> cathegories = mRecognitionSystem->categorize(view);
+		candidate.addView(view, cathegories);
+
+		view = _frame2(boundBox(reprojection2));
+		cathegories = mRecognitionSystem->categorize(view);
+		candidate.addView(view, cathegories);
+	}
+
+	return true;
+}
