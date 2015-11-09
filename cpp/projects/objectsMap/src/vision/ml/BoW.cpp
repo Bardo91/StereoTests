@@ -304,7 +304,7 @@ namespace algorithm {
 	//-----------------------------------------------------------------------------------------------------------------
 	void SvmModel::trainModel(const cv::Ptr<cv::ml::TrainData>& _trainData) {
 		if (mAutoTrain) {
-			mSvm->trainAuto(_trainData, 10, ParamGrid(1,1000,1.5), ParamGrid(0.00001,1,2));
+			mSvm->trainAuto(_trainData, 10, ParamGrid(1,100,2), ParamGrid(0.001,1,5));
 		}
 		else {
 			mSvm->train(_trainData);

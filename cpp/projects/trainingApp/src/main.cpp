@@ -27,7 +27,8 @@ int main(int _argc, char ** _argv) {
 	svm.setParams(0.1,2,cv::ml::SVM::Types::C_SVC, cv::ml::SVM::KernelTypes::RBF, true);
 	bow.model(svm);
 
-	string imageTemplate = "";
-	string gtFile = "";
+	string imageTemplate = "C:/programming/datasets/objectsMaps/training (%d).jpg";
+	string gtFile = "C:/programming/datasets/objectsMaps/gt.txt";
 	bow.train(imageTemplate, gtFile);
+	bow.save("canjuiboxcrasen.svm");
 }

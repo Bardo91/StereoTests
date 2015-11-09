@@ -46,7 +46,8 @@ bool MainApplication::step() {
 	double t3 = mTimer->getTime();
 	if(!stepUpdateCameraRotation()) return false;
 	double t4 = mTimer->getTime();
-	if(!stepGetCandidates()) return false;
+	vector<ObjectCandidate> candidates;
+	if(!stepGetCandidates(candidates)) return false;
 	double t5 = mTimer->getTime();
 
 	tGetImages.push_back(t1-t0);
@@ -217,7 +218,7 @@ bool MainApplication::stepUpdateCameraRotation() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepGetCandidates(){
+bool MainApplication::stepGetCandidates(vector<ObjectCandidate> &_candidates){
 	ModelCoefficients plane = mMap.extractFloor(mMap.cloud().makeShared());
 	if (plane.values.size() == 0)
 		return false;
@@ -227,12 +228,12 @@ bool MainApplication::stepGetCandidates(){
 
 	vector<PointIndices> mClusterIndices;
 	mClusterIndices = mMap.clusterCloud(cropedCloud);
-	vector<ObjectCandidate> candidates;
+	
 	//create candidates from indices
 	for (PointIndices indices : mClusterIndices)
-		candidates.push_back(ObjectCandidate(indices, cropedCloud, true));
+		_candidates.push_back(ObjectCandidate(indices, cropedCloud, true));
 	//draw all candidates
-	for (ObjectCandidate candidate : candidates) {
+	for (ObjectCandidate candidate : _candidates) {
 		if(mMap.distanceToPlane(candidate.cloud(), plane) < 0.05)	// Draw only candidates close to the floor.
 			mGui->drawCandidate(candidate);	
 	}

@@ -36,7 +36,7 @@ private:
 	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
 	bool stepUpdateMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
 	bool stepUpdateCameraRotation();
-	bool stepGetCandidates();
+	bool stepGetCandidates(vector<ObjectCandidate> _candidates);
 
 private:
 	StereoCameras		*mCameras;
