@@ -36,8 +36,9 @@ private:	// Private methods.
 	void setFeatures(cjson::Json _params);
 
 private:	// Private members.
-	algorithm::BoW	mBow;
-	algorithm::BoW::Params		mBowParams;
+	algorithm::MlModel		*mMlModel;
+	algorithm::BoW			mBow;
+	algorithm::BoW::Params	mBowParams;
 };
 
 

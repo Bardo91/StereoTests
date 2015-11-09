@@ -49,12 +49,16 @@ bool MainApplication::step() {
 	vector<ObjectCandidate> candidates;
 	if(!stepGetCandidates(candidates)) return false;
 	double t5 = mTimer->getTime();
+	if(!stepCathegorizeCandidates(candidates, frame1, frame2)) return false;
+	double t6 = mTimer->getTime();
 
 	tGetImages.push_back(t1-t0);
 	tTriangulate.push_back(tGetImages[tGetImages.size()-1] + t2-t1);
 	tUpdateMap.push_back(tTriangulate[tTriangulate.size()-1] + t3-t2);
 	tUpdCam.push_back(tUpdateMap[tUpdateMap.size()-1] + t4-t3);
 	tCandidates.push_back(tUpdCam[tUpdCam.size()-1] + t5-t4);
+	tCathegorize.push_back(tCandidates[tCandidates.size()-1] + t6-t5);
+
 
 	mTimePlot.clean();
 	mTimePlot.draw(tGetImages	, 255, 0, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
@@ -230,14 +234,12 @@ bool MainApplication::stepGetCandidates(vector<ObjectCandidate> &_candidates){
 	mClusterIndices = mMap.clusterCloud(cropedCloud);
 	
 	//create candidates from indices
-	for (PointIndices indices : mClusterIndices)
-		_candidates.push_back(ObjectCandidate(indices, cropedCloud, true));
-	//draw all candidates
-	for (ObjectCandidate candidate : _candidates) {
-		if(mMap.distanceToPlane(candidate.cloud(), plane) < 0.05)	// Draw only candidates close to the floor.
-			mGui->drawCandidate(candidate);	
+	for (PointIndices indices : mClusterIndices) {
+		ObjectCandidate candidate(indices, cropedCloud, true);
+		if(mMap.distanceToPlane(candidate.cloud(), plane) < 0.05)
+			_candidates.push_back(candidate);
 	}
-
+	
 	return true;
 }
 
@@ -279,6 +281,8 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 		view = _frame2(boundBox(reprojection2));
 		cathegories = mRecognitionSystem->categorize(view);
 		candidate.addView(view, cathegories);
+
+		mGui->drawCandidate(candidate);	
 	}
 
 	return true;

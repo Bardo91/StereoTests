@@ -46,7 +46,7 @@ private:
 	RecognitionSystem	*mRecognitionSystem;
 
 	BOViL::plot::Graph2d mTimePlot;
-	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates;
+	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates, tCathegorize;
 	BOViL::STime *mTimer;
 
 	cjson::Json mConfig;

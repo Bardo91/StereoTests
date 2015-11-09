@@ -22,6 +22,7 @@ RecognitionSystem::RecognitionSystem(cjson::Json _configFile) {
 	setBowParams(_configFile["bovwParams"]);
 	setModel(_configFile["mlModel"]);
 	setFeatures(_configFile["features"]);
+	mBow.load(_configFile["mlModel"]["modelPath"]);	// 666 Bow class load vocabulary and svm/LDA model, but in json all is inside mlModel
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -75,8 +76,9 @@ cv::ml::SVM::KernelTypes RecognitionSystem::decodeKernelType(std::string _string
 //---------------------------------------------------------------------------------------------------------------------
 void RecognitionSystem::setModel(cjson::Json _params) {
 	if (_params["name"] == "SVM") {
-		SvmModel model;
-		model.setParams(_params["params"]["c"], _params["params"]["gamma"], decodeSvmType(_params["params"]["svmType"]), decodeKernelType(_params["params"]["kernel"]));
+		mMlModel = new SvmModel();
+		static_cast<SvmModel*>(mMlModel)->setParams(_params["params"]["c"], _params["params"]["gamma"], decodeSvmType(_params["params"]["svmType"]), decodeKernelType(_params["params"]["kernel"]));
+		mBow.model(*mMlModel);
 	}
 	else if (_params["name"] = "LDA") {
 		// 666 fill this too.
@@ -109,16 +111,18 @@ void RecognitionSystem::setFeatures(cjson::Json _params) {
 
 
 	// Get descriptor
-	if (_params["detector"] == "SIFT") {
+	if (_params["descriptor"] == "SIFT") {
 		mBowParams.descriptorType = BoW::Params::eDescriptorType::SIFT;
 	}
-	else if (_params["detector"] == "SIFT") {
+	else if (_params["descriptor"] == "ORB") {
 		mBowParams.descriptorType = BoW::Params::eDescriptorType::ORB;
 	}
-	else if (_params["detector"] == "SIFT") {
+	else if (_params["descriptor"] == "SURF") {
 		mBowParams.descriptorType = BoW::Params::eDescriptorType::SURF;
 	}
 	else {
 		assert(false);
 	}
+
+	mBow.params(mBowParams);
 }
