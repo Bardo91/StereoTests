@@ -30,7 +30,8 @@ std::vector<std::pair<unsigned, float>> RecognitionSystem::categorize(const cv::
 	// For now, only one region.
 	vector<Rect> regions;
 	regions.push_back(Rect(0,0,_view.cols, _view.rows));
-
+	imshow("view", _view);
+	waitKey();
 	return mBow.evaluate(_view, regions);
 }
 
