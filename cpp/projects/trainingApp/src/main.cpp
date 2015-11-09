@@ -8,6 +8,8 @@
 #include "../../objectsMap/src/vision/ml/BoW.h"
 using namespace algorithm;
 using namespace std;
+#include <sstream>
+#include <Windows.h>
 
 //---------------------------------------------------------------------------------------------------------------------
 int main(int _argc, char ** _argv) {
@@ -16,7 +18,7 @@ int main(int _argc, char ** _argv) {
 	BoW::Params params;
 	params.extractorType = BoW::Params::eExtractorType::SIFT;
 	params.descriptorType = BoW::Params::eDescriptorType::SIFT;
-	params.imageSizeTrain = 200;
+	params.imageSizeTrain = 640;
 	params.nScalesTrain = 1;
 	params.scaleFactor = 0.5;
 	params.vocSize = 500;
@@ -24,21 +26,22 @@ int main(int _argc, char ** _argv) {
 	bow.params(params);
 
 	SvmModel svm;
-	svm.setParams(2.25, 0.16384, cv::ml::SVM::Types::C_SVC,  cv::ml::SVM::KernelTypes::RBF, true);
+	svm.setParams(2.25, 0.16384, cv::ml::SVM::Types::C_SVC,  cv::ml::SVM::KernelTypes::RBF);
 	bow.model(svm);
 
-	string imageTemplate = "C:/programming/demo_bagofwords/dataset/datasetTools/train/img (%d).jpg";
-	string gtFile = "C:/programming/demo_bagofwords/dataset/datasetTools/train/gt.txt";
+	string imageTemplate = "C:/programming/datasets/objectsMaps/training (%d).jpg";
+	string gtFile = "C:/programming/datasets/objectsMaps/gt.txt";
 	bow.train(imageTemplate, gtFile);
-	bow.save("tools");
+	bow.save("canjuiboxcrasen2");
 
-	string cvImagesPath = "C:/programming/demo_bagofwords/dataset/datasetTools/cv/";
+	string cvImagesPath = "C:/programming/datasets/objectsMaps/";
 	vector<cv::Mat> cvImages;
-	for (int i = 1;i<99999;i++) {
-		cv::Mat image = cv::imread(cvImagesPath + "img (" + to_string(i) +").jpg");
+	for (int i = 1;i<999;i=i+20) {
+		cv::Mat image = cv::imread(cvImagesPath + "training (" + to_string(i) +").jpg");
 		if(image.rows == 0)
 			break;
 
+		cv::resize(image, image, cv::Size(320,240));
 		cvImages.push_back(image);
 	}
 
@@ -50,7 +53,13 @@ int main(int _argc, char ** _argv) {
 		regions.push_back(cv::Rect(0, 0, image.cols, image.rows));
 		results.push_back(bow.evaluate(image, regions));
 
-		std::cout << "Image " << index << ". Label " << results[index][0].first << ". Prob " << results[results.size() -1][0].second << std::endl;
+		stringstream ss;
+
+		ss << "Image " << index << ". Label " << results[index][0].first << ". Prob " << results[results.size() -1][0].second;
+
+		cv::putText(image, ss.str(), cv::Point2i(30,30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
+		cv::imshow("display", image);
+		cv::waitKey();
 		index++;
 	}
 
