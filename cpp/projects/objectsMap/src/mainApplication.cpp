@@ -256,7 +256,10 @@ Rect boundBox(vector<Point2f> _points2d) {
 			maxY = point.y;
 	}
 
-	return Rect(minX, minY, maxX-minX, maxY-minY);
+	return Rect(	minX<0?0:minX, 
+					minY<0?0:minY, 
+					maxX-minX, 
+					maxY-minY);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
