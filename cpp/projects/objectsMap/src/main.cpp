@@ -6,8 +6,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "mainApplication.h"
-#include "TimeTools.h"
-#include "graph2d.h"
+#include "utils/TimeTools.h"
+#include "utils/gui/graph2d.h"
 
 
 #include <opencv2/opencv.hpp>

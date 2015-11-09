@@ -12,7 +12,7 @@
 #ifndef RECOGNITIONSYStEM_H_
 #define RECOGNITIONSYStEM_H_
 
-#include "ml/BoW.h"
+#include "models/BoW.h"
 
 #include <vector>
 #include <cjson/Json.h>

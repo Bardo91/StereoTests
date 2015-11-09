@@ -5,8 +5,8 @@
 //
 
 
-#include "Gui.h"
-#include "ImageFilteringTools.h"
+#include "utils/gui/Gui.h"
+#include "vision/ImageFilteringTools.h"
 #include "mainApplication.h"
 
 #include <cassert>

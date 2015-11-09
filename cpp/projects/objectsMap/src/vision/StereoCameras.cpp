@@ -4,7 +4,7 @@
 //
 //
 
-#include "Gui.h"
+#include "../utils/gui/Gui.h"
 #include "ParallelFeatureMatcher.h"
 #include "StereoCameras.h"
 

@@ -13,8 +13,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/visualization/pcl_visualizer.h>
-#include "StereoCameras.h"
-#include "ObjectCandidate.h"
+#include "../../vision/StereoCameras.h"
+#include "../../vision/ObjectCandidate.h"
 
 
 class Gui {

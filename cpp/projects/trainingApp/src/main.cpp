@@ -5,7 +5,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../../objectsMap/src/vision/ml/BoW.h"
+#include "../../objectsMap/src/vision/ml/models/BoW.h"
 using namespace algorithm;
 using namespace std;
 #include <sstream>

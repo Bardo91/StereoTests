@@ -8,12 +8,12 @@
 #ifndef MAINAPPLICATION_H_
 #define MAINAPPLICATION_H_
 
-#include "graph2d.h"
-#include "Gui.h"
-#include "EnvironmentMap.h"
-#include "vision/RecognitionSystem.h"
-#include "StereoCameras.h"
-#include "TimeTools.h"
+#include "utils/gui/graph2d.h"
+#include "utils/gui/Gui.h"
+#include "utils/TimeTools.h"
+#include "vision/map3d/EnvironmentMap.h"
+#include "vision/ml/RecognitionSystem.h"
+#include "vision/StereoCameras.h"
 
 #include <cjson/json.h>
 #include <pcl/point_cloud.h>
