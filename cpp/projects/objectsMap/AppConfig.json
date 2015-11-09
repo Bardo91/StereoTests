@@ -71,7 +71,7 @@
 				"svmType":"c_svc",
 				"kernel":"RBF"
 			},
-			"modelPath":""
+			"modelPath":"canjuiboxcrasen.svm"
 		}, 
 		"bovwParams":
 		{
