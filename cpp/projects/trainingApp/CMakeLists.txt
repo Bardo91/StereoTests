@@ -23,6 +23,9 @@ if(${PCL_FOUND} AND ${VTK_FOUND} AND ${Boost_FOUND} AND ${FLANN_FOUND})
 	add_definitions(${PCL_DEFINITIONS})
 endif()
 
+# Copy configuration file
+file(COPY trainingConfig.json DESTINATION ${CMAKE_BINARY_DIR}/projects/trainingApp)
+
 
 # Add Executable
 add_executable(trainingApp ${TRAININGAPP_SOURCE_FILES})
