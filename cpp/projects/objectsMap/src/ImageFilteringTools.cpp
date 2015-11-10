@@ -44,7 +44,7 @@ void zeroCrossX(const cv::Mat &_binaryImage, cv::Mat &_output)
 {
 	int m = _binaryImage.rows;
 	int n = _binaryImage.cols;
-	Mat zerocross = Mat(m,n, CV_8U);
+	_output = Mat(m,n, CV_8U);
 
 	for (uint i = 0; i < m; i++)
 	{
@@ -52,15 +52,14 @@ void zeroCrossX(const cv::Mat &_binaryImage, cv::Mat &_output)
 		{
 			if (abs(_binaryImage.at<uchar>(i, j)-_binaryImage.at<uchar>(i, j + 1)) > 0)
 			{
-				zerocross.at<uchar>(i, j) = 255;
+				_output.at<uchar>(i, j) = 255;
 			} 
 			else
 			{
-				zerocross.at<uchar>(i, j) = 0;
+				_output.at<uchar>(i, j) = 0;
 			}
 		}
 	}
-	_output = zerocross;
 }
 
 
@@ -68,7 +67,7 @@ void zeroCrossY(const cv::Mat &_binaryImage, cv::Mat &_output)
 {
 	int m = _binaryImage.rows;
 	int n = _binaryImage.cols;
-	Mat zerocross = Mat(m, n, CV_8U);
+	_output = Mat(m, n, CV_8U);
 
 	for (uint j = 0; j < n; j++)
 	{
@@ -76,13 +75,12 @@ void zeroCrossY(const cv::Mat &_binaryImage, cv::Mat &_output)
 		{
 			if (abs(_binaryImage.at<uchar>(i, j) - _binaryImage.at<uchar>(i+1, j)) > 0)
 			{
-				zerocross.at<uchar>(i, j) = 255;
+				_output.at<uchar>(i, j) = 255;
 			}
 			else
 			{
-				zerocross.at<uchar>(i, j) = 0;
+				_output.at<uchar>(i, j) = 0;
 			}
 		}
 	}
-	_output = zerocross;
 }
