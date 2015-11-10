@@ -136,22 +136,28 @@ bool MainApplication::initRecognitionSystem() {
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
+	Mat gray1, gray2;
 	bool isBlurry1, isBlurry2;
-
+	cout << "Blurriness: ";
 	_frame1 = mCameras->camera(0).frame();
+	cvtColor(_frame1, gray1, CV_BGR2GRAY);
 	if (_frame1.rows != 0) {
-		isBlurry1  = isBlurry(_frame1, mConfig["cameras"]["blurThreshold"]);
-	}else{ return false; }
-	
+		isBlurry1 = isBlurry(gray1, mConfig["cameras"]["blurThreshold"]);
+	}
+	else { return false; }
+
 	_frame2 = mCameras->camera(1).frame();
+	cvtColor(_frame2, gray2, CV_BGR2GRAY);
 	if (_frame2.rows != 0) {
-		isBlurry2  = isBlurry(_frame2, mConfig["cameras"]["blurThreshold"]);
-	}else{ return false; }
+		isBlurry2 = isBlurry(gray2, mConfig["cameras"]["blurThreshold"]);
+	}
+	else { return false; }
+	cout << endl;
 
 	if (isBlurry1 || isBlurry2) {
 		mGui->updateStereoImages(_frame1, _frame2);
-		
-		if(isBlurry1) 
+
+		if(isBlurry1)
 			mGui->putBlurry(true);
 		if(isBlurry2) 
 			mGui->putBlurry(false);
@@ -161,8 +167,6 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 		mGui->drawBox(leftRoi, true, 0,255,0);
 		mGui->drawBox(rightRoi, false, 0,255,0);
 
-		cvtColor(_frame1, _frame1, CV_BGR2GRAY);
-		cvtColor(_frame2, _frame2, CV_BGR2GRAY);
 		
 		return false;
 	} else {
@@ -175,8 +179,10 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 		mGui->drawBox(leftRoi, true, 0,255,0);
 		mGui->drawBox(rightRoi, false, 0,255,0);
 
-		cvtColor(_frame1, _frame1, CV_BGR2GRAY);
-		cvtColor(_frame2, _frame2, CV_BGR2GRAY);
+		_frame1 = gray1;
+		_frame2 = gray2;
+// 		cvtColor(_frame1, _frame1, CV_BGR2GRAY);
+// 		cvtColor(_frame2, _frame2, CV_BGR2GRAY);
 		
 		return true;
 	}
