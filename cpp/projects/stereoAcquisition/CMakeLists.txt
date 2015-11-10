@@ -28,7 +28,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 # Loading 3rd party libraries.
-find_package(OpenCV 3 REQUIRED core imgproc highgui OPTIONAL_COMPONENTS adas)
+find_package(OpenCV 3 REQUIRED core imgproc highgui)
 set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE)
 LINK_DIRECTORIES(${OpenCV_LIB_DIR})
 # Add Executable

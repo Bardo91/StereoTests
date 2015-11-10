@@ -49,7 +49,33 @@ namespace algorithm {
 
 	//-----------------------------------------------------------------------------------------------------------------
 	void BoW::train(std::string _imagePathTemplate, std::string _gtFile) {
-		Ptr<ml::TrainData> trainData =  createTrainData(_imagePathTemplate, _gtFile);
+		// Load dataset from paths
+		unsigned index = 0;
+		vector<Mat> images;
+		for (;;) {	// For each image in dataset
+			Mat frame = loadImage(_imagePathTemplate, index++);
+			if (frame.rows == 0) {
+				break;	// Can't open image.
+			}
+			double scaleFactor = 1;
+			for (unsigned i = 0; i < mParams.nScalesTrain; i++) {
+				Mat resizedImage;
+				resize(frame, resizedImage, Size(), scaleFactor, scaleFactor);
+				images.push_back(resizedImage);
+				scaleFactor*=mParams.scaleFactor;
+			}
+		}
+		Mat groundTruth = loadGroundTruth(_gtFile);
+
+		// Train models
+		Ptr<ml::TrainData> trainData =  createTrainData(images, groundTruth);
+		mModel->trainModel(trainData);
+	}
+
+	//-----------------------------------------------------------------------------------------------------------------
+	void BoW::train(const std::vector<cv::Mat> &_images, const std::vector<unsigned> &_groundTruth) {
+		Ptr<ml::TrainData> trainData = createTrainData(_images, _groundTruth);;
+		
 		mModel->trainModel(trainData);
 	}
 
@@ -126,31 +152,20 @@ namespace algorithm {
 	}
 
 	//-----------------------------------------------------------------------------------------------------------------
-	Ptr<ml::TrainData> BoW::createTrainData(const std::string &_imagePathTemplate, const std::string &_gtFile) {
+	Ptr<ml::TrainData> BoW::createTrainData(const std::vector<cv::Mat> &_images, const std::vector<unsigned> &_groundTruth) {
 		Mat descriptorsAll;
 		vector<Mat> descriptorPerImg;
 		unsigned index = 1;
-		for (;;) {	// For each image in dataset
-			Mat frame = loadImage(_imagePathTemplate, index++);
-			if (frame.rows == 0) {
-				break;	// Can't open image.
-			}
-			double scaleFactor = 1;
-			for (unsigned i = 0; i < mParams.nScalesTrain; i++) {
-				Mat resizedImage;
-				resize(frame, resizedImage, Size(), scaleFactor, scaleFactor);
+		for (Mat image:_images) {	// For each image in dataset
+			// Look for interest points to compute features in there.
+			vector<KeyPoint> keypoints;
+			Mat descriptors = computeFeatures(image, keypoints);
 
-				// Look for interest points to compute features in there.
-				vector<KeyPoint> keypoints;
-				Mat descriptors = computeFeatures(resizedImage, keypoints);
+			Mat descriptors_32f;
+			descriptors.convertTo(descriptors_32f, CV_32F, 1.0 / 255.0);
 
-				Mat descriptors_32f;
-				descriptors.convertTo(descriptors_32f, CV_32F, 1.0 / 255.0);
-
-				descriptorsAll.push_back(descriptors_32f);
-				descriptorPerImg.push_back(descriptors_32f);
-				scaleFactor*=mParams.scaleFactor;
-			}
+			descriptorsAll.push_back(descriptors_32f);
+			descriptorPerImg.push_back(descriptors_32f);
 		}
 		// Form codebook from all descriptors
 		mCodebook = formCodebook(descriptorsAll);
@@ -167,10 +182,7 @@ namespace algorithm {
 			transpose(histograms[i], rotated);
 			rotated.copyTo(X.row(i));
 		}
-
-		Mat groundTruth = loadGroundTruth(_gtFile);
-
-		return ml::TrainData::create(X, ml::SampleTypes::ROW_SAMPLE, groundTruth);
+		return ml::TrainData::create(X, ml::SampleTypes::ROW_SAMPLE, _groundTruth);
 	}
 
 	//-----------------------------------------------------------------------------------------------------------------
