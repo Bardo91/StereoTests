@@ -1,8 +1,8 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8)
 project(StereoTests)
 
 # Collect all sources
-file(GLOB_RECURSE TRAININGAPP_SOURCE_FILES "src/*.cpp" "src/*.h" "src/*.inl" "../objectsMap/src/vision/*.h" "../objectsMap/src/vision/*.cpp")
+file(GLOB_RECURSE TRAININGAPP_SOURCE_FILES "src/*.cpp" "src/*.h" "src/*.inl" "../objectsMap/src/vision/*.h" "../objectsMap/src/vision/*.cpp" "../objectsMap/src/utils/*.h" "../objectsMap/src/utils/*.cpp")
 
 # Compiler specific options
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -29,6 +29,8 @@ add_executable(trainingApp ${TRAININGAPP_SOURCE_FILES})
 
 target_include_directories(trainingApp PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(trainingApp PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_include_directories(trainingApp PUBLIC ${PROJECT_SOURCE_DIR}/../../lib/cjson/src)
+target_link_libraries(trainingApp LINK_PUBLIC cjson)
 target_link_libraries(trainingApp LINK_PUBLIC ${OpenCV_LIBS})
 target_link_libraries(trainingApp LINK_PUBLIC ${PCL_LIBRARIES})
 
