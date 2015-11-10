@@ -24,10 +24,10 @@ using namespace cjson;
 
 void initConfig(string _path, Json &_config);
 void initBow(BoW &_bow, Json &_config);
-void initCameras(StereoCameras *_cameras, Json &_config);
+StereoCameras * initCameras(Json &_config);
 
 // To do in a loop
-void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud);
+void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Json &_config);
 void reprojectPoints(const vector<Point3f> &_cloud, vector<Point2f> &_leftPoints, vector<Point2f> &_rightPoints);
 void getSubImagesAndGroundTruth();
 
@@ -45,16 +45,19 @@ int main(int _argc, char ** _argv) {
 	assert(_argc == 2);	// Added path to training configuration file.
 	initConfig(string(_argv[1]), config);
 	initBow(bow, config["recognitionSystem"]);
-	initCameras(cameras, config["cameras"]);
+	cameras = initCameras(config["cameras"]);
 
 	vector<Mat> images;
 	Mat groundTruth;
 	for (;;) {
 		vector<Point3f> cloud;
-		/*calculatePointCloud(cameras, cloud);*/
+		calculatePointCloud(cameras, cloud, config);
+		
+		waitKey();
+		
 		if(cloud.size() == 0)
 			break;
-
+		
 		// 666 Todo next things.
 	}
 
@@ -201,14 +204,15 @@ void initBow(BoW & _bow, Json &_config) {
 }
 
 //---------------------------------------------------------------------------------------------------------------
-void initCameras(StereoCameras * _cameras, Json &_config) {
-	_cameras = new StereoCameras(_config["left"], _config["right"]);
+StereoCameras * initCameras(Json &_config) {
+	StereoCameras *  cameras = new StereoCameras(_config["left"], _config["right"]);
 	Json leftRoi = _config["leftRoi"];
 	Json rightRoi = _config["rightRoi"];
-	_cameras->roi(	Rect(leftRoi["x"],leftRoi["y"],leftRoi["width"],leftRoi["height"]), 
+	cameras->roi(	Rect(leftRoi["x"],leftRoi["y"],leftRoi["width"],leftRoi["height"]), 
 		Rect(rightRoi["x"],rightRoi["y"],rightRoi["width"],rightRoi["height"]));
-	_cameras->load(_config["paramFile"]);
-	_cameras->rangeZ(_config["pointRanges"]["z"]["min"], _config["pointRanges"]["z"]["max"]);
+	cameras->load(_config["paramFile"]);
+	cameras->rangeZ(_config["pointRanges"]["z"]["min"], _config["pointRanges"]["z"]["max"]);
+	return cameras;
 }
 
 
@@ -272,7 +276,7 @@ void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Json 
 	int squareSize = _config["cameras"]["templateSquareSize"];
 	int maxReprojectionError = _config["cameras"]["maxReprojectionError"];
 	pcl::PointCloud<pcl::PointXYZ> cloud;
-	cloud = _config->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);
+	cloud = *_cameras->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);
 	_cloud.clear();
 	for (pcl::PointXYZ point : cloud)
 	{

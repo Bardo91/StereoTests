@@ -22,7 +22,7 @@
 			"width":610,
 			"height":480
 		},
-		"blurThreshold":0.8,
+		"blurThreshold":1.30,
 		"disparityRange":
 		{
 			"min":60,
