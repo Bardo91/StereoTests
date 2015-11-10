@@ -50,7 +50,7 @@ namespace algorithm {
 	//-----------------------------------------------------------------------------------------------------------------
 	void BoW::train(std::string _imagePathTemplate, std::string _gtFile) {
 		// Load dataset from paths
-		unsigned index = 0;
+		unsigned index = 1;
 		vector<Mat> images;
 		for (;;) {	// For each image in dataset
 			Mat frame = loadImage(_imagePathTemplate, index++);
@@ -73,7 +73,7 @@ namespace algorithm {
 	}
 
 	//-----------------------------------------------------------------------------------------------------------------
-	void BoW::train(const std::vector<cv::Mat> &_images, const std::vector<unsigned> &_groundTruth) {
+	void BoW::train(const std::vector<cv::Mat> &_images, const cv::Mat &_groundTruth) {
 		Ptr<ml::TrainData> trainData = createTrainData(_images, _groundTruth);;
 		
 		mModel->trainModel(trainData);
@@ -152,7 +152,7 @@ namespace algorithm {
 	}
 
 	//-----------------------------------------------------------------------------------------------------------------
-	Ptr<ml::TrainData> BoW::createTrainData(const std::vector<cv::Mat> &_images, const std::vector<unsigned> &_groundTruth) {
+	Ptr<ml::TrainData> BoW::createTrainData(const std::vector<cv::Mat> &_images, const cv::Mat &_groundTruth) {
 		Mat descriptorsAll;
 		vector<Mat> descriptorPerImg;
 		unsigned index = 1;

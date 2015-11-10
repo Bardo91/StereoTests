@@ -95,7 +95,7 @@ namespace algorithm {
 		void train(std::string _imagePathTemplate, std::string _gtFile);
 
 		/// Train model with given dataset
-		void train(const std::vector<cv::Mat> &_images, const std::vector<unsigned> &_groundTruth);
+		void train(const std::vector<cv::Mat> &_images, const cv::Mat &_groundTruth);
 
 		/// Evaluate input
 		std::vector<std::pair<unsigned, float>> evaluate(cv::Mat _image, std::vector<cv::Rect> _regions);
@@ -117,7 +117,7 @@ namespace algorithm {
 		cv::Mat loadImage(std::string _filePatern, unsigned index);
 
 		// Create train data.
-		cv::Ptr<cv::ml::TrainData> createTrainData(const std::vector<cv::Mat> &_images, const std::vector<unsigned> &_groundTruth);
+		cv::Ptr<cv::ml::TrainData> createTrainData(const std::vector<cv::Mat> &_images, const cv::Mat &_groundTruth);
 
 		// Find regions of interest in the given image and Compute features on given regions.
 		cv::Mat computeFeatures(const cv::Mat &_frame,std::vector<cv::KeyPoint> &_keypoints = std::vector<cv::KeyPoint>());
