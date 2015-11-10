@@ -144,8 +144,7 @@ cv::ml::SVM::Types decodeSvmType(std::string _string) {
 cv::ml::SVM::KernelTypes decodeKernelType(std::string _string) {
 	if (_string == "RBF") {
 		return ml::SVM::KernelTypes::RBF;
-	}
-	else {
+	} else {
 		assert(false);
 		return  ml::SVM::KernelTypes::RBF;	// 666 never reach this.
 	}
@@ -157,10 +156,8 @@ void setModel(BoW & _bow, cjson::Json _params) {
 		static_cast<SvmModel*>(mlModel)->setParams(_params["params"]["c"], _params["params"]["gamma"], decodeSvmType(_params["params"]["svmType"]), decodeKernelType(_params["params"]["kernel"]));
 		_bow.model(*mlModel);
 		mlModel = nullptr;
-	}
-	else if (_params["name"] = "LDA") {		// 666 fill this too. 
-	}
-	else {
+	} else if (_params["name"] = "LDA") {		// 666 fill this too. 
+	} else {
 		assert(false);
 	}
 }
@@ -215,15 +212,13 @@ StereoCameras * initCameras(Json &_config) {
 	return cameras;
 }
 
-
 //---------------------------------------------------------------------------------------------------------------------
 void trainModel(BoW & _bow, vector<Mat>& _images, Mat & _groundTruth) {
 	_bow.train(_images, _groundTruth);
 }
 
-
-void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Json &_config)
-{
+//---------------------------------------------------------------------------------------------------------------------
+void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Json &_config) {
 	Mat gray1, gray2, _frame1, _frame2;
 	bool isBlurry1, isBlurry2;
 	cout << "Blurriness: ";
@@ -252,11 +247,6 @@ void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Json 
 			putText(imageTogether, "Blurry Image", Point2i(20 + _frame1.cols, 30), FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255), 4);
 
 		imshow("StereoViewer", imageTogether);
-
-		Rect leftRoi = _cameras->roi(true);
-		Rect rightRoi = _cameras->roi(false);
-		// 		mGui->drawBox(leftRoi, true, 0, 255, 0);
-		// 		mGui->drawBox(rightRoi, false, 0, 255, 0);
 		return;
 	}
 	else {
@@ -278,10 +268,7 @@ void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Json 
 	pcl::PointCloud<pcl::PointXYZ> cloud;
 	cloud = *_cameras->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);
 	_cloud.clear();
-	for (pcl::PointXYZ point : cloud)
-	{
+	for (pcl::PointXYZ point : cloud) {
 		_cloud.push_back(Point3f(point.x, point.y, point.z));
 	}
-	return;
-
 }
