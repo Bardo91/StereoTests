@@ -3,10 +3,11 @@
 	{
 		"name":"Stereo Detector"
 	},
+	"gtFile":"C:/programming/datasets/train3d/gt.txt",
 	"cameras":
 	{
-		"left":"C:/programming/CalibrationD/CalibrationD/LargeRandom_highFPS/img_cam1_%d.jpg",
-		"right":"C:/programming/CalibrationD/CalibrationD/LargeRandom_highFPS/img_cam2_%d.jpg",
+		"left":"C:/programming/datasets/train3d/cam1 (%d).jpg",
+		"right":"C:/programming/datasets/train3d/cam2 (%d).jpg",
 		"paramFile":"C:/programming/StereoTests/cpp/build/projects/calibrationTest/stereo_D",
 		"leftRoi":
 		{
@@ -22,7 +23,7 @@
 			"width":610,
 			"height":480
 		},
-		"blurThreshold":1.30,
+		"blurThreshold":5.0,
 		"disparityRange":
 		{
 			"min":60,
