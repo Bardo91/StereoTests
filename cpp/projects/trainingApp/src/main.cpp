@@ -46,6 +46,8 @@ int main(int _argc, char ** _argv) {
 	initBow(bow, config["recognitionSystem"]);
 	initCameras(cameras, config["cameras"]);
 
+	vector<Mat> images;
+	Mat groundTruth;
 	for (;;) {
 		vector<Point3f> cloud;
 		/*calculatePointCloud(cameras, cloud);*/
@@ -54,6 +56,11 @@ int main(int _argc, char ** _argv) {
 
 		// 666 Todo next things.
 	}
+
+	trainModel(bow, images, groundTruth);
+
+
+	// 666 TEST IMAGES.
 
 	/*BoW bow;
 
@@ -201,4 +208,10 @@ void initCameras(StereoCameras * _cameras, Json &_config) {
 		Rect(rightRoi["x"],rightRoi["y"],rightRoi["width"],rightRoi["height"]));
 	_cameras->load(_config["paramFile"]);
 	_cameras->rangeZ(_config["pointRanges"]["z"]["min"], _config["pointRanges"]["z"]["max"]);
+}
+
+
+//---------------------------------------------------------------------------------------------------------------------
+void trainModel(BoW & _bow, vector<Mat>& _images, Mat & _groundTruth) {
+	_bow.train(_images, _groundTruth);
 }
