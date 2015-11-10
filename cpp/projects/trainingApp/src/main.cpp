@@ -6,14 +6,37 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../../objectsMap/src/vision/ml/models/BoW.h"
-using namespace algorithm;
-using namespace std;
+#include "../../objectsMap/src/vision/StereoCameras.h"
+
 #include <sstream>
 #include <Windows.h>
+#include <opencv2/opencv.hpp>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+
+using namespace algorithm;
+using namespace std;
+using namespace cv;
+
+void initBow(BoW &_bow);
+void initMap(StereoCameras &_cameras);
+
+// To do in a loop
+void calculatePointCloud(StereoCameras &_cameras, vector<Point3f> &_cloud);
+void reprojectPoints(const vector<Point3f> &_cloud, vector<Point2f> &_leftPoints, vector<Point2f> &_rightPoints);
+void getSubImagesAndGroundTruth();
+
+// For training
+void trainModel(BoW &_bow, vector<Mat> &_images, Mat &_groundTruth);
+
 
 //---------------------------------------------------------------------------------------------------------------------
 int main(int _argc, char ** _argv) {
 	BoW bow;
+
+
+
+	/*BoW bow;
 
 	BoW::Params params;
 	params.extractorType = BoW::Params::eExtractorType::SIFT;
@@ -63,6 +86,6 @@ int main(int _argc, char ** _argv) {
 		index++;
 	}
 
-	system("PAUSE");
+	system("PAUSE");*/
 
 }
