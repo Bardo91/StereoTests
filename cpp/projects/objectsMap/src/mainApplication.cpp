@@ -179,10 +179,10 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 		mGui->drawBox(leftRoi, true, 0,255,0);
 		mGui->drawBox(rightRoi, false, 0,255,0);
 
-		_frame1 = gray1;
-		_frame2 = gray2;
-// 		cvtColor(_frame1, _frame1, CV_BGR2GRAY);
-// 		cvtColor(_frame2, _frame2, CV_BGR2GRAY);
+// 		_frame1 = gray1; //not correct because they are distorted images
+// 		_frame2 = gray2;
+		cvtColor(_frame1, _frame1, CV_BGR2GRAY);
+		cvtColor(_frame2, _frame2, CV_BGR2GRAY);
 		
 		return true;
 	}

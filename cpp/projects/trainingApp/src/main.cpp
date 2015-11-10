@@ -7,6 +7,7 @@
 
 #include "../../objectsMap/src/vision/ml/models/BoW.h"
 #include "../../objectsMap/src/vision/StereoCameras.h"
+#include "../../objectsMap/src/vision/ImageFilteringTools.h"
 
 #include <sstream>
 #include <Windows.h>
@@ -19,10 +20,10 @@ using namespace std;
 using namespace cv;
 
 void initBow(BoW &_bow);
-void initMap(StereoCameras &_cameras);
+void initMap(StereoCameras *_cameras);
 
 // To do in a loop
-void calculatePointCloud(StereoCameras &_cameras, vector<Point3f> &_cloud);
+void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud);
 void reprojectPoints(const vector<Point3f> &_cloud, vector<Point2f> &_leftPoints, vector<Point2f> &_rightPoints);
 void getSubImagesAndGroundTruth();
 
@@ -87,5 +88,70 @@ int main(int _argc, char ** _argv) {
 	}
 
 	system("PAUSE");*/
+
+}
+
+
+void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Json &_config)
+{
+	Mat gray1, gray2, _frame1, _frame2;
+	bool isBlurry1, isBlurry2;
+	cout << "Blurriness: ";
+	_frame1 = _cameras->camera(0).frame();
+	cvtColor(_frame1, gray1, CV_BGR2GRAY);
+	if (_frame1.rows != 0) {
+		isBlurry1 = isBlurry(gray1, _config["cameras"]["blurThreshold"]);
+	}
+	else { return; }
+
+	_frame2 = _cameras->camera(1).frame();
+	cvtColor(_frame2, gray2, CV_BGR2GRAY);
+	if (_frame2.rows != 0) {
+		isBlurry2 = isBlurry(gray2, _config["cameras"]["blurThreshold"]);
+	}
+	else { return; }
+	cout << endl;
+
+	Mat imageTogether;
+	if (isBlurry1 || isBlurry2) {
+		hconcat(_frame1, _frame2, imageTogether);
+
+		if (isBlurry1)
+			putText(imageTogether, "Blurry Image", Point2i(20, 30), FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255), 4);
+		if (isBlurry2)
+			putText(imageTogether, "Blurry Image", Point2i(20 + _frame1.cols, 30), FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255), 4);
+
+		imshow("StereoViewer", imageTogether);
+
+		Rect leftRoi = _cameras->roi(true);
+		Rect rightRoi = _cameras->roi(false);
+		// 		mGui->drawBox(leftRoi, true, 0, 255, 0);
+		// 		mGui->drawBox(rightRoi, false, 0, 255, 0);
+		return;
+	}
+	else {
+		_frame1 = _cameras->camera(0).undistort(_frame1);
+		_frame2 = _cameras->camera(1).undistort(_frame2);
+		hconcat(_frame1, _frame2, imageTogether);
+		imshow("StereoViewer", imageTogether);
+
+		Rect leftRoi = _cameras->roi(true);
+		Rect rightRoi = _cameras->roi(false);
+
+		cvtColor(_frame1, _frame1, CV_BGR2GRAY);
+		cvtColor(_frame2, _frame2, CV_BGR2GRAY);
+	}
+
+	pair<int, int> disparityRange(_config["cameras"]["disparityRange"]["min"], _config["cameras"]["disparityRange"]["max"]);
+	int squareSize = _config["cameras"]["templateSquareSize"];
+	int maxReprojectionError = _config["cameras"]["maxReprojectionError"];
+	pcl::PointCloud<pcl::PointXYZ> cloud;
+	cloud = _config->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);
+	_cloud.clear();
+	for (pcl::PointXYZ point : cloud)
+	{
+		_cloud.push_back(Point3f(point.x, point.y, point.z));
+	}
+	return;
 
 }

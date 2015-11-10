@@ -148,6 +148,7 @@ PointCloud<PointXYZ>::Ptr StereoCameras::pointCloud(const cv::Mat &_frame1, cons
 			cloud->push_back(point);
 		}
 	}
+	std::cout << "Points in the selected range: " << cloud->size() << std::endl;
 
 	return cloud;
 }
