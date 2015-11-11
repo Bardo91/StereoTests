@@ -22,7 +22,6 @@ RecognitionSystem::RecognitionSystem(cjson::Json _configFile) {
 	setBowParams(_configFile["bovwParams"]);
 	setModel(_configFile["mlModel"]);
 	setFeatures(_configFile["features"]);
-	mBow.load(_configFile["mlModel"]["modelPath"]);	// 666 Bow class load vocabulary and svm/LDA model, but in json all is inside mlModel
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -81,12 +80,15 @@ void RecognitionSystem::setModel(cjson::Json _params) {
 		static_cast<SvmModel*>(mMlModel)->setParams(_params["params"]["c"], _params["params"]["gamma"], decodeSvmType(_params["params"]["svmType"]), decodeKernelType(_params["params"]["kernel"]));
 		mBow.model(*mMlModel);
 	}
-	else if (_params["name"] = "LDA") {
-		// 666 fill this too.
+	else if (_params["name"] == "LDA") {
+		mMlModel = new LdaModel();
+		static_cast<LdaModel*>(mMlModel)->setParams(_params["params"]["alpha"], _params["params"]["beta"]);
+		mBow.model(*mMlModel);
 	}
 	else {
 		assert(false);
 	}
+	mBow.load(_params["modelPath"]);	// 666 Bow class load vocabulary and svm/LDA model, but in json all is inside mlModel
 }
 
 //---------------------------------------------------------------------------------------------------------------------

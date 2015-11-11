@@ -160,14 +160,19 @@ cv::ml::SVM::KernelTypes decodeKernelType(std::string _string) {
 
 void setModel(BoW & _bow, cjson::Json _params) {
 	if (_params["name"] == "SVM") {
-		SvmModel * mlModel = new SvmModel();
+		MlModel * mlModel = new SvmModel();
 		static_cast<SvmModel*>(mlModel)->setParams(_params["params"]["c"], _params["params"]["gamma"], decodeSvmType(_params["params"]["svmType"]), decodeKernelType(_params["params"]["kernel"]), true);
 		_bow.model(*mlModel);
 		mlModel = nullptr;
-	} else if (_params["name"] = "LDA") {		// 666 fill this too. 
-	} else {
+	} else if (_params["name"] = "LDA") {
+		MlModel * mlModel = new LdaModel();
+		static_cast<LdaModel*>(mlModel)->setParams(_params["params"]["alpha"], _params["params"]["beta"]);
+		_bow.model(*mlModel);
+	}
+	else {
 		assert(false);
 	}
+	//_bow.load(_params["modelPath"]);
 }
 
 void setBowParams(algorithm::BoW::Params & _bowParams, cjson::Json _params) {
