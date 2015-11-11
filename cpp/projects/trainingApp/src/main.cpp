@@ -47,7 +47,7 @@ int main(int _argc, char ** _argv) {
 	assert(_argc == 2);	// Added path to training configuration file.
 	initConfig(string(_argv[1]), config);
 
-	if (config["train"]) {
+	if (config["recognitionSystem"]["train"]) {
 
 		cameras = initCameras(config["cameras"]);
 
@@ -98,7 +98,7 @@ int main(int _argc, char ** _argv) {
 		BOWImgDescriptorExtractor histogramExtractor(detector, matcher);
 
 		histogramExtractor.setVocabulary(vocabulary);
-		FileStorage codebook("codebook.yml", FileStorage::WRITE);
+		FileStorage codebook(string(config["recognitionSystem"]["mlModel"]["modelPath"])+".yml", FileStorage::WRITE);
 		codebook << "vocabulary" << vocabulary;
 
 
@@ -126,11 +126,18 @@ int main(int _argc, char ** _argv) {
 		mSvm = cv::ml::SVM::create();
 		mSvm->setType(ml::SVM::Types::C_SVC);
 		mSvm->setKernel(ml::SVM::KernelTypes::RBF);
-		//mSvm->setGamma(0.001);
-		//mSvm->setC(10);
-		//mSvm->trainAuto(trainData, 10);
-		mSvm->trainAuto(trainData, 10, cv::ml::ParamGrid(1, 10000, 1.5), cv::ml::ParamGrid(0.0001, 1, 2));
-		mSvm->save("cvSvm");
+		if (config["recognitionSystem"]["mlModel"]["params"]["auto"]) {
+			Json params = config["recognitionSystem"]["mlModel"]["params"];
+			mSvm->trainAuto(trainData, 10, 
+							cv::ml::ParamGrid(params["c_grid"](0), params["c_grid"](1), params["c_grid"](2)), 
+							cv::ml::ParamGrid(params["g_grid"](0), params["g_grid"](1), params["g_grid"](2)));
+		}
+		else {
+			mSvm->setGamma(config["recognitionSystem"]["mlModel"]["params"]["gamma"]);
+			mSvm->setC(config["recognitionSystem"]["mlModel"]["params"]["c"]);
+			mSvm->train(trainData);
+		}
+		mSvm->save(string(config["recognitionSystem"]["mlModel"]["modelPath"]));
 
 		system("PAUSE");
 		vector<vector<pair<unsigned, float>>> results;
@@ -154,15 +161,17 @@ int main(int _argc, char ** _argv) {
 		BOWImgDescriptorExtractor histogramExtractor(detector, matcher);
 
 		Mat vocabulary;
-		FileStorage codebook("codebook.yml", FileStorage::READ);
-		codebook["vocabulary"]>>vocabulary;
+		FileStorage codebook(string(config["recognitionSystem"]["mlModel"]["modelPath"]) + ".yml", FileStorage::READ);
+		codebook["vocabulary"] >> vocabulary;
 		histogramExtractor.setVocabulary(vocabulary);
 
-		cv::Ptr<cv::ml::SVM> mSvm = mSvm = Algorithm::load<cv::ml::SVM>("cvSvm");
+		cv::Ptr<cv::ml::SVM> mSvm  = Algorithm::load<cv::ml::SVM>(string(config["recognitionSystem"]["mlModel"]["modelPath"]));
+		mSvm->setGamma(1.2799999676644802e-03);
+		mSvm->setC(4.3789389038085938e+02);
 		string cvImagesPath = "C:/programming/datasets/train3d/cv/";
 		vector<cv::Mat> cvImages;
 		for (int i = 1;i < 100;i++) {
-			string name = cvImagesPath + "view1_"+ to_string(i) + ".jpg";
+			string name = cvImagesPath + "view1_" + to_string(i) + ".jpg";
 			cout << "opening " << name << endl;
 			cv::Mat image = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
 			if (image.rows == 0)
@@ -185,60 +194,6 @@ int main(int _argc, char ** _argv) {
 			cv::waitKey();
 		}
 	}
-	// 666 TEST IMAGES.
-
-	/*BoW bow;
-
-	BoW::Params params;
-	params.extractorType = BoW::Params::eExtractorType::SIFT;
-	params.descriptorType = BoW::Params::eDescriptorType::SIFT;
-	params.imageSizeTrain = 640;
-	params.nScalesTrain = 1;
-	params.scaleFactor = 0.5;
-	params.vocSize = 500;
-
-	bow.params(params);
-
-	SvmModel svm;
-	svm.setParams(2.25, 0.16384, cv::ml::SVM::Types::C_SVC,  cv::ml::SVM::KernelTypes::RBF);
-	bow.model(svm);
-
-	string imageTemplate = "C:/programming/datasets/objectsMaps/training (%d).jpg";
-	string gtFile = "C:/programming/datasets/objectsMaps/gt.txt";
-	bow.train(imageTemplate, gtFile);
-	bow.save("canjuiboxcrasen2");
-
-	string cvImagesPath = "C:/programming/datasets/objectsMaps/";
-	vector<cv::Mat> cvImages;
-	for (int i = 1;i<999;i=i+20) {
-		cv::Mat image = cv::imread(cvImagesPath + "training (" + to_string(i) +").jpg");
-		if(image.rows == 0)
-			break;
-
-		cv::resize(image, image, cv::Size(320,240));
-		cvImages.push_back(image);
-	}
-
-
-	vector<vector<pair<unsigned,float>>> results;
-	int index = 0;
-	for (cv::Mat image : cvImages) {
-		vector<cv::Rect> regions;
-		regions.push_back(cv::Rect(0, 0, image.cols, image.rows));
-		results.push_back(bow.evaluate(image, regions));
-
-		stringstream ss;
-
-		ss << "Image " << index << ". Label " << results[index][0].first << ". Prob " << results[results.size() -1][0].second;
-
-		cv::putText(image, ss.str(), cv::Point2i(30,30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
-		cv::imshow("display", image);
-		cv::waitKey();
-		index++;
-	}
-
-	system("PAUSE");*/
-
 }
 
 void initConfig(string _path, Json & _data) {
