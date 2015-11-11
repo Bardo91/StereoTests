@@ -41,76 +41,150 @@ void trainModel(BoW &_bow, vector<Mat> &_images, Mat &_groundTruth);
 
 //---------------------------------------------------------------------------------------------------------------------
 int main(int _argc, char ** _argv) {
-	BoW bow;
 	StereoCameras *cameras;
 	Json config;
-	
+
 	assert(_argc == 2);	// Added path to training configuration file.
 	initConfig(string(_argv[1]), config);
-	initBow(bow, config["recognitionSystem"]);
-	cameras = initCameras(config["cameras"]);
 
-	vector<Mat> images;
-	Mat groundTruth = loadGroundTruth(config["gtFile"]);
-	Mat frame1, frame2, vLeft, vRight;
-	for (;;) {
-		vector<Point3f> cloud;
-		calculatePointCloud(cameras, cloud, frame1, frame2, config);
-		if(cloud.size() == 0)
-			break;
+	if (config["train"]) {
 
-		getSubImages(cameras, cloud, frame1, frame2, vLeft, vRight);
-		images.push_back(vLeft);
-		images.push_back(vRight);
-		
-		//imshow("left", vLeft);
-		//imshow("right", vRight);
+		cameras = initCameras(config["cameras"]);
 
-		waitKey(3);
+		vector<Mat> images;
+		Mat groundTruth = loadGroundTruth(config["gtFile"]);
+		Mat frame1, frame2, vLeft, vRight;
+		for (;;) {
+			vector<Point3f> cloud;
+			calculatePointCloud(cameras, cloud, frame1, frame2, config);
+			if (cloud.size() == 0)
+				break;
+
+			getSubImages(cameras, cloud, frame1, frame2, vLeft, vRight);
+			images.push_back(vLeft);
+			images.push_back(vRight);
+
+			//imshow("left", vLeft);
+			//imshow("right", vRight);
+
+			waitKey(3);
+		}
+
+		int dictionarySize = 500;
+		TermCriteria tc(CV_TERMCRIT_ITER, 10, 0.001);
+		int retries = 1;
+		int flags = KMEANS_PP_CENTERS;
+		BOWKMeansTrainer bowTrainer(dictionarySize, tc, retries, flags);
+
+		Ptr<FeatureDetector> detector = xfeatures2d::SIFT::create();
+		Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
+		//auto data = bow.createTrainData(images, groundTruth);
+		Mat descriptorsAll;
+		unsigned index = 1;
+		for (Mat image : images) {	// For each image in dataset
+									// Look for interest points to compute features in there.
+			vector<KeyPoint> keypoints;
+			Mat descriptors;
+			detector->detect(image, keypoints);
+			detector->compute(image, keypoints, descriptors);
+			descriptorsAll.push_back(descriptors);
+		}
+
+		Mat descriptors32;
+		descriptorsAll.convertTo(descriptors32, CV_32F, 1.0 / 255.0);
+		Mat vocabulary = bowTrainer.cluster(descriptors32);
+
+
+		BOWImgDescriptorExtractor histogramExtractor(detector, matcher);
+
+		histogramExtractor.setVocabulary(vocabulary);
+		FileStorage codebook("codebook.yml", FileStorage::WRITE);
+		codebook << "vocabulary" << vocabulary;
+
+
+		FileStorage histogramsFile("histogramPerImgCv.yml", FileStorage::WRITE);
+		index = 0;
+		Mat gt = loadGroundTruth("C:/programming/datasets/train3d/gt.txt");
+		Mat data;
+		vector<Mat> oriHist;
+		for (Mat image : images) {	// For each image in dataset
+			Mat descriptor;
+			vector<KeyPoint> keypoints;
+			detector->detect(image, keypoints);
+			detector->compute(image, keypoints, descriptor);
+			Mat histogram;
+			histogramExtractor.compute(descriptor, histogram);
+			histogramsFile << "hist_" + to_string(index) << histogram;
+			index++;
+			data.push_back(histogram);
+			oriHist.push_back(histogram);
+		}
+
+		Ptr<ml::TrainData> trainData = ml::TrainData::create(data, ml::SampleTypes::ROW_SAMPLE, gt);
+
+		cv::Ptr<cv::ml::SVM> mSvm;
+		mSvm = cv::ml::SVM::create();
+		mSvm->setType(ml::SVM::Types::C_SVC);
+		mSvm->setKernel(ml::SVM::KernelTypes::RBF);
+		//mSvm->setGamma(0.001);
+		//mSvm->setC(10);
+		//mSvm->trainAuto(trainData, 10);
+		mSvm->trainAuto(trainData, 10, cv::ml::ParamGrid(1, 10000, 1.5), cv::ml::ParamGrid(0.0001, 1, 2));
+		mSvm->save("cvSvm");
+
+		system("PAUSE");
+		vector<vector<pair<unsigned, float>>> results;
+		for (unsigned i = 0; i < oriHist.size(); i++) {
+			Mat results;
+			mSvm->predict(oriHist[i], results);
+
+			stringstream ss;
+			ss << "Image " << i << ". Label " << results.at<float>(0, 0) << ". Prob " << results.at<float>(0, 1);
+			cout << ss.str() << endl;
+			Mat image = images[i];
+			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
+			cv::imshow("display", image);
+			cv::waitKey();
+		}
+
 	}
+	else {
+		Ptr<FeatureDetector> detector = xfeatures2d::SIFT::create();
+		Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
+		BOWImgDescriptorExtractor histogramExtractor(detector, matcher);
 
+		Mat vocabulary;
+		FileStorage codebook("codebook.yml", FileStorage::READ);
+		codebook["vocabulary"]>>vocabulary;
+		histogramExtractor.setVocabulary(vocabulary);
 
-	BOWKMeansTrainer bowTrainer(6);
+		cv::Ptr<cv::ml::SVM> mSvm = mSvm = Algorithm::load<cv::ml::SVM>("cvSvm");
+		string cvImagesPath = "C:/programming/datasets/train3d/cv/";
+		vector<cv::Mat> cvImages;
+		for (int i = 1;i < 100;i++) {
+			string name = cvImagesPath + "view1_"+ to_string(i) + ".jpg";
+			cout << "opening " << name << endl;
+			cv::Mat image = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
+			if (image.rows == 0)
+				break;
 
-	Ptr<FeatureDetector> detector = xfeatures2d::SIFT::create();
-	Ptr<DescriptorMatcher> matcher = FlannBasedMatcher::create("FlannBased"); 
-	//auto data = bow.createTrainData(images, groundTruth);
-	Mat descriptorsAll;
-	unsigned index = 1;
-	for (Mat image:images) {	// For each image in dataset
-								// Look for interest points to compute features in there.
-		vector<KeyPoint> keypoints;
-		Mat descriptors;
-		detector->detect(image, keypoints);
-		detector->compute(image, keypoints, descriptors);
-		Mat descriptors_32f;
-		descriptors.convertTo(descriptors_32f, CV_32F, 1.0 / 255.0);
+			Mat descriptor;
+			vector<KeyPoint> keypoints;
+			detector->detect(image, keypoints);
+			detector->compute(image, keypoints, descriptor);
+			Mat histogram;
+			histogramExtractor.compute(descriptor, histogram);
+			Mat results;
+			mSvm->predict(histogram, results);
 
-		descriptorsAll.push_back(descriptors_32f);
+			stringstream ss;
+			ss << "Image " << i << ". Label " << results.at<float>(0, 0) << ". Prob " << results.at<float>(0, 1);
+			cout << ss.str() << endl;
+			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
+			cv::imshow("display", image);
+			cv::waitKey();
+		}
 	}
-
-
-	Mat vocabulary = bowTrainer.cluster(descriptorsAll);
-
-
-	BOWImgDescriptorExtractor histogramExtractor(detector, matcher);
-
-	histogramExtractor.setVocabulary(vocabulary);
-
-
-	FileStorage histogramsFile("histogramPerImgCv.yml", FileStorage::WRITE);
-	index = 0;
-	for (Mat image : images) {	// For each image in dataset
-		Mat descriptor;
-		vector<KeyPoint> keypoints;
-		detector->detect(image, keypoints);
-		histogramExtractor.compute(keypoints, descriptor);
-		histogramsFile << "hist_"+to_string(index) << image;
-		index++;
-
-	}
-	
-
 	// 666 TEST IMAGES.
 
 	/*BoW bow;
