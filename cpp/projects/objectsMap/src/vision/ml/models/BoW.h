@@ -106,7 +106,7 @@ namespace algorithm {
 		/// Load model
 		void load(std::string _name);
 
-	private:	// Private methods
+	public:	// Private methods
 				// Randomize order of set in order to improve train performance.
 				//void randomizeSet();		Supposed that set is randomly acquired.
 

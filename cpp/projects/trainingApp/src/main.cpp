@@ -16,6 +16,7 @@
 #include <pcl/point_cloud.h>
 #include <cjson/json.h>
 #include <fstream>
+#include <opencv2/xfeatures2d.hpp>
 
 using namespace algorithm;
 using namespace std;
@@ -66,11 +67,47 @@ int main(int _argc, char ** _argv) {
 		waitKey(3);
 	}
 
-	trainModel(bow, images, groundTruth);
 
-	bow.save("canjuiboxsencrabot");
+	BOWKMeansTrainer bowTrainer(6);
 
-	system("PAUSE");
+	Ptr<FeatureDetector> detector = xfeatures2d::SIFT::create();
+	Ptr<DescriptorMatcher> matcher = FlannBasedMatcher::create("FlannBased"); 
+	//auto data = bow.createTrainData(images, groundTruth);
+	Mat descriptorsAll;
+	unsigned index = 1;
+	for (Mat image:images) {	// For each image in dataset
+								// Look for interest points to compute features in there.
+		vector<KeyPoint> keypoints;
+		Mat descriptors;
+		detector->detect(image, keypoints);
+		detector->compute(image, keypoints, descriptors);
+		Mat descriptors_32f;
+		descriptors.convertTo(descriptors_32f, CV_32F, 1.0 / 255.0);
+
+		descriptorsAll.push_back(descriptors_32f);
+	}
+
+
+	Mat vocabulary = bowTrainer.cluster(descriptorsAll);
+
+
+	BOWImgDescriptorExtractor histogramExtractor(detector, matcher);
+
+	histogramExtractor.setVocabulary(vocabulary);
+
+
+	FileStorage histogramsFile("histogramPerImgCv.yml", FileStorage::WRITE);
+	index = 0;
+	for (Mat image : images) {	// For each image in dataset
+		Mat descriptor;
+		vector<KeyPoint> keypoints;
+		detector->detect(image, keypoints);
+		histogramExtractor.compute(keypoints, descriptor);
+		histogramsFile << "hist_"+to_string(index) << image;
+		index++;
+
+	}
+	
 
 	// 666 TEST IMAGES.
 
