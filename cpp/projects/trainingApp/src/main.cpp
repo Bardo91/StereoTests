@@ -14,6 +14,7 @@
 #include <opencv2/opencv.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 #include <cjson/json.h>
 #include <fstream>
 
@@ -30,6 +31,7 @@ StereoCameras * initCameras(Json &_config);
 void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Mat &_frame1, Mat &_frame2, Json &_config);
 void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const Mat &_frame1, const Mat &_frame2, Mat &_viewLeft, Mat &_viewRight);
 Mat loadGroundTruth(string _path);
+pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inputCloud, Json &_config);
 
 // For training
 void trainModel(BoW &_bow, vector<Mat> &_images, Mat &_groundTruth);
@@ -289,6 +291,7 @@ void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Mat &
 	int maxReprojectionError = _config["cameras"]["maxReprojectionError"];
 	pcl::PointCloud<pcl::PointXYZ> cloud;
 	cloud = *_cameras->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);
+	cloud = filter(cloud, _config);
 	_cloud.clear();
 	for (pcl::PointXYZ point : cloud) {
 		_cloud.push_back(Point3f(point.x, point.y, point.z));
@@ -337,4 +340,16 @@ void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const 
 	rectangle(display, r2, Scalar(0,0,255));
 
 	imshow("display", display);
+}
+
+pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inputCloud, Json &_config) {
+	pcl::PointCloud<pcl::PointXYZ> filteredCloud;
+	pcl::StatisticalOutlierRemoval<pcl::PointXYZ>		outlierRemoval;
+	outlierRemoval.setMeanK(_config["mapParams"]["outlierMeanK"]);
+	outlierRemoval.setStddevMulThresh(_config["mapParams"]["outlierStdDev"]);
+	outlierRemoval.setNegative((bool)_config["mapParams"]["outlierSetNegative"]);
+	outlierRemoval.setInputCloud(_inputCloud.makeShared());
+	outlierRemoval.filter(filteredCloud);
+	return filteredCloud;
+
 }
