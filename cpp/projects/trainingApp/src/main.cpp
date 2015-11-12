@@ -104,7 +104,7 @@ int main(int _argc, char ** _argv) {
 
 		FileStorage histogramsFile("histogramPerImgCv.yml", FileStorage::WRITE);
 		index = 0;
-		Mat gt = loadGroundTruth("C:/programming/datasets/train3d/gt.txt");
+		//Mat gt = loadGroundTruth("C:/programming/datasets/train3d/gt.txt");
 		Mat data;
 		vector<Mat> oriHist;
 		for (Mat image : images) {	// For each image in dataset
@@ -120,7 +120,7 @@ int main(int _argc, char ** _argv) {
 			oriHist.push_back(histogram);
 		}
 
-		Ptr<ml::TrainData> trainData = ml::TrainData::create(data, ml::SampleTypes::ROW_SAMPLE, gt);
+		Ptr<ml::TrainData> trainData = ml::TrainData::create(data, ml::SampleTypes::ROW_SAMPLE, groundTruth);
 
 		cv::Ptr<cv::ml::SVM> mSvm;
 		mSvm = cv::ml::SVM::create();
@@ -168,7 +168,7 @@ int main(int _argc, char ** _argv) {
 		cv::Ptr<cv::ml::SVM> mSvm  = Algorithm::load<cv::ml::SVM>(string(config["recognitionSystem"]["mlModel"]["modelPath"]));
 		mSvm->setGamma(1.2799999676644802e-03);
 		mSvm->setC(4.3789389038085938e+02);
-		string cvImagesPath = "C:/programming/datasets/train3d/cv/";
+		string cvImagesPath = "C:/Users/GRVC/Desktop/train3d/cv/";
 		vector<cv::Mat> cvImages;
 		for (int i = 1;i < 100;i++) {
 			string name = cvImagesPath + "view1_" + to_string(i) + ".jpg";
