@@ -25,7 +25,6 @@ using namespace cv;
 using namespace cjson;
 
 void initConfig(string _path, Json &_config);
-void initBow(BoW &_bow, Json &_config);
 StereoCameras * initCameras(Json &_config);
 
 // To do in a loop
@@ -34,8 +33,6 @@ void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const 
 Mat loadGroundTruth(string _path);
 pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inputCloud, Json &_config);
 
-// For training
-void trainModel(BoW &_bow, vector<Mat> &_images, Mat &_groundTruth);
 
 void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &_images);
 void showMatch(const Mat &groundTruth, const Mat &results, vector<Mat> &images);
@@ -132,7 +129,7 @@ int main(int _argc, char ** _argv) {
 		}
 		mSvm->save(string(config["recognitionSystem"]["mlModel"]["modelPath"]));
 
-		system("PAUSE");
+		/*system("PAUSE");
 		vector<vector<pair<unsigned, float>>> results;
 		for (unsigned i = 0; i < oriHist.size(); i++) {
 			Mat results;
@@ -145,27 +142,22 @@ int main(int _argc, char ** _argv) {
 			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 			cv::imshow("display", image);
 			cv::waitKey();
-		}
-
-	
+		}*/
 
 		// stuff for showing the result class
-	
+		vector<Mat> cvImages;
+		string cvPath = "C:/programming/datasets/train3d/cv/";
+		for (unsigned i = 0; i < 165;i++) {
+			Mat frame = imread(cvPath + "view2_"+to_string(i)+".jpg");
+			if(frame.rows == 0)
+				break;
+			else
+				cvImages.push_back(frame);
+		}
 
-		
 
-		//cv::Ptr<cv::ml::SVM> mSvm  = Algorithm::load<cv::ml::SVM>(string(config["recognitionSystem"]["mlModel"]["modelPath"]));
-// 		mSvm->setGamma(1.2799999676644802e-03);
-// 		mSvm->setC(4.3789389038085938e+02);
-// 		for (int i = 1;i < 100;i++) {
-// 			string name = cvImagesPath + "view1_" + to_string(i) + ".jpg";
-// 			cout << "opening " << name << endl;
-// 			cv::Mat image = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
-// 			if (image.rows == 0)
-// 				break;
-
-		for (int i = 0; i < images.size(); i += 2) {
-			Mat image = images[i];
+		for (int i = 0; i < cvImages.size(); i += 2) {
+			Mat image = cvImages[i];
 
 			Mat descriptor;
 			vector<KeyPoint> keypoints;
@@ -199,84 +191,6 @@ void initConfig(string _path, Json & _data) {
 	_data.parse(file);
 }
 
-cv::ml::SVM::Types decodeSvmType(std::string _string) {
-	if (_string == "c_svc") 
-		return ml::SVM::Types::C_SVC;
-	else if (_string == "v_svc") 
-		return ml::SVM::Types::NU_SVC;
-	else if (_string == "v_svr") 
-		return ml::SVM::Types::NU_SVR;
-	else if (_string == "eps_svr") 
-		return ml::SVM::Types::EPS_SVR;
-	else {
-		assert(false);
-		return  ml::SVM::Types::EPS_SVR;	// 666 never reach this.
-	}
-}
-cv::ml::SVM::KernelTypes decodeKernelType(std::string _string) {
-	if (_string == "RBF") {
-		return ml::SVM::KernelTypes::RBF;
-	} else {
-		assert(false);
-		return  ml::SVM::KernelTypes::RBF;	// 666 never reach this.
-	}
-}
-
-void setModel(BoW & _bow, cjson::Json _params) {
-	if (_params["name"] == "SVM") {
-		MlModel * mlModel = new SvmModel();
-		static_cast<SvmModel*>(mlModel)->setParams(_params["params"]["c"], _params["params"]["gamma"], decodeSvmType(_params["params"]["svmType"]), decodeKernelType(_params["params"]["kernel"]), true);
-		_bow.model(*mlModel);
-		mlModel = nullptr;
-	} else if (_params["name"] = "LDA") {
-		MlModel * mlModel = new LdaModel();
-		static_cast<LdaModel*>(mlModel)->setParams(_params["params"]["alpha"], _params["params"]["beta"]);
-		_bow.model(*mlModel);
-	}
-	else {
-		assert(false);
-	}
-	//_bow.load(_params["modelPath"]);
-}
-
-void setBowParams(algorithm::BoW::Params & _bowParams, cjson::Json _params) {
-	_bowParams.vocSize = (int) _params["vocabularySize"];
-}
-
-void setFeatures(algorithm::BoW::Params & _bowParams, cjson::Json _params) {
-	// get detector
-	if (_params["detector"] == "SIFT") 
-		_bowParams.extractorType = BoW::Params::eExtractorType::SIFT;
-	else if (_params["detector"] == "FAST") 
-		_bowParams.extractorType = BoW::Params::eExtractorType::FAST;
-	else if (_params["detector"] == "ORB") 
-		_bowParams.extractorType = BoW::Params::eExtractorType::ORB;
-	else if (_params["detector"] == "SURF") 
-		_bowParams.extractorType = BoW::Params::eExtractorType::SURF;
-	else if (_params["detector"] == "MSER")
-		_bowParams.extractorType = BoW::Params::eExtractorType::MSER;
-	else 
-		assert(false);
-	
-	if (_params["descriptor"] == "SIFT") 
-		_bowParams.descriptorType = BoW::Params::eDescriptorType::SIFT;
-	else if (_params["descriptor"] == "ORB") 
-		_bowParams.descriptorType = BoW::Params::eDescriptorType::ORB;
-	else if (_params["descriptor"] == "SURF") 
-		_bowParams.descriptorType = BoW::Params::eDescriptorType::SURF;
-	else 
-		assert(false);
-}
-
-//---------------------------------------------------------------------------------------------------------------
-void initBow(BoW & _bow, Json &_config) {
-	algorithm::BoW::Params	bowParams;
-	setBowParams(bowParams, _config["bovwParams"]);
-	setFeatures(bowParams, _config["features"]);
-	_bow.params(bowParams);
-	setModel(_bow, _config["mlModel"]);
-}
-
 //---------------------------------------------------------------------------------------------------------------
 StereoCameras * initCameras(Json &_config) {
 	StereoCameras *  cameras = new StereoCameras(_config["left"], _config["right"]);
@@ -301,11 +215,6 @@ Mat loadGroundTruth(string _path) {
 		//groundTruth.push_back(gtVal);
 	}
 	return groundTruth;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-void trainModel(BoW & _bow, vector<Mat>& _images, Mat & _groundTruth) {
-	_bow.train(_images, _groundTruth);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
