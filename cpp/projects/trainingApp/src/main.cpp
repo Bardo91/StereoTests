@@ -37,6 +37,9 @@ pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inp
 // For training
 void trainModel(BoW &_bow, vector<Mat> &_images, Mat &_groundTruth);
 
+void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &_images);
+void showMatch(const Mat &groundTruth, const Mat &results, const vector<Mat> images);
+
 
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -47,28 +50,14 @@ int main(int _argc, char ** _argv) {
 	assert(_argc == 2);	// Added path to training configuration file.
 	initConfig(string(_argv[1]), config);
 
+	cameras = initCameras(config["cameras"]);
+
+	vector<Mat> images;
+	Mat groundTruth = loadGroundTruth(config["gtFile"]);
+	createTrainingImages(cameras, config, images);
+
+
 	if (config["recognitionSystem"]["train"]) {
-
-		cameras = initCameras(config["cameras"]);
-
-		vector<Mat> images;
-		Mat groundTruth = loadGroundTruth(config["gtFile"]);
-		Mat frame1, frame2, vLeft, vRight;
-		for (;;) {
-			vector<Point3f> cloud;
-			calculatePointCloud(cameras, cloud, frame1, frame2, config);
-			if (cloud.size() == 0)
-				break;
-
-			getSubImages(cameras, cloud, frame1, frame2, vLeft, vRight);
-			images.push_back(vLeft);
-			images.push_back(vRight);
-
-			//imshow("left", vLeft);
-			//imshow("right", vRight);
-
-			waitKey(3);
-		}
 
 		int dictionarySize = 500;
 		TermCriteria tc(CV_TERMCRIT_ITER, 10, 0.001);
@@ -159,6 +148,8 @@ int main(int _argc, char ** _argv) {
 		Ptr<FeatureDetector> detector = xfeatures2d::SIFT::create();
 		Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
 		BOWImgDescriptorExtractor histogramExtractor(detector, matcher);
+		// stuff for showing the result class
+	
 
 		Mat vocabulary;
 		FileStorage codebook(string(config["recognitionSystem"]["mlModel"]["modelPath"]) + ".yml", FileStorage::READ);
@@ -185,6 +176,10 @@ int main(int _argc, char ** _argv) {
 			histogramExtractor.compute(descriptor, histogram);
 			Mat results;
 			mSvm->predict(histogram, results);
+
+			showMatch(groundTruth, results, images);
+
+
 
 			stringstream ss;
 			ss << "Image " << i << ". Label " << results.at<float>(0, 0) << ". Prob " << results.at<float>(0, 1);
@@ -423,4 +418,33 @@ pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inp
 	outlierRemoval.filter(filteredCloud);
 	return filteredCloud;
 
+}
+
+void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &_images)
+{
+	Mat frame1, frame2, vLeft, vRight;
+	for (;;) {
+		vector<Point3f> cloud;
+		calculatePointCloud(_cameras, cloud, frame1, frame2, _config);
+		if (cloud.size() == 0)
+			break;
+
+		getSubImages(_cameras, cloud, frame1, frame2, vLeft, vRight);
+		_images.push_back(vLeft);
+		_images.push_back(vRight);
+
+		waitKey(3);
+	}
+}
+
+void showMatch(const Mat &groundTruth, const Mat &results, const vector<Mat> images)
+{
+	auto* Mi = groundTruth.ptr<int>(0);
+	int j;
+	for (j = 0; j < groundTruth.rows; j++) {
+		if (Mi[j] == results.at<float>(0, 1))
+			break;
+	}
+	//cv::putText(imageSh, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
+	cv::imshow("match", images[j]);
 }
