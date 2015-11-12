@@ -38,7 +38,7 @@ pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inp
 void trainModel(BoW &_bow, vector<Mat> &_images, Mat &_groundTruth);
 
 void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &_images);
-void showMatch(const Mat &groundTruth, const Mat &results, const vector<Mat> images);
+void showMatch(const Mat &groundTruth, const Mat &results, vector<Mat> &images);
 
 
 
@@ -147,24 +147,16 @@ int main(int _argc, char ** _argv) {
 			cv::waitKey();
 		}
 
-	}
-	else {
-		Ptr<FeatureDetector> detector = xfeatures2d::SIFT::create();
-		Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
-		BOWImgDescriptorExtractor histogramExtractor(detector, matcher);
+	
+
 		// stuff for showing the result class
 	
 
-		Mat vocabulary;
-		FileStorage codebook(string(config["recognitionSystem"]["mlModel"]["modelPath"]) + ".yml", FileStorage::READ);
-		codebook["vocabulary"] >> vocabulary;
-		histogramExtractor.setVocabulary(vocabulary);
+		
 
-		cv::Ptr<cv::ml::SVM> mSvm  = Algorithm::load<cv::ml::SVM>(string(config["recognitionSystem"]["mlModel"]["modelPath"]));
+		//cv::Ptr<cv::ml::SVM> mSvm  = Algorithm::load<cv::ml::SVM>(string(config["recognitionSystem"]["mlModel"]["modelPath"]));
 // 		mSvm->setGamma(1.2799999676644802e-03);
 // 		mSvm->setC(4.3789389038085938e+02);
-		string cvImagesPath = "C:/Users/GRVC/Desktop/train3d/cv/";
-		vector<cv::Mat> cvImages;
 // 		for (int i = 1;i < 100;i++) {
 // 			string name = cvImagesPath + "view1_" + to_string(i) + ".jpg";
 // 			cout << "opening " << name << endl;
@@ -172,15 +164,15 @@ int main(int _argc, char ** _argv) {
 // 			if (image.rows == 0)
 // 				break;
 
-			for (int i = 0; i < images.size(); i += 2) {
-				Mat image = images[i];
+		for (int i = 0; i < images.size(); i += 2) {
+			Mat image = images[i];
 
 			Mat descriptor;
 			vector<KeyPoint> keypoints;
 			detector->detect(image, keypoints);
 			detector->compute(image, keypoints, descriptor);
-// 			Mat descriptors32;
-// 			descriptor.convertTo(descriptors32, CV_32F, 1.0 / 255.0);
+			// 			Mat descriptors32;
+			// 			descriptor.convertTo(descriptors32, CV_32F, 1.0 / 255.0);
 			Mat histogram;
 			histogramExtractor.compute(descriptor, histogram);
 			Mat results;
@@ -446,14 +438,20 @@ void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &
 	}
 }
 
-void showMatch(const Mat &groundTruth, const Mat &results, const vector<Mat> images)
-{
-	auto* Mi = groundTruth.ptr<int>(0);
+void showMatch(const Mat &groundTruth, const Mat &results,  vector<Mat> &images) {
 	int j;
+	int res = results.at<float>(0, 1);
+	cout << "result: " << res << endl;
 	for (j = 0; j < groundTruth.rows; j++) {
-		if (Mi[j] == results.at<float>(0, 1))
+	
+		int gt = groundTruth.at<int>(j);
+		cout << gt << " ";
+		if (res == gt)
 			break;
 	}
+	cout << endl;
 	//cv::putText(imageSh, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
-	cv::imshow("match", images[j*2]);
+	j = min(j*2, 625);
+	Mat image = images[j].clone();
+	cv::imshow("match", image);
 }
