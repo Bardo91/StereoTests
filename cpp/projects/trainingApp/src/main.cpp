@@ -70,8 +70,10 @@ int main(int _argc, char ** _argv) {
 		//auto data = bow.createTrainData(images, groundTruth);
 		Mat descriptorsAll;
 		unsigned index = 1;
-		for (Mat image : images) {	// For each image in dataset
+		//for (Mat image : images) {	// For each image in dataset
 									// Look for interest points to compute features in there.
+		for (int k = 0; k < images.size(); k += 2) {
+			Mat image = images[k];
 			vector<KeyPoint> keypoints;
 			Mat descriptors;
 			detector->detect(image, keypoints);
@@ -79,9 +81,9 @@ int main(int _argc, char ** _argv) {
 			descriptorsAll.push_back(descriptors);
 		}
 
-		Mat descriptors32;
-		descriptorsAll.convertTo(descriptors32, CV_32F, 1.0 / 255.0);
-		Mat vocabulary = bowTrainer.cluster(descriptors32);
+// 		Mat descriptors32;
+// 		descriptorsAll.convertTo(descriptors32, CV_32F, 1.0 / 255.0);
+		Mat vocabulary = bowTrainer.cluster(descriptorsAll);
 
 
 		BOWImgDescriptorExtractor histogramExtractor(detector, matcher);
@@ -96,7 +98,9 @@ int main(int _argc, char ** _argv) {
 		//Mat gt = loadGroundTruth("C:/programming/datasets/train3d/gt.txt");
 		Mat data;
 		vector<Mat> oriHist;
-		for (Mat image : images) {	// For each image in dataset
+		//for (Mat image : images) {	// For each image in dataset
+		for (int k = 0; k < images.size(); k += 2) {
+			Mat image = images[k];
 			Mat descriptor;
 			vector<KeyPoint> keypoints;
 			detector->detect(image, keypoints);
@@ -157,21 +161,26 @@ int main(int _argc, char ** _argv) {
 		histogramExtractor.setVocabulary(vocabulary);
 
 		cv::Ptr<cv::ml::SVM> mSvm  = Algorithm::load<cv::ml::SVM>(string(config["recognitionSystem"]["mlModel"]["modelPath"]));
-		mSvm->setGamma(1.2799999676644802e-03);
-		mSvm->setC(4.3789389038085938e+02);
+// 		mSvm->setGamma(1.2799999676644802e-03);
+// 		mSvm->setC(4.3789389038085938e+02);
 		string cvImagesPath = "C:/Users/GRVC/Desktop/train3d/cv/";
 		vector<cv::Mat> cvImages;
-		for (int i = 1;i < 100;i++) {
-			string name = cvImagesPath + "view1_" + to_string(i) + ".jpg";
-			cout << "opening " << name << endl;
-			cv::Mat image = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
-			if (image.rows == 0)
-				break;
+// 		for (int i = 1;i < 100;i++) {
+// 			string name = cvImagesPath + "view1_" + to_string(i) + ".jpg";
+// 			cout << "opening " << name << endl;
+// 			cv::Mat image = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
+// 			if (image.rows == 0)
+// 				break;
+
+			for (int i = 0; i < images.size(); i += 2) {
+				Mat image = images[i];
 
 			Mat descriptor;
 			vector<KeyPoint> keypoints;
 			detector->detect(image, keypoints);
 			detector->compute(image, keypoints, descriptor);
+// 			Mat descriptors32;
+// 			descriptor.convertTo(descriptors32, CV_32F, 1.0 / 255.0);
 			Mat histogram;
 			histogramExtractor.compute(descriptor, histogram);
 			Mat results;
@@ -297,7 +306,7 @@ Mat loadGroundTruth(string _path) {
 		int gtVal;
 		gtFile >> gtVal;
 		groundTruth.push_back(gtVal);
-		groundTruth.push_back(gtVal);
+		//groundTruth.push_back(gtVal);
 	}
 	return groundTruth;
 }
@@ -446,5 +455,5 @@ void showMatch(const Mat &groundTruth, const Mat &results, const vector<Mat> ima
 			break;
 	}
 	//cv::putText(imageSh, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
-	cv::imshow("match", images[j]);
+	cv::imshow("match", images[j*2]);
 }
