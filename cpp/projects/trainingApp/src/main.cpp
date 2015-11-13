@@ -32,14 +32,14 @@ StereoCameras * initCameras(Json &_config);
 // To do in a loop
 void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Mat &_frame1, Mat &_frame2, Json &_config);
 void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const Mat &_frame1, const Mat &_frame2, Mat &_viewLeft, Mat &_viewRight);
-Mat loadGroundTruth(string _path);
+Mat loadGroundTruth(string _path, int _scaleCount =1);
 pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inputCloud, Json &_config);
 
 // For training
 void trainModel(BoW &_bow, vector<Mat> &_images, Mat &_groundTruth);
 
 void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &_images);
-void showMatch(const Mat &_groundTruth, const Mat &_results, const vector<Mat> &_images);
+void showMatch(const Mat &_groundTruth, const Mat &_results, const vector<Mat> &_images, int _scaleCount);
 
 
 
@@ -51,10 +51,13 @@ int main(int _argc, char ** _argv) {
 	assert(_argc == 2);	// Added path to training configuration file.
 	initConfig(string(_argv[1]), config);
 
+	int scaleCount = 1; //add this to config, min value 1
+	float scaleStep = 0.7;
+
 	cameras = initCameras(config["cameras"]);
 
 	vector<Mat> images;
-	Mat groundTruth = loadGroundTruth(config["gtFile"]);
+	Mat groundTruth = loadGroundTruth(config["gtFile"],scaleCount);
 	createTrainingImages(cameras, config, images);
 
 
@@ -104,11 +107,11 @@ int main(int _argc, char ** _argv) {
 			Mat imageOri = images[k];
 			//vector<Mat> differentImageScales;
 			double scaleFactor = 1;
-			for (unsigned i = 0; i < 3; i++) {
+			for (unsigned i = 0; i < scaleCount; i++) {
 				Mat image;
 				resize(imageOri, image, Size(), scaleFactor, scaleFactor);
 				//differentImageScales.push_back(resizedImage);
-				scaleFactor *= 0.7;
+				scaleFactor *= scaleStep;
 			Mat descriptor;
 			vector<KeyPoint> keypoints;
 			detector->detect(image, keypoints);
@@ -156,10 +159,10 @@ int main(int _argc, char ** _argv) {
 			stringstream ss;
 			ss << "Image " << i << ". Label " << results.at<float>(0, 1) << ". Prob " << results.at<float>(0, 0);
 			cout << ss.str() << endl;
-			Mat image = images[floor(i/3)*2];
+			Mat image = images[floor(i/scaleCount)*2];
 			//cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 			cv::imshow("display", image);
-			cv::waitKey();
+			//cv::waitKey();
 		}
 
 		float trueRate = (float) accumulate(success.begin(), success.end(), 0) / groundTruth.rows;
@@ -183,7 +186,7 @@ int main(int _argc, char ** _argv) {
 			histogramExtractor.compute(descriptor, histogram);
 			Mat results;
 			mSvm->predict(histogram, results);
-			showMatch(groundTruth, results, images);
+			showMatch(groundTruth, results, images, scaleCount);
 			stringstream ss;
 			ss << "Image " << i << ". Label " << results.at<float>(0, 1) << ". Prob " << results.at<float>(0, 0);
 			cout << ss.str() << endl;
@@ -222,7 +225,7 @@ int main(int _argc, char ** _argv) {
 				success.push_back(true);
 			else
 				success.push_back(false);
-			showMatch(groundTruth, results, images);
+			showMatch(groundTruth, results, images, scaleCount);
 
 
 
@@ -231,10 +234,10 @@ int main(int _argc, char ** _argv) {
 			cout << ss.str() << endl;
 			//cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 			cv::imshow("display", image);
-			k=k+3;
+			k=k+ scaleCount;
 			cv::waitKey();
 		}
-		trueRate = (float)accumulate(success.begin(), success.end(), 0) / groundTruth.rows*3;
+		trueRate = (float)accumulate(success.begin(), success.end(), 0) / groundTruth.rows*scaleCount;
 		cout << "On the testing data our success rate is " << trueRate * 100 << "%" << endl;
 		system("PAUSE");
 	}
@@ -338,16 +341,17 @@ StereoCameras * initCameras(Json &_config) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Mat loadGroundTruth(string _path) {
+Mat loadGroundTruth(string _path, int _scale) {
 	Mat groundTruth(0, 1, CV_32SC1);
 	ifstream gtFile(_path);
 	assert(gtFile.is_open());
 	for (unsigned i = 0; !gtFile.eof();i++) {
 		int gtVal;
 		gtFile >> gtVal;
-		groundTruth.push_back(gtVal);
-		groundTruth.push_back(gtVal); 
-		groundTruth.push_back(gtVal);
+		for (unsigned j = 0; j < _scale; j++)
+		{
+			groundTruth.push_back(gtVal);
+		}
 	}
 	return groundTruth;
 }
@@ -488,7 +492,7 @@ void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &
 	}
 }
 
-void showMatch(const Mat & _groundTruth, const Mat & _results,const  vector<Mat> & _images) {
+void showMatch(const Mat & _groundTruth, const Mat & _results,const  vector<Mat> & _images, int _scaleCount) {
 	int j,gt;
 	int res = _results.at<float>(0, 1);
 	for (j = 0; j < _groundTruth.rows; j++) {
@@ -498,6 +502,6 @@ void showMatch(const Mat & _groundTruth, const Mat & _results,const  vector<Mat>
 			break;
 	}
 	//cv::putText(imageSh, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
-	Mat image = _images[floor(j/3)*2];
+	Mat image = _images[floor(j/_scaleCount)*2];
 	cv::imshow("match", image);
 }
