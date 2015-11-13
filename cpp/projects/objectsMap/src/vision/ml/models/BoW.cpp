@@ -111,6 +111,7 @@ namespace algorithm {
 		FileStorage fs(_name + ".yml", FileStorage::READ);
 		fs["vocabulary"] >> mCodebook;
 		fs.release(); 
+		mHistogramExtractor->setVocabulary(mCodebook);
 		mModel->load(_name);
 	}
 
