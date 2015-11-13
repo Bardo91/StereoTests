@@ -100,6 +100,32 @@ int main(int _argc, char ** _argv) {
 			cv::waitKey();
 		}
 	}
+	else {
+		bow.load(config["recognitionSystem"]["mlModel"]["modelPath"]);
+
+		vector<Mat> cvImages;
+		string cvPath = "C:/programming/datasets/train3d/cv/";
+		for (unsigned i = 0; i < 165;i++) {
+			Mat frame = imread(cvPath + "view2_"+to_string(i)+".jpg");
+			if(frame.rows == 0)
+				break;
+			else
+				cvImages.push_back(frame);
+		}
+
+
+		for (int i = 0; i < cvImages.size(); i += 2) {
+			std::vector<std::pair<unsigned, float>>  results = bow.evaluate(cvImages[i]);
+
+			showMatch(groundTruth, results[0].first, images);
+
+			stringstream ss;
+			ss << "Image " << i << ". Label " << results[0].first << ". Prob " << results[0].second;
+			cout << ss.str() << endl;
+			cv::imshow("display", cvImages[i]);
+			cv::waitKey();
+		}
+	}
 }
 
 void initConfig(string _path, Json & _data) {
