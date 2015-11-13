@@ -25,6 +25,7 @@ using namespace cv;
 using namespace cjson;
 
 void initConfig(string _path, Json &_config);
+void initBow(BoW &_bow, Json &_config);
 StereoCameras * initCameras(Json &_config);
 
 // To do in a loop
@@ -35,7 +36,7 @@ pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inp
 
 
 void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &_images);
-void showMatch(const Mat &groundTruth, const Mat &results, vector<Mat> &images);
+void showMatch(const Mat &groundTruth, unsigned _label, vector<Mat> &images);
 
 
 
@@ -43,10 +44,11 @@ void showMatch(const Mat &groundTruth, const Mat &results, vector<Mat> &images);
 int main(int _argc, char ** _argv) {
 	StereoCameras *cameras;
 	Json config;
+	BoW bow;
 
 	assert(_argc == 2);	// Added path to training configuration file.
 	initConfig(string(_argv[1]), config);
-
+	initBow(bow, config["recognitionSystem"]);
 	cameras = initCameras(config["cameras"]);
 
 	vector<Mat> images;
@@ -56,78 +58,8 @@ int main(int _argc, char ** _argv) {
 
 	if (config["recognitionSystem"]["train"]) {
 
-		int dictionarySize = 500;
-		TermCriteria tc(CV_TERMCRIT_ITER, 10, 0.001);
-		int retries = 1;
-		int flags = KMEANS_PP_CENTERS;
-		BOWKMeansTrainer bowTrainer(dictionarySize, tc, retries, flags);
-
-		Ptr<FeatureDetector> detector = xfeatures2d::SIFT::create();
-		Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce");
-		//auto data = bow.createTrainData(images, groundTruth);
-		Mat descriptorsAll;
-		unsigned index = 1;
-		//for (Mat image : images) {	// For each image in dataset
-									// Look for interest points to compute features in there.
-		for (int k = 0; k < images.size(); k += 2) {
-			Mat image = images[k];
-			vector<KeyPoint> keypoints;
-			Mat descriptors;
-			detector->detect(image, keypoints);
-			detector->compute(image, keypoints, descriptors);
-			descriptorsAll.push_back(descriptors);
-		}
-
-// 		Mat descriptors32;
-// 		descriptorsAll.convertTo(descriptors32, CV_32F, 1.0 / 255.0);
-		Mat vocabulary = bowTrainer.cluster(descriptorsAll);
-
-
-		BOWImgDescriptorExtractor histogramExtractor(detector, matcher);
-
-		histogramExtractor.setVocabulary(vocabulary);
-		FileStorage codebook(string(config["recognitionSystem"]["mlModel"]["modelPath"])+".yml", FileStorage::WRITE);
-		codebook << "vocabulary" << vocabulary;
-
-
-		FileStorage histogramsFile("histogramPerImgCv.yml", FileStorage::WRITE);
-		index = 0;
-		//Mat gt = loadGroundTruth("C:/programming/datasets/train3d/gt.txt");
-		Mat data;
-		vector<Mat> oriHist;
-		//for (Mat image : images) {	// For each image in dataset
-		for (int k = 0; k < images.size(); k += 2) {
-			Mat image = images[k];
-			Mat descriptor;
-			vector<KeyPoint> keypoints;
-			detector->detect(image, keypoints);
-			detector->compute(image, keypoints, descriptor);
-			Mat histogram;
-			histogramExtractor.compute(descriptor, histogram);
-			histogramsFile << "hist_" + to_string(index) << histogram;
-			index++;
-			data.push_back(histogram);
-			oriHist.push_back(histogram);
-		}
-
-		Ptr<ml::TrainData> trainData = ml::TrainData::create(data, ml::SampleTypes::ROW_SAMPLE, groundTruth);
-
-		cv::Ptr<cv::ml::SVM> mSvm;
-		mSvm = cv::ml::SVM::create();
-		mSvm->setType(ml::SVM::Types::C_SVC);
-		mSvm->setKernel(ml::SVM::KernelTypes::RBF);
-		if (config["recognitionSystem"]["mlModel"]["params"]["auto"]) {
-			Json params = config["recognitionSystem"]["mlModel"]["params"];
-			mSvm->trainAuto(trainData, 10, 
-							cv::ml::ParamGrid(params["c_grid"](0), params["c_grid"](1), params["c_grid"](2)), 
-							cv::ml::ParamGrid(params["g_grid"](0), params["g_grid"](1), params["g_grid"](2)));
-		}
-		else {
-			mSvm->setGamma(config["recognitionSystem"]["mlModel"]["params"]["gamma"]);
-			mSvm->setC(config["recognitionSystem"]["mlModel"]["params"]["c"]);
-			mSvm->train(trainData);
-		}
-		mSvm->save(string(config["recognitionSystem"]["mlModel"]["modelPath"]));
+		bow.train(images, groundTruth);
+		bow.save(config["recognitionSystem"]["mlModel"]["modelPath"]);
 
 		/*system("PAUSE");
 		vector<vector<pair<unsigned, float>>> results;
@@ -157,28 +89,14 @@ int main(int _argc, char ** _argv) {
 
 
 		for (int i = 0; i < cvImages.size(); i += 2) {
-			Mat image = cvImages[i];
+			std::vector<std::pair<unsigned, float>>  results = bow.evaluate(cvImages[i]);
 
-			Mat descriptor;
-			vector<KeyPoint> keypoints;
-			detector->detect(image, keypoints);
-			detector->compute(image, keypoints, descriptor);
-			// 			Mat descriptors32;
-			// 			descriptor.convertTo(descriptors32, CV_32F, 1.0 / 255.0);
-			Mat histogram;
-			histogramExtractor.compute(descriptor, histogram);
-			Mat results;
-			mSvm->predict(histogram, results);
-
-			showMatch(groundTruth, results, images);
-
-
+			showMatch(groundTruth, results[0].first, images);
 
 			stringstream ss;
-			ss << "Image " << i << ". Label " << results.at<float>(0, 0) << ". Prob " << results.at<float>(0, 1);
+			ss << "Image " << i << ". Label " << results[0].first << ". Prob " << results[0].second;
 			cout << ss.str() << endl;
-			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
-			cv::imshow("display", image);
+			cv::imshow("display", cvImages[i]);
 			cv::waitKey();
 		}
 	}
@@ -189,6 +107,37 @@ void initConfig(string _path, Json & _data) {
 	file.open(_path);
 	assert(file.is_open());
 	_data.parse(file);
+}
+
+//---------------------------------------------------------------------------------------------------------------
+void initBow(BoW &_bow, Json &_config) {
+	BoW::Params params;
+
+	if (_config.contains("multiScale")) {
+		params.nScalesTrain = (int)_config["multiScale"]["nScales"];
+		params.scaleFactor = _config["multiScale"]["scaleFactor"];
+	}
+	else {
+		params.nScalesTrain = 1;
+		params.scaleFactor = 1;
+	}
+
+	params.descriptorType = BoW::Params::eDescriptorType::SIFT;
+	params.histMatcher = BoW::Params::eHistogramMatcher::FlannBased;
+	params.vocSize = (int) _config["bovwParams"]["vocabularySize"];
+	_bow.params(params);
+
+
+	if (_config["mlModel"]["name"] == "SVM") {
+		MlModel *model = new SvmModel();
+		static_cast<SvmModel*>(model)->setParams(_config["mlModel"]["params"]["c"], _config["mlModel"]["params"]["gamma"], ml::SVM::Types::C_SVC, ml::SVM::KernelTypes::RBF, true);
+		_bow.model(*model);
+	}
+	else if (_config["mlModel"]["name"] == "LDA") {
+		MlModel *model = new LdaModel();
+		static_cast<LdaModel*>(model)->setParams(_config["mlModel"]["params"]["alpha"], _config["mlModel"]["params"]["beta"]);
+		_bow.model(*model);
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------
@@ -212,7 +161,7 @@ Mat loadGroundTruth(string _path) {
 		int gtVal;
 		gtFile >> gtVal;
 		groundTruth.push_back(gtVal);
-		//groundTruth.push_back(gtVal);
+		groundTruth.push_back(gtVal);
 	}
 	return groundTruth;
 }
@@ -347,9 +296,9 @@ void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &
 	}
 }
 
-void showMatch(const Mat &groundTruth, const Mat &results,  vector<Mat> &images) {
+void showMatch(const Mat &groundTruth, unsigned _label,  vector<Mat> &images) {
 	int j;
-	int res = results.at<float>(0, 1);
+	int res = _label;
 	cout << "result: " << res << endl;
 	for (j = 0; j < groundTruth.rows; j++) {
 	
@@ -359,7 +308,6 @@ void showMatch(const Mat &groundTruth, const Mat &results,  vector<Mat> &images)
 			break;
 	}
 	cout << endl;
-	//cv::putText(imageSh, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 	j = min(j*2, 625);
 	Mat image = images[j].clone();
 	cv::imshow("match", image);

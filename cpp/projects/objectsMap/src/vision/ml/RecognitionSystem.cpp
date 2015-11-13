@@ -26,12 +26,7 @@ RecognitionSystem::RecognitionSystem(cjson::Json _configFile) {
 
 //---------------------------------------------------------------------------------------------------------------------
 std::vector<std::pair<unsigned, float>> RecognitionSystem::categorize(const cv::Mat &_view) {
-	// For now, only one region.
-	vector<Rect> regions;
-	regions.push_back(Rect(0,0,_view.cols, _view.rows));
-	//imshow("view", _view);
-	//waitKey();
-	return mBow.evaluate(_view, regions);
+	return mBow.evaluate(_view);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -93,26 +88,6 @@ void RecognitionSystem::setModel(cjson::Json _params) {
 
 //---------------------------------------------------------------------------------------------------------------------
 void RecognitionSystem::setFeatures(cjson::Json _params) {
-	// get detector
-	if (_params["detector"] == "SIFT") {
-		mBowParams.extractorType = BoW::Params::eExtractorType::SIFT;
-	}
-	else if (_params["detector"] == "FAST") {
-		mBowParams.extractorType = BoW::Params::eExtractorType::FAST;
-	}
-	else if (_params["detector"] == "ORB") {
-		mBowParams.extractorType = BoW::Params::eExtractorType::ORB;
-	}
-	else if (_params["detector"] == "SURF") {
-		mBowParams.extractorType = BoW::Params::eExtractorType::SURF;
-	} else if (_params["detector"] == "MSER") {
-		mBowParams.extractorType = BoW::Params::eExtractorType::MSER;
-	}
-	else {
-		assert(false);
-	}
-
-
 	// Get descriptor
 	if (_params["descriptor"] == "SIFT") {
 		mBowParams.descriptorType = BoW::Params::eDescriptorType::SIFT;

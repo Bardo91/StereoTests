@@ -17,19 +17,19 @@ using namespace cv;
 using namespace cv::ml;
 
 namespace algorithm {
-	// FAST WRAPER
-	class FASTwrapper: public FeatureDetector {
-	public:
-		static Ptr<FASTwrapper> create() { return Ptr<FASTwrapper>();}
-		void detect(InputArray image, std::vector<KeyPoint>& keypoints, InputArray mask) {
-			FAST(image, keypoints, 9);
-		}
-	};
-
-
 	//-----------------------------------------------------------------------------------------------------------------
 	void BoW::params(Params _params) {
 		mParams = _params;
+
+		setDetector(mParams.descriptorType);
+		mHistogramMatcher = DescriptorMatcher::create("BruteForce");
+
+		TermCriteria tc(CV_TERMCRIT_ITER, 10, 0.001);
+		int retries = 1;
+		int flags = KMEANS_PP_CENTERS;
+		mBowTrainer = new BOWKMeansTrainer(mParams.vocSize, tc, retries, flags);
+
+		mHistogramExtractor = new BOWImgDescriptorExtractor(mDetector, mHistogramMatcher);
 	}
 
 	//-----------------------------------------------------------------------------------------------------------------
@@ -75,45 +75,23 @@ namespace algorithm {
 	//-----------------------------------------------------------------------------------------------------------------
 	void BoW::train(const std::vector<cv::Mat> &_images, const cv::Mat &_groundTruth) {
 		Ptr<ml::TrainData> trainData = createTrainData(_images, _groundTruth);;
-		
 		mModel->trainModel(trainData);
 	}
 
 	//-----------------------------------------------------------------------------------------------------------------
-	std::vector<std::pair<unsigned, float>> BoW::evaluate(Mat _image, vector<Rect> _regions) {
+	std::vector<std::pair<unsigned, float>> BoW::evaluate(Mat _image) {
 		std::vector<std::pair<unsigned, float>> topics;
 		std::vector<Mat> descriptors;
 		std::vector<Mat> histograms;
 		
+		Mat descriptor;
 		vector<KeyPoint> keypoints;
-		Mat imageDescriptors = computeFeatures(_image, keypoints);
-		
-		for (Rect region : _regions) {
-			Mat regionDescriptors;
-			for (unsigned i = 0; i < keypoints.size(); i++) {
-				if (region.contains(keypoints[i].pt)) {
-					regionDescriptors.push_back(imageDescriptors.row(i));
-				}
-			}
-			descriptors.push_back(regionDescriptors);
-		}
-
-		if(descriptors.size() == 0)
-			return topics;
-
-		vectorQuantization(descriptors, histograms);
-		Mat newData;
-		for (Mat histogram : histograms) {
-			double max;
-			minMaxLoc(histogram, NULL, &max);
-			histogram = histogram / max;
-
-			Mat rotated;
-			transpose(histogram, rotated);
-			newData.push_back(rotated);
-		}
+		mDetector->detect(_image, keypoints);
+		mDetector->compute(_image, keypoints, descriptor);
+		Mat histogram;
+		mHistogramExtractor->compute(descriptor, histogram);
 		Mat results;
-		mModel->predict(newData, results);
+		mModel->predict(histogram, results);
 		for (unsigned i = 0; i < results.rows; i++) {
 			topics.push_back(std::pair<unsigned, float>(results.at<float>(i,1),results.at<float>(i,0)));
 		}
@@ -157,127 +135,51 @@ namespace algorithm {
 		vector<Mat> descriptorPerImg;
 		unsigned index = 1;
 		for (Mat image:_images) {	// For each image in dataset
-			// Look for interest points to compute features in there.
 			vector<KeyPoint> keypoints;
-			Mat descriptors = computeFeatures(image, keypoints);
-
-			Mat descriptors_32f;
-			descriptors.convertTo(descriptors_32f, CV_32F, 1.0 / 255.0);
-
-			descriptorsAll.push_back(descriptors_32f);
-			descriptorPerImg.push_back(descriptors_32f);
+			Mat descriptors;
+			mDetector->detect(image, keypoints);
+			mDetector->compute(image, keypoints, descriptors);
+			descriptorsAll.push_back(descriptors);
 		}
 		// Form codebook from all descriptors
-		mCodebook = formCodebook(descriptorsAll);
+		mCodebook = mBowTrainer->cluster(descriptorsAll);
 		descriptorsAll.release();
 
-		// Compute histograms
-		std::vector<cv::Mat> histograms;
-		vectorQuantization(descriptorPerImg, histograms);
+		mHistogramExtractor->setVocabulary(mCodebook);
 
-		// TRAIN DATA
-		Mat X(histograms.size(), mCodebook.rows, CV_32FC1);
-		for (int i = 0; i < histograms.size(); i++) {
-			Mat rotated;
-			transpose(histograms[i], rotated);
-			rotated.copyTo(X.row(i));
+		// Compute histograms
+		Mat data;
+		vector<Mat> oriHist;
+		//for (Mat image : images) {	// For each image in dataset
+		for (Mat image:_images) {
+			Mat descriptor;
+			vector<KeyPoint> keypoints;
+			mDetector->detect(image, keypoints);
+			mDetector->compute(image, keypoints, descriptor);
+			Mat histogram;
+			mHistogramExtractor->compute(descriptor, histogram);
+			data.push_back(histogram);
 		}
-		return ml::TrainData::create(X, ml::SampleTypes::ROW_SAMPLE, _groundTruth);
+
+		return ml::TrainData::create(data, ml::SampleTypes::ROW_SAMPLE, _groundTruth);
 	}
 
 	//-----------------------------------------------------------------------------------------------------------------
-	Mat BoW::computeFeatures(const Mat &_frame, vector<KeyPoint> &_keypoints) {
+	void BoW::setDetector(BoW::Params::eDescriptorType) {
 		Ptr<FeatureDetector> detector;
 		Ptr<FeatureDetector> descriptor;
 
-		switch (mParams.extractorType) {
-		case Params::eExtractorType::SIFT:
-			detector = xfeatures2d::SIFT::create();
-			break;
-		case Params::eExtractorType::SURF:
-			detector = xfeatures2d::SURF::create();
-			break;
-		case Params::eExtractorType::FAST:
-			detector = FASTwrapper::create();
-			break;
-		case Params::eExtractorType::ORB:
-			detector = ORB::create();
-			break;
-		}
-
 		switch (mParams.descriptorType) {
 		case Params::eDescriptorType::SIFT:
-			descriptor = xfeatures2d::SIFT::create();
+			mDetector = xfeatures2d::SIFT::create();
 			break;
 		case Params::eDescriptorType::SURF:
-			descriptor = xfeatures2d::SURF::create();
+			mDetector = xfeatures2d::SURF::create();
 			break;
 		case Params::eDescriptorType::ORB:
-			descriptor = ORB::create();
+			mDetector = ORB::create();
 			break;
 		}
-
-		Mat descriptors;
-		detector->detect(_frame, _keypoints);
-		descriptor->compute(_frame, _keypoints, descriptors);
-
-		return descriptors;
-	}
-
-	//-----------------------------------------------------------------------------------------------------------------
-	Mat BoW::formCodebook(const Mat &_descriptors) {
-		Mat codebook;
-		int codebookSize = mParams.vocSize;
-		TermCriteria criteria(CV_TERMCRIT_ITER,100,0.001);
-		vector<int> labels;
-		std::cout << "Number of descriptors " << _descriptors.rows << std::endl;
-		std::cout << "Performing kmeans" << std::endl;
-		kmeans(_descriptors, codebookSize, labels, criteria, 1,KMEANS_PP_CENTERS, codebook);
-		//std::cout << "Codebook size " << codebook.rows << std::endl;
-		return codebook;
-	}
-
-	//-----------------------------------------------------------------------------------------------------------------
-	void BoW::vectorQuantization(const std::vector<cv::Mat> &_descriptors, std::vector<cv::Mat> &_histograms) {
-		std::cout << "Performing vector quantization" << std::endl;
-		for (Mat mat : _descriptors) {
-			_histograms.push_back(Mat(mCodebook.rows, 1 , CV_32F, Scalar(0)));
-			for (int i = 0; i < mat.rows; i++) {
-				double minDist = 999999;
-				unsigned index = 0;
-
-				// Compute dist of descriptor i to centroid j;
-				for (int j = 0; j < mCodebook.rows; j++) {
-					double dist = 0;
-					for (int k = 0; k < mCodebook.cols; k++) {
-						double a = mCodebook.at<float>(j,k) - mat.at<float>(i,k);
-						dist += a*a;
-					}
-					//dist = sqrt(dist);
-					if (dist < minDist) {
-						minDist = dist;
-						index = j;
-					}
-				}
-				_histograms[_histograms.size()-1].at<float>(index) += 1;
-			}
-			int recount = (int) sum(_histograms[_histograms.size() -1])[0];
-			assert(recount == mat.rows);
-		}
-
-		// Normalize histograms
-		for (cv::Mat &histogram : _histograms) {
-			double max;
-			minMaxLoc(histogram, NULL, &max);
-			histogram = histogram / max;
-		}
-
-		FileStorage histogramsFile("histogramPerImg.yml", FileStorage::WRITE);
-		for (unsigned i = 0; i < _histograms.size(); i++) {
-			histogramsFile << "hist_"+to_string(i) << _histograms[i];
-		}
-
-		std::cout << "Endl vector quantization" << std::endl;
 	}
 
 	//-----------------------------------------------------------------------------------------------------------------
@@ -316,7 +218,7 @@ namespace algorithm {
 	//-----------------------------------------------------------------------------------------------------------------
 	void SvmModel::trainModel(const cv::Ptr<cv::ml::TrainData>& _trainData) {
 		if (mAutoTrain) {
-			mSvm->trainAuto(_trainData, 10, ParamGrid(1,10000,1.5), ParamGrid(0.0001,1,2));
+			mSvm->trainAuto(_trainData, 10, ParamGrid(1,100,1.5), ParamGrid(0.01,1,2));
 		}
 		else {
 			mSvm->train(_trainData);

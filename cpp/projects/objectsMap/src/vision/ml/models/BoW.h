@@ -66,15 +66,15 @@ namespace algorithm {
 	/// Base object detector class.
 	class BoW {
 	public:
-		struct Params {
-			enum class eExtractorType {SIFT, SURF, FAST, ORB, MSER};
+		struct Params {			
 			enum class eDescriptorType {SIFT, SURF, ORB};
+			enum class eHistogramMatcher {FlannBased, BruteL1, BruteL2};
 
 			unsigned imageSizeTrain;
 			unsigned nScalesTrain;
 			double scaleFactor;
-			eExtractorType extractorType;
 			eDescriptorType descriptorType;
+			eHistogramMatcher histMatcher;
 
 			unsigned vocSize;
 		};
@@ -98,7 +98,7 @@ namespace algorithm {
 		void train(const std::vector<cv::Mat> &_images, const cv::Mat &_groundTruth);
 
 		/// Evaluate input
-		std::vector<std::pair<unsigned, float>> evaluate(cv::Mat _image, std::vector<cv::Rect> _regions);
+		std::vector<std::pair<unsigned, float>> evaluate(cv::Mat _image);
 
 		/// Save model
 		void save(std::string _name);
@@ -116,23 +116,21 @@ namespace algorithm {
 				// Load image
 		cv::Mat loadImage(std::string _filePatern, unsigned index);
 
+		void BoW::setDetector(BoW::Params::eDescriptorType);
+
 		// Create train data.
 		cv::Ptr<cv::ml::TrainData> createTrainData(const std::vector<cv::Mat> &_images, const cv::Mat &_groundTruth);
-
-		// Find regions of interest in the given image and Compute features on given regions.
-		cv::Mat computeFeatures(const cv::Mat &_frame,std::vector<cv::KeyPoint> &_keypoints = std::vector<cv::KeyPoint>());
-
-		// Form codebook from given descriptors. Basically runs kmeans on data and set as vocabulary the centroids of the clusters.
-		cv::Mat formCodebook(const cv::Mat &_descriptors);
-
-		// Get descriptors and form histograms using precomputed vocabulary.
-		void vectorQuantization(const std::vector<cv::Mat> &_descriptors, std::vector<cv::Mat> &_histograms);
-
 		// Load ground truth
 		cv::Mat loadGroundTruth(const std::string &_gtFile) const;
 	private:	// Private members
-		cv::Mat mCodebook;
 		Params mParams;
+
+		cv::Ptr<cv::FeatureDetector> mDetector;
+		cv::Ptr<cv::DescriptorMatcher> mHistogramMatcher;
+		cv::BOWKMeansTrainer *mBowTrainer;
+		cv::BOWImgDescriptorExtractor *mHistogramExtractor;
+		cv::Mat mCodebook;
+		
 		MlModel *mModel;
 	};
 
