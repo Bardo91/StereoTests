@@ -38,7 +38,7 @@ pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inp
 void trainModel(BoW &_bow, vector<Mat> &_images, Mat &_groundTruth);
 
 void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &_images);
-void showMatch(const Mat &groundTruth, const Mat &results, vector<Mat> &images);
+void showMatch(const Mat &_groundTruth, const Mat &_results, const vector<Mat> &_images);
 
 
 
@@ -139,9 +139,9 @@ int main(int _argc, char ** _argv) {
 			mSvm->predict(oriHist[i], results);
 
 			stringstream ss;
-			ss << "Image " << i << ". Label " << results.at<float>(0, 0) << ". Prob " << results.at<float>(0, 1);
+			ss << "Image " << i << ". Label " << results.at<float>(0, 1) << ". Prob " << results.at<float>(0, 0);
 			cout << ss.str() << endl;
-			Mat image = images[i];
+			Mat image = images[i*2];
 			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 			cv::imshow("display", image);
 			cv::waitKey();
@@ -183,7 +183,7 @@ int main(int _argc, char ** _argv) {
 
 
 			stringstream ss;
-			ss << "Image " << i << ". Label " << results.at<float>(0, 0) << ". Prob " << results.at<float>(0, 1);
+			ss << "Image " << i << ". Label " << results.at<float>(0, 1) << ". Prob " << results.at<float>(0, 0);
 			cout << ss.str() << endl;
 			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 			cv::imshow("display", image);
@@ -438,20 +438,16 @@ void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &
 	}
 }
 
-void showMatch(const Mat &groundTruth, const Mat &results,  vector<Mat> &images) {
-	int j;
-	int res = results.at<float>(0, 1);
-	cout << "result: " << res << endl;
-	for (j = 0; j < groundTruth.rows; j++) {
+void showMatch(const Mat & _groundTruth, const Mat & _results,const  vector<Mat> & _images) {
+	int j,gt;
+	int res = _results.at<float>(0, 1);
+	for (j = 0; j < _groundTruth.rows; j++) {
 	
-		int gt = groundTruth.at<int>(j);
-		cout << gt << " ";
+		gt = _groundTruth.at<int>(j);
 		if (res == gt)
 			break;
 	}
-	cout << endl;
 	//cv::putText(imageSh, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
-	j = min(j*2, 625);
-	Mat image = images[j].clone();
+	Mat image = _images[j*2];
 	cv::imshow("match", image);
 }
