@@ -101,7 +101,14 @@ int main(int _argc, char ** _argv) {
 		vector<Mat> oriHist;
 		//for (Mat image : images) {	// For each image in dataset
 		for (int k = 0; k < images.size(); k += 2) {
-			Mat image = images[k];
+			Mat imageOri = images[k];
+			//vector<Mat> differentImageScales;
+			double scaleFactor = 1;
+			for (unsigned i = 0; i < 3; i++) {
+				Mat image;
+				resize(imageOri, image, Size(), scaleFactor, scaleFactor);
+				//differentImageScales.push_back(resizedImage);
+				scaleFactor *= 0.7;
 			Mat descriptor;
 			vector<KeyPoint> keypoints;
 			detector->detect(image, keypoints);
@@ -112,6 +119,7 @@ int main(int _argc, char ** _argv) {
 			index++;
 			data.push_back(histogram);
 			oriHist.push_back(histogram);
+			}
 		}
 
 		Ptr<ml::TrainData> trainData = ml::TrainData::create(data, ml::SampleTypes::ROW_SAMPLE, groundTruth);
@@ -148,7 +156,7 @@ int main(int _argc, char ** _argv) {
 			stringstream ss;
 			ss << "Image " << i << ". Label " << results.at<float>(0, 1) << ". Prob " << results.at<float>(0, 0);
 			cout << ss.str() << endl;
-			Mat image = images[i*2];
+			Mat image = images[floor(i/3)*2];
 			//cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 			cv::imshow("display", image);
 			cv::waitKey();
@@ -159,19 +167,31 @@ int main(int _argc, char ** _argv) {
 	
 
 		// stuff for showing the result class
-	
-
+		system("PAUSE");
+		string cvImagesPath = "C:/Users/GRVC/Desktop/train3d/cv/";
+		for (int i = 1; i < 100; i++) {
+			string name = cvImagesPath + "view1_" + to_string(i) + ".jpg";
+			cout << "opening " << name << endl;
+			cv::Mat image = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
+			if (image.rows == 0)
+				break;
+			Mat descriptor;
+			vector<KeyPoint> keypoints;
+			detector->detect(image, keypoints);
+			detector->compute(image, keypoints, descriptor);
+			Mat histogram;
+			histogramExtractor.compute(descriptor, histogram);
+			Mat results;
+			mSvm->predict(histogram, results);
+			showMatch(groundTruth, results, images);
+			stringstream ss;
+			ss << "Image " << i << ". Label " << results.at<float>(0, 1) << ". Prob " << results.at<float>(0, 0);
+			cout << ss.str() << endl;
+			cv::imshow("display", image);
+			cv::waitKey();
+		}
 		
-
-		//cv::Ptr<cv::ml::SVM> mSvm  = Algorithm::load<cv::ml::SVM>(string(config["recognitionSystem"]["mlModel"]["modelPath"]));
-// 		mSvm->setGamma(1.2799999676644802e-03);
-// 		mSvm->setC(4.3789389038085938e+02);
-// 		for (int i = 1;i < 100;i++) {
-// 			string name = cvImagesPath + "view1_" + to_string(i) + ".jpg";
-// 			cout << "opening " << name << endl;
-// 			cv::Mat image = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
-// 			if (image.rows == 0)
-// 				break;
+		system("PAUSE");
 		success.clear();
 		int k = 0;
 		for (int i = 1; i < images.size(); i += 2) {
@@ -209,12 +229,12 @@ int main(int _argc, char ** _argv) {
 			stringstream ss;
 			ss << "Image " << i << ". Label " << results.at<float>(0, 1) << ". Prob " << results.at<float>(0, 0);
 			cout << ss.str() << endl;
-			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
+			//cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 			cv::imshow("display", image);
-			k++;
+			k=k+3;
 			cv::waitKey();
 		}
-		trueRate = (float)accumulate(success.begin(), success.end(), 0) / groundTruth.rows;
+		trueRate = (float)accumulate(success.begin(), success.end(), 0) / groundTruth.rows*3;
 		cout << "On the testing data our success rate is " << trueRate * 100 << "%" << endl;
 		system("PAUSE");
 	}
@@ -326,7 +346,8 @@ Mat loadGroundTruth(string _path) {
 		int gtVal;
 		gtFile >> gtVal;
 		groundTruth.push_back(gtVal);
-		//groundTruth.push_back(gtVal);
+		groundTruth.push_back(gtVal); 
+		groundTruth.push_back(gtVal);
 	}
 	return groundTruth;
 }
@@ -396,6 +417,7 @@ void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Mat &
 //---------------------------------------------------------------------------------------------------------------------
 Rect bound(vector<Point2f> _points2d) {
 	int minX=99999, minY=999999, maxX=0, maxY=0;
+	int border = 0;
 	for (Point2f point : _points2d) {
 		if(point.x < minX)
 			minX = point.x;
@@ -407,7 +429,7 @@ Rect bound(vector<Point2f> _points2d) {
 			maxY = point.y;
 	}
 
-	return Rect(minX, minY, maxX-minX, maxY-minY);
+	return Rect(minX-border, minY-border, maxX-minX+border*2, maxY-minY+border*2);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -423,8 +445,8 @@ void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const 
 		circle(display, pointsRight[i] + Point2f( _frame1.cols, 0), 3, Scalar(0,255,0));
 	}
 
-	Rect r1 = bound(pointsLeft);
-	Rect r2 = bound(pointsRight);
+	Rect r1 = bound(pointsLeft)&Rect(0,0,_frame1.cols, _frame1.rows);
+	Rect r2 = bound(pointsRight)&Rect(0, 0, _frame1.cols, _frame1.rows);
 	
 
 	_viewLeft = _frame1(r1);
@@ -462,7 +484,7 @@ void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &
 		_images.push_back(vLeft);
 		_images.push_back(vRight);
 
-		waitKey(3);
+		waitKey(1);
 	}
 }
 
@@ -476,6 +498,6 @@ void showMatch(const Mat & _groundTruth, const Mat & _results,const  vector<Mat>
 			break;
 	}
 	//cv::putText(imageSh, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
-	Mat image = _images[j*2];
+	Mat image = _images[floor(j/3)*2];
 	cv::imshow("match", image);
 }
