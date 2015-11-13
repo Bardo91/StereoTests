@@ -18,6 +18,7 @@
 #include <cjson/json.h>
 #include <fstream>
 #include <opencv2/xfeatures2d.hpp>
+#include "../../objectsMap/src/utils/gui/graph2d.h"
 
 using namespace algorithm;
 using namespace std;
@@ -134,19 +135,27 @@ int main(int _argc, char ** _argv) {
 
 		system("PAUSE");
 		vector<vector<pair<unsigned, float>>> results;
+		vector<bool> success;
 		for (unsigned i = 0; i < oriHist.size(); i++) {
 			Mat results;
 			mSvm->predict(oriHist[i], results);
+			if (results.at<float>(0, 1) == groundTruth.at<int>(i))
+				success.push_back(true);
+			else
+				success.push_back(false);
+
 
 			stringstream ss;
 			ss << "Image " << i << ". Label " << results.at<float>(0, 1) << ". Prob " << results.at<float>(0, 0);
 			cout << ss.str() << endl;
 			Mat image = images[i*2];
-			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
+			//cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 			cv::imshow("display", image);
 			cv::waitKey();
 		}
 
+		float trueRate = (float) accumulate(success.begin(), success.end(), 0) / groundTruth.rows;
+		cout << "On the training data our success rate is " << trueRate * 100 << "%" << endl;
 	
 
 		// stuff for showing the result class
@@ -163,21 +172,36 @@ int main(int _argc, char ** _argv) {
 // 			cv::Mat image = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
 // 			if (image.rows == 0)
 // 				break;
-
-		for (int i = 0; i < images.size(); i += 2) {
+		success.clear();
+		int k = 0;
+		for (int i = 1; i < images.size(); i += 2) {
 			Mat image = images[i];
 
 			Mat descriptor;
 			vector<KeyPoint> keypoints;
 			detector->detect(image, keypoints);
 			detector->compute(image, keypoints, descriptor);
-			// 			Mat descriptors32;
-			// 			descriptor.convertTo(descriptors32, CV_32F, 1.0 / 255.0);
 			Mat histogram;
 			histogramExtractor.compute(descriptor, histogram);
+// 			BOViL::plot::Graph2d graph("histograms");
+// 
+// 			vector<double> h1, h2;
+// 			for (unsigned j = 0; j < histogram.cols; j++) {
+// 				h1.push_back(histogram.at<float>(j));
+// 				h2.push_back(oriHist[k].at<float>(j));
+// 			}
+// 
+// 			graph.draw(h1, 0, 255, 0, BOViL::plot::Graph2d::Lines);
+// 			graph.draw(h2, 255, 0, 0, BOViL::plot::Graph2d::Lines);
+// 
+// 			graph.show();
+// 			waitKey();
 			Mat results;
 			mSvm->predict(histogram, results);
-
+			if (results.at<float>(0, 1) == groundTruth.at<int>(k))
+				success.push_back(true);
+			else
+				success.push_back(false);
 			showMatch(groundTruth, results, images);
 
 
@@ -187,8 +211,12 @@ int main(int _argc, char ** _argv) {
 			cout << ss.str() << endl;
 			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 			cv::imshow("display", image);
+			k++;
 			cv::waitKey();
 		}
+		trueRate = (float)accumulate(success.begin(), success.end(), 0) / groundTruth.rows;
+		cout << "On the testing data our success rate is " << trueRate * 100 << "%" << endl;
+		system("PAUSE");
 	}
 }
 
