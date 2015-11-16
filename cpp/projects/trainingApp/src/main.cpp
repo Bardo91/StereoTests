@@ -134,24 +134,24 @@ int main(int _argc, char ** _argv) {
 		params.weight_label = nullptr;
 		params.weight = nullptr;
 
+		svmpp::ParamGrid cGrid(svmpp::ParamGrid::Type::C, 1, 100, 2);
+		svmpp::ParamGrid gGrid(svmpp::ParamGrid::Type::Gamma, 0.001, 1, 5);
 
-		svm.train(params, set);
+		svm.trainAuto(set, params, {cGrid, gGrid});
 		svm.save("svmModel");
 
 		vector<vector<pair<unsigned, float>>> results;
 		for (unsigned i = 0; i < oriHist.size(); i++) {
-
 			std::vector<double> stdHistogram;
 			for (unsigned j = 0; j < oriHist[i].cols; j++) {
 				stdHistogram.push_back(oriHist[i].at<float>(j));
 			}
 			std::vector<double> probs;
-			double res = svm.predict(stdHistogram, probs);
-			Mat image = images[i];
+			double res = svm.predict(stdHistogram, probs);			
 			stringstream ss;
 			ss << "Image " << i << ". Label " << res << ". Prob " << probs[res]<<endl;
 			cout << ss.str() << endl;
-			cv::imshow("display", image);
+			cv::imshow("display", images[i*2]);
 			cv::waitKey();
 		}
 
