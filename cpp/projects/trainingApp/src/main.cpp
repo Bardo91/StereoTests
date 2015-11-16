@@ -19,6 +19,8 @@
 #include <fstream>
 #include <opencv2/xfeatures2d.hpp>
 
+#include <libsvmpp/Svmpp.h>
+
 using namespace algorithm;
 using namespace std;
 using namespace cv;
@@ -30,7 +32,7 @@ StereoCameras * initCameras(Json &_config);
 // To do in a loop
 void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Mat &_frame1, Mat &_frame2, Json &_config);
 void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const Mat &_frame1, const Mat &_frame2, Mat &_viewLeft, Mat &_viewRight);
-Mat loadGroundTruth(string _path);
+vector<double> loadGroundTruth(string _path);
 pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inputCloud, Json &_config);
 
 
@@ -50,7 +52,7 @@ int main(int _argc, char ** _argv) {
 	cameras = initCameras(config["cameras"]);
 
 	vector<Mat> images;
-	Mat groundTruth = loadGroundTruth(config["gtFile"]);
+	vector<double> groundTruth = loadGroundTruth(config["gtFile"]);
 	createTrainingImages(cameras, config, images);
 
 
@@ -93,9 +95,10 @@ int main(int _argc, char ** _argv) {
 		FileStorage histogramsFile("histogramPerImgCv.yml", FileStorage::WRITE);
 		index = 0;
 		//Mat gt = loadGroundTruth("C:/programming/datasets/train3d/gt.txt");
-		Mat data;
+		
 		vector<Mat> oriHist;
 		//for (Mat image : images) {	// For each image in dataset
+		svmpp::TrainSet set;
 		for (int k = 0; k < images.size(); k += 2) {
 			Mat image = images[k];
 			Mat descriptor;
@@ -106,46 +109,54 @@ int main(int _argc, char ** _argv) {
 			histogramExtractor.compute(descriptor, histogram);
 			histogramsFile << "hist_" + to_string(index) << histogram;
 			index++;
-			data.push_back(histogram);
+			std::vector<double> stdHistogram;
+			for (unsigned i = 0; i < histogram.cols; i++) {
+				stdHistogram.push_back(histogram.at<float>(i));
+			}
+			set.addEntry(stdHistogram, groundTruth[k/2]);
 			oriHist.push_back(histogram);
 		}
 
-		Ptr<ml::TrainData> trainData = ml::TrainData::create(data, ml::SampleTypes::ROW_SAMPLE, groundTruth);
+		svmpp::Svm svm;
 
-		cv::Ptr<cv::ml::SVM> mSvm;
-		mSvm = cv::ml::SVM::create();
-		mSvm->setType(ml::SVM::Types::C_SVC);
-		mSvm->setKernel(ml::SVM::KernelTypes::RBF);
-		if (config["recognitionSystem"]["mlModel"]["params"]["auto"]) {
-			Json params = config["recognitionSystem"]["mlModel"]["params"];
-			mSvm->trainAuto(trainData, 10, 
-							cv::ml::ParamGrid(params["c_grid"](0), params["c_grid"](1), params["c_grid"](2)), 
-							cv::ml::ParamGrid(params["g_grid"](0), params["g_grid"](1), params["g_grid"](2)));
-		}
-		else {
-			mSvm->setGamma(config["recognitionSystem"]["mlModel"]["params"]["gamma"]);
-			mSvm->setC(config["recognitionSystem"]["mlModel"]["params"]["c"]);
-			mSvm->train(trainData);
-		}
-		mSvm->save(string(config["recognitionSystem"]["mlModel"]["modelPath"]));
+		// Setting parameters
+		svmpp::Svm::Params params;
+		params.svm_type = C_SVC;
+		params.kernel_type = RBF;
+		params.cache_size = 100;
+		params.gamma = 6.3999998569488525e-01;
+		params.C = 1.7085937500000000e+01;
+		params.eps = 1e-5;
+		params.p = 0.1;
+		params.shrinking = 0;
+		params.probability = 1;
+		params.nr_weight = 0;
+		params.weight_label = nullptr;
+		params.weight = nullptr;
 
-		/*system("PAUSE");
+
+		svm.train(params, set);
+		svm.save("svmModel");
+
 		vector<vector<pair<unsigned, float>>> results;
 		for (unsigned i = 0; i < oriHist.size(); i++) {
-			Mat results;
-			mSvm->predict(oriHist[i], results);
 
-			stringstream ss;
-			ss << "Image " << i << ". Label " << results.at<float>(0, 0) << ". Prob " << results.at<float>(0, 1);
-			cout << ss.str() << endl;
+			std::vector<double> stdHistogram;
+			for (unsigned j = 0; j < oriHist[i].cols; j++) {
+				stdHistogram.push_back(oriHist[i].at<float>(j));
+			}
+			std::vector<double> probs;
+			double res = svm.predict(stdHistogram, probs);
 			Mat image = images[i];
-			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
+			stringstream ss;
+			ss << "Image " << i << ". Label " << res << ". Prob " << probs[res]<<endl;
+			cout << ss.str() << endl;
 			cv::imshow("display", image);
 			cv::waitKey();
-		}*/
+		}
 
 		// stuff for showing the result class
-		vector<Mat> cvImages;
+		/*vector<Mat> cvImages;
 		string cvPath = "C:/programming/datasets/train3d/cv/";
 		for (unsigned i = 0; i < 165;i++) {
 			Mat frame = imread(cvPath + "view2_"+to_string(i)+".jpg");
@@ -167,20 +178,24 @@ int main(int _argc, char ** _argv) {
 			// 			descriptor.convertTo(descriptors32, CV_32F, 1.0 / 255.0);
 			Mat histogram;
 			histogramExtractor.compute(descriptor, histogram);
-			Mat results;
-			mSvm->predict(histogram, results);
+			std::vector<double> stdHistogram;
+			for (unsigned i = 0; i < histogram.cols; i++) {
+				stdHistogram.push_back(histogram.at<float>(i));
+			}
+			std::vector<double> probs;
+			double res = svm.predict(stdHistogram, probs);
 
-			showMatch(groundTruth, results, images);
+			//showMatch(groundTruth, results, images);
 
 
 
 			stringstream ss;
-			ss << "Image " << i << ". Label " << results.at<float>(0, 0) << ". Prob " << results.at<float>(0, 1);
+			ss << "Image " << i << ". Label " << res << ". Prob " << probs[res]<<endl;
 			cout << ss.str() << endl;
 			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 			cv::imshow("display", image);
 			cv::waitKey();
-		}
+		}*/
 	}
 }
 
@@ -204,15 +219,14 @@ StereoCameras * initCameras(Json &_config) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Mat loadGroundTruth(string _path) {
-	Mat groundTruth(0, 1, CV_32SC1);
+vector<double> loadGroundTruth(string _path) {
+	vector<double> groundTruth;
 	ifstream gtFile(_path);
 	assert(gtFile.is_open());
 	for (unsigned i = 0; !gtFile.eof();i++) {
 		int gtVal;
 		gtFile >> gtVal;
 		groundTruth.push_back(gtVal);
-		//groundTruth.push_back(gtVal);
 	}
 	return groundTruth;
 }
