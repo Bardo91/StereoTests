@@ -78,9 +78,9 @@ int main(int _argc, char ** _argv) {
 		bow.load(config["recognitionSystem"]["bow"]["modelPath"]);
 
 		vector<Mat> cvImages;
-		string cvPath = "C:/programming/datasets/train3d/cv/";
+		string cvPath = "C:/programming/datasets/CroppedSet/";
 		for (unsigned i = 0; i < 165;i++) {
-			Mat frame = imread(cvPath + "view2_"+to_string(i)+".jpg");
+			Mat frame = imread(cvPath + "img_left_"+to_string(i)+".jpg");
 			if(frame.rows == 0)
 				break;
 			else
