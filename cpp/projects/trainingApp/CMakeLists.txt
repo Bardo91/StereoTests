@@ -15,7 +15,7 @@ set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBIN
 LINK_DIRECTORIES(${OpenCV_LIB_DIR})
 
 
-find_package(PCL 1.2)
+find_package(PCL 1.2 REQUIRED common io kdtree filters visualization segmentation)
 if(${PCL_FOUND} AND ${VTK_FOUND} AND ${Boost_FOUND} AND ${FLANN_FOUND})
 	add_definitions(-DENABLE_PCL)
 	include_directories(${PCL_INCLUDE_DIRS})

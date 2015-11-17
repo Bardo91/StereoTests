@@ -21,6 +21,7 @@ using namespace svmpp;
 //---------------------------------------------------------------------------------------------------------------------
 void BoW::params(Json _paramFile) {
 	mParams = _paramFile;
+	decodeParams(mParams);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -122,7 +123,7 @@ void BoW::defaultParams() {
 //---------------------------------------------------------------------------------------------------------------------
 void BoW::decodeParams(::Json _paramFile) {
 	decodeSvmParams(_paramFile["svm"]);
-	decodeHistogramParams(_paramFile["histogram"]);
+	decodeHistogramParams(_paramFile["histogramMatcher"]);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -144,7 +145,7 @@ void BoW::decodeSvmParams(::Json _svmParams) {
 
 	// Decode autotrain parameters
 	if (_svmParams.contains("autoTrain")) {
-		decodeTrainGrids(_svmParams["svm"]["trainGrids"]);
+		decodeTrainGrids(_svmParams["trainGrids"]);
 		mAutoTrain = true;
 	}
 }
@@ -186,15 +187,18 @@ void BoW::decodeHistogramParams(::Json _histogramParams) {
 		mDetector = xfeatures2d::SURF::create();
 	}
 
+	// Matcher
+	mHistogramMatcher = DescriptorMatcher::create((string) _histogramParams["matcher"]);
+
 	// Bow trainer
 	int dictionarySize = _histogramParams["vocabularySize"];
 	TermCriteria tc(CV_TERMCRIT_ITER, 10, 0.001);
 	int retries = 1;
 	int flags = KMEANS_PP_CENTERS;
-	BOWKMeansTrainer bowTrainer(dictionarySize, tc, retries, flags);
+	mBowTrainer = new BOWKMeansTrainer(dictionarySize, tc, retries, flags);
 
 	// Set matcher.
-	mHistogramMatcher = DescriptorMatcher::create((string) _histogramParams["matcher"]);
+	mHistogramExtractor  = new BOWImgDescriptorExtractor(mDetector, mHistogramMatcher);
 }
 
 
