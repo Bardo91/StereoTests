@@ -284,12 +284,12 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 
 
 		Mat view = _frame1(boundBox(reprojection1));
-		std::vector<std::pair<unsigned, float>> cathegories = mRecognitionSystem->categorize(view);
-		candidate.addView(view, cathegories);
+		std::vector<double> probs1 = mRecognitionSystem->categorize(view);
+		candidate.addView(view, probs1);
 
 		Mat view2 = _frame2(boundBox(reprojection2));
-		std::vector<std::pair<unsigned, float>> cathegories2 = mRecognitionSystem->categorize(view2);
-		candidate.addView(view2, cathegories2);
+		std::vector<double> probs2 = mRecognitionSystem->categorize(view2);
+		candidate.addView(view2, probs2);
 
 		/*std::cout << "Image left: " << cathegories[0].first << ": " << cathegories[0].second << std::endl;
 		std::cout << "Image left: " << cathegories2[0].first << ": " << cathegories2[0].second << std::endl;
