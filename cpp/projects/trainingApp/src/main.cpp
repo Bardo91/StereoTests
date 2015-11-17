@@ -5,7 +5,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../../objectsMap/src/vision/ml/models/BoW.h"
+//#include "../../objectsMap/src/vision/ml/models/BoW.h"
 #include "../../objectsMap/src/vision/StereoCameras.h"
 #include "../../objectsMap/src/vision/ImageFilteringTools.h"
 
@@ -21,7 +21,7 @@
 
 #include <libsvmpp/Svmpp.h>
 
-using namespace algorithm;
+//using namespace algorithm;
 using namespace std;
 using namespace cv;
 using namespace cjson;
@@ -140,7 +140,7 @@ int main(int _argc, char ** _argv) {
 		svm.trainAuto(set, params, {cGrid, gGrid});
 		svm.save("svmModel");
 
-		vector<vector<pair<unsigned, float>>> results;
+		/*vector<vector<pair<unsigned, float>>> results;
 		for (unsigned i = 0; i < oriHist.size(); i++) {
 			std::vector<double> stdHistogram;
 			for (unsigned j = 0; j < oriHist[i].cols; j++) {
@@ -153,10 +153,10 @@ int main(int _argc, char ** _argv) {
 			cout << ss.str() << endl;
 			cv::imshow("display", images[i*2]);
 			cv::waitKey();
-		}
+		}*/
 
 		// stuff for showing the result class
-		/*vector<Mat> cvImages;
+		vector<Mat> cvImages;
 		string cvPath = "C:/programming/datasets/train3d/cv/";
 		for (unsigned i = 0; i < 165;i++) {
 			Mat frame = imread(cvPath + "view2_"+to_string(i)+".jpg");
@@ -174,28 +174,25 @@ int main(int _argc, char ** _argv) {
 			vector<KeyPoint> keypoints;
 			detector->detect(image, keypoints);
 			detector->compute(image, keypoints, descriptor);
-			// 			Mat descriptors32;
-			// 			descriptor.convertTo(descriptors32, CV_32F, 1.0 / 255.0);
 			Mat histogram;
 			histogramExtractor.compute(descriptor, histogram);
+
 			std::vector<double> stdHistogram;
 			for (unsigned i = 0; i < histogram.cols; i++) {
 				stdHistogram.push_back(histogram.at<float>(i));
 			}
 			std::vector<double> probs;
 			double res = svm.predict(stdHistogram, probs);
-
-			//showMatch(groundTruth, results, images);
-
-
-
 			stringstream ss;
-			ss << "Image " << i << ". Label " << res << ". Prob " << probs[res]<<endl;
+			ss << "Image " << i << ". Label " << res << ". Prob: ";
+			for (unsigned n = 0; n < probs.size(); n++) {
+				ss << probs[n] << ", ";
+			}
 			cout << ss.str() << endl;
-			cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
+			//cv::putText(image, ss.str(), cv::Point2i(30, 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 2);
 			cv::imshow("display", image);
 			cv::waitKey();
-		}*/
+		}
 	}
 }
 
