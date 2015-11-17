@@ -100,6 +100,7 @@ void BoW::load(string _name) {
 	mSvm.load(_name);
 	FileStorage codebook(_name + ".vocabulary.xml", FileStorage::READ);
 	codebook["vocabulary"] >> mCodebook;
+	mHistogramExtractor->setVocabulary(mCodebook);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
