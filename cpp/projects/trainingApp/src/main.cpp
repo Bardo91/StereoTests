@@ -79,7 +79,7 @@ int main(int _argc, char ** _argv) {
 
 		vector<Mat> cvImages;
 		string cvPath = "C:/programming/datasets/CroppedSet/";
-		for (unsigned i = 0; i < 165;i++) {
+		for (unsigned i = 0; i < 9999;i++) {
 			Mat frame = imread(cvPath + "img_left_"+to_string(i)+".jpg");
 			if(frame.rows == 0)
 				break;

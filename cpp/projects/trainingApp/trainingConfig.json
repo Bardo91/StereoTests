@@ -78,7 +78,7 @@
 				"trainGrids":
 				{
 				"c":{"min":1.0,"max":200.0, "step":1.5},
-				"gamma":{"min":0.001,"max":1, "step":2}
+				"gamma":{"min":0.001,"max":1.0, "step":2.0}
 				}
 			}
 		}

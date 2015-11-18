@@ -59,7 +59,7 @@ private:	// Private members
 	// Clasification model
 	svmpp::Svm						mSvm;
 	svmpp::Svm::Params				mSvmParams;
-	bool							mAutoTrain;
+	bool							mAutoTrain = false;
 	std::vector<svmpp::ParamGrid>	mParamGrids;
 
 	cjson::Json mParams;

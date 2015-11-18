@@ -145,7 +145,7 @@ void BoW::decodeSvmParams(::Json _svmParams) {
 	}
 
 	// Decode autotrain parameters
-	if (_svmParams.contains("autoTrain")) {
+	if (_svmParams["autoTrain"]) {
 		decodeTrainGrids(_svmParams["trainGrids"]);
 		mAutoTrain = true;
 	}
