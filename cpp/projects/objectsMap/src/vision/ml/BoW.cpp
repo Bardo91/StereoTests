@@ -33,12 +33,14 @@ Json BoW::params() const{
 void BoW::train(const vector<Mat> &_images, const vector<double> &_groundTruth){
 	// Get all descriptors to form vocabulary.
 	Mat descriptorsAll;
+	vector<Mat> descriptorPerImg;
 	for (unsigned i = 0; i < _images.size(); i++) {	// For each image in dataset
 		vector<KeyPoint> keypoints;
 		Mat descriptors;
 		mDetector->detect(_images[i], keypoints);
 		mDetector->compute(_images[i], keypoints, descriptors);
 		descriptorsAll.push_back(descriptors);
+		descriptorPerImg.push_back(descriptors);
 	}
 	// Form codebook from all descriptors
 	mCodebook = mBowTrainer->cluster(descriptorsAll);
@@ -48,7 +50,7 @@ void BoW::train(const vector<Mat> &_images, const vector<double> &_groundTruth){
 	vector<vector<double>> X;
 	for (unsigned i = 0; i < _images.size(); i++) {
 		Mat histogram;
-		mHistogramExtractor->compute(descriptorsAll.row(i), histogram);
+		mHistogramExtractor->compute(descriptorPerImg[i], histogram);
 		vector<double> x;
 		for (int i = 0; i < histogram.cols; i++) {
 			x.push_back(histogram.at<float>(i));
