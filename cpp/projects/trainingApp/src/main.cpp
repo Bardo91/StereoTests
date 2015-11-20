@@ -75,6 +75,9 @@ int main(int _argc, char ** _argv) {
 					imshow("display2", frame2);
 					waitKey(3);
 				}
+				else {
+					break;
+				}
 			}
 		}
 
