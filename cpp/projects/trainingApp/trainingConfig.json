@@ -65,7 +65,13 @@
 			"histogramMatcher":
 			{
 				"vocabularySize":500,
-				"descriptor":"SIFT",
+				"descriptor":"HOG",
+				"HOG":
+				{
+					"blockSize":16,
+					"cellSize": 4,
+					"blockStride":8
+				}
 				"matcher":"FlannBased"
 			},
 			"svm":

@@ -58,16 +58,18 @@ int main(int _argc, char ** _argv) {
 			createTrainingImages(cameras, config, images);
 		}
 		else {
-			int index = 0;
+			int index = 1;
 			for (;;) {
-				string left = string(config["cameras"]["left"]);
-				string right = string(config["cameras"]["right"]);
+				string left = string(config["cameras"]["left1"]);
+				string right = string(config["cameras"]["right1"]);
 				left = left.substr(0,left.find("%d")) +to_string(index)+ left.substr(left.find("%d")+2);
 				right = right.substr(0,right.find("%d")) +to_string(index)+ right.substr(right.find("%d")+2);
 				index++;
 				Mat frame1 = imread(left);	//cameras->camera(0).frame();
 				Mat frame2 = imread(right);	//cameras->camera(1).frame();
 				if (frame1.rows != 0 && frame2.rows != 0) {
+					resize(frame1, frame1, Size(150,150));
+					resize(frame2, frame2, Size(150,150));
 					images.push_back(frame1);
 					images.push_back(frame2);
 					Mat display;
@@ -90,13 +92,15 @@ int main(int _argc, char ** _argv) {
 		bow.load(config["recognitionSystem"]["bow"]["modelPath"]);
 
 		vector<Mat> cvImages;
-		string cvPath = "C:/programming/datasets/CroppedSet/";
-		for (unsigned i = 0; i < 9999;i++) {
-			Mat frame = imread(cvPath + "img_left_"+to_string(i)+".jpg");
+		string path = string(config["cameras"]["left1"]);
+		for (unsigned i = 1; i < 9999;i++) {
+			Mat frame = imread(path.substr(0,path.find("%d")) +to_string(i)+ path.substr(path.find("%d")+2));
 			if(frame.rows == 0)
 				break;
-			else
+			else {
+				resize(frame, frame, Size(150, 150));
 				cvImages.push_back(frame);
+			}
 		}
 
 		for (int i = 0; i < cvImages.size(); i++) {
@@ -219,7 +223,7 @@ Rect bound(vector<Point2f> _points2d) {
 			maxY = point.y;
 	}
 
-	return Rect(minX, minY, maxX-minX, maxY-minY);
+	return Rect(minX-10, minY-10, maxX-minX+20, maxY-minY+20);
 }
 
 //---------------------------------------------------------------------------------------------------------------------

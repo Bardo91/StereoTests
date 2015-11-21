@@ -48,9 +48,14 @@ private:	// Private methods
 	void decodeSvmType(std::string _type, std::string _kernel);
 	void decodeHistogramParams(cjson::Json _gridFile);
 
+	cv::Mat computeDescriptor(cv::Mat _frame);
+
 private:	// Private members
 	// Histogram creation
 	cv::Ptr<cv::FeatureDetector> mDetector;
+	cv::HOGDescriptor mHog;
+	enum class eDetector {SIFT, SURF, HOG};
+	eDetector mDetecetorType;
 	cv::Ptr<cv::DescriptorMatcher> mHistogramMatcher;
 	cv::BOWKMeansTrainer *mBowTrainer;
 	cv::BOWImgDescriptorExtractor *mHistogramExtractor;

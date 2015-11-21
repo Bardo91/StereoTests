@@ -32,34 +32,45 @@ Json BoW::params() const{
 //---------------------------------------------------------------------------------------------------------------------
 void BoW::train(const vector<Mat> &_images, const vector<double> &_groundTruth){
 	// Get all descriptors to form vocabulary.
-	Mat descriptorsAll;
-	vector<Mat> descriptorPerImg;
-	for (unsigned i = 0; i < _images.size(); i++) {	// For each image in dataset
-		vector<KeyPoint> keypoints;
-		Mat descriptors;
-		mDetector->detect(_images[i], keypoints);
-		mDetector->compute(_images[i], keypoints, descriptors);
-		descriptorsAll.push_back(descriptors);
-		descriptorPerImg.push_back(descriptors);
-	}
-	// Form codebook from all descriptors
-	mCodebook = mBowTrainer->cluster(descriptorsAll);
-	mHistogramExtractor->setVocabulary(mCodebook);
-
-	// Compute histograms
 	vector<vector<double>> X;
-	for (unsigned i = 0; i < _images.size(); i++) {
-		Mat histogram;
-		mHistogramExtractor->compute(descriptorPerImg[i], histogram);
-		vector<double> x;
-		for (int i = 0; i < histogram.cols; i++) {
-			x.push_back(histogram.at<float>(i));
+	if (mDetecetorType == eDetector::SIFT || mDetecetorType == eDetector::SURF) {
+		// Form codebook from all descriptors
+		Mat descriptorsAll;
+		vector<Mat> descriptorPerImg;
+		for (unsigned i = 0; i < _images.size(); i++) {	// For each image in dataset
+			Mat descriptors = computeDescriptor(_images[i]);
+			descriptorsAll.push_back(descriptors);
+			descriptorPerImg.push_back(descriptors);
 		}
-		X.push_back(x);
+		mCodebook = mBowTrainer->cluster(descriptorsAll);
+		mHistogramExtractor->setVocabulary(mCodebook);
+
+		// Compute histograms
+		for (unsigned i = 0; i < _images.size(); i++) {
+			Mat histogram;
+			mHistogramExtractor->compute(descriptorPerImg[i], histogram);
+			vector<double> x;
+			for (int i = 0; i < histogram.cols; i++) {
+				x.push_back(histogram.at<float>(i));
+			}
+			X.push_back(x);
+		}
 	}
+	else if (mDetecetorType == eDetector::HOG) {
+		for (unsigned i = 0; i < _images.size(); i++) {	// For each image in dataset
+			Mat descriptors = computeDescriptor(_images[i]);
+			vector<double> x;
+			for (int j = 0; j < descriptors.cols; j++) {
+				x.push_back(descriptors.at<float>(j));
+			}
+			X.push_back(x);
+		}
+	}
+
 	TrainSet set;
 	set.addEntries(X, _groundTruth);
-
+	X.clear();
+	
 	if (mAutoTrain) {
 		mSvm.trainAuto(set, mSvmParams, mParamGrids);
 	}
@@ -71,16 +82,22 @@ void BoW::train(const vector<Mat> &_images, const vector<double> &_groundTruth){
 //---------------------------------------------------------------------------------------------------------------------
 vector<double> BoW::evaluate(Mat _image) {
 	// Get histogram
-	Mat descriptor;
-	vector<KeyPoint> keypoints;
-	mDetector->detect(_image, keypoints);
-	mDetector->compute(_image, keypoints, descriptor);
-	Mat histogram;
-	mHistogramExtractor->compute(descriptor, histogram);
+	Mat descriptors = computeDescriptor(_image);
 	vector<double> x;
-	for (int i = 0; i < histogram.cols; i++) {
-		x.push_back(histogram.at<float>(i));
+	if (mDetecetorType == eDetector::SIFT || mDetecetorType == eDetector::SURF) {
+		Mat histogram;
+		mHistogramExtractor->compute(descriptors, histogram);
+		for (int i = 0; i < histogram.cols; i++) {
+			x.push_back(histogram.at<float>(i));
+		}
+
 	}
+	else if (mDetecetorType == eDetector::HOG) {
+		for (int i = 0; i < descriptors.cols; i++) {
+			x.push_back(descriptors.at<float>(i));
+		}
+	}
+
 	Query query(x);
 
 	// Evaluate
@@ -185,9 +202,17 @@ void BoW::decodeHistogramParams(::Json _histogramParams) {
 	// Set features.
 	if (_histogramParams["descriptor"] == "SIFT") {
 		mDetector = xfeatures2d::SIFT::create();
+		mDetecetorType = eDetector::SIFT;
 	}
 	else if (_histogramParams["descriptor"] == "SURF"){
 		mDetector = xfeatures2d::SURF::create();
+		mDetecetorType = eDetector::SURF;
+	}
+	else if (_histogramParams["descriptor"] == "HOG") {
+		mDetecetorType = eDetector::HOG;
+		mHog.blockSize		= Size(_histogramParams["HOG"]["blockSize"], _histogramParams["HOG"]["blockSize"]);
+		mHog.cellSize		= Size(_histogramParams["HOG"]["cellSize"], _histogramParams["HOG"]["cellSize"]);
+		mHog.blockStride	= Size(_histogramParams["HOG"]["blockStride"],_histogramParams["HOG"]["blockStride"]);
 	}
 
 	// Matcher
@@ -202,6 +227,23 @@ void BoW::decodeHistogramParams(::Json _histogramParams) {
 
 	// Set matcher.
 	mHistogramExtractor  = new BOWImgDescriptorExtractor(mDetector, mHistogramMatcher);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+cv::Mat BoW::computeDescriptor(cv::Mat _frame) {
+	Mat descriptors;
+	if (mDetecetorType == eDetector::SIFT || mDetecetorType == eDetector::SURF) {
+		vector<KeyPoint> keypoints;
+		mDetector->detect(_frame, keypoints);
+		mDetector->compute(_frame, keypoints, descriptors);
+	}
+	else if (mDetecetorType == eDetector::HOG) {
+		std::vector<float> hogVector;
+		mHog.compute(_frame, hogVector);
+		descriptors = Mat(hogVector);
+		transpose(descriptors, descriptors);
+	}
+	return descriptors;
 }
 
 
