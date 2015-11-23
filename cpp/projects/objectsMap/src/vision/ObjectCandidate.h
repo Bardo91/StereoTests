@@ -30,16 +30,20 @@ public:
 	unsigned B() const;
 
 
-	void addView(cv::Mat _view, std::vector<double> _cathegories);
-	std::pair<unsigned, float>  cathegory() const;
+	void addView(cv::Mat _view, std::vector<double> _probs);
+	std::pair<int, double>  cathegory() const;
+
+private:
+	void calculateLabelsStatistics();
 
 private:
 	pcl::PointIndices mPointIndices;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr mCloud;
 	unsigned mR, mG, mB;
 
-	std::vector<cv::Mat> mViewHistory;
-	std::vector<std::vector<double>> mCathegoryHistory;
+	std::vector<cv::Mat>				mViewHistory;
+	std::vector<std::vector<double>>	mLabelsHistory;
+	std::vector<std::pair<double, double>> mLabelsStatistics;
 };
 
 #endif

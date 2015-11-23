@@ -5,15 +5,16 @@
 //
 
 #include "ObjectCandidate.h"
-
+#include <numeric>
 
 using namespace pcl;
 using namespace cv;
 using namespace std;
 
 //---------------------------------------------------------------------------------------------------------------------
-ObjectCandidate::ObjectCandidate(PointIndices _pointIndices, PointCloud<PointXYZ>::Ptr _cloud, bool _copyCloudPoints = false)
-{
+// Public Interface
+//---------------------------------------------------------------------------------------------------------------------
+ObjectCandidate::ObjectCandidate(PointIndices _pointIndices, PointCloud<PointXYZ>::Ptr _cloud, bool _copyCloudPoints = false) {
 	mPointIndices = _pointIndices;
 	mCloud =  PointCloud<PointXYZ>::Ptr(new PointCloud<PointXYZ>);
 	if (_copyCloudPoints) {
@@ -54,27 +55,56 @@ unsigned ObjectCandidate::G() const { return mG; }
 unsigned ObjectCandidate::B() const { return mB; }
 
 //---------------------------------------------------------------------------------------------------------------------
-void ObjectCandidate::addView(cv::Mat _view, std::vector<double> probs) {
+void ObjectCandidate::addView(cv::Mat _view, std::vector<double> _probs) {
 	mViewHistory.push_back(_view);
-	mCathegoryHistory.push_back(probs);
+	
+	if (mLabelsHistory.size() == 0) {
+		mLabelsHistory.push_back(_probs);
+	} else {
+		for (unsigned i = 0 ; i < mLabelsHistory.size() ; i++) {
+			mLabelsHistory[i].push_back(_probs[i]);
+		}
+	}
+	calculateLabelsStatistics();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-std::pair<unsigned, float> ObjectCandidate::cathegory() const {
-	if (mCathegoryHistory.size() == 0) {
-		return pair<unsigned, float>(9999,0);
+std::pair<int, double> ObjectCandidate::cathegory() const {
+	if (mLabelsHistory.size() == 0) {
+		return pair<int, double>(9999,0);
 	}
 
-	std::vector<double> lastData = mCathegoryHistory[mCathegoryHistory.size()-1];
-
-	double maxProb=0;
 	int maxIndex;
-	for (unsigned i = 0; i < lastData.size(); i++) {
-		if (lastData[i] > maxProb) {
+	double maxProb = 0;
+	for (unsigned i = 0; i < mLabelsStatistics.size(); i++) {
+		if (mLabelsStatistics[i].first > maxProb) {
 			maxIndex = i;
-			maxProb = lastData[i];
+			maxProb = mLabelsStatistics[i].first;
 		}
 	}
 
-	return pair<unsigned, float>(maxIndex, lastData[maxIndex]);
+	return pair<unsigned, float>(maxIndex, maxProb);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+// Private Interface
+//---------------------------------------------------------------------------------------------------------------------
+void ObjectCandidate::calculateLabelsStatistics() {
+	if (mLabelsStatistics.size() == 0) {
+		mLabelsHistory.resize(mLabelsHistory[0].size());
+	}
+
+	for (unsigned i = 0; i < mLabelsHistory.size(); i++) {
+		int nSamples = mLabelsHistory[i].size();
+		double mean = std::accumulate(mLabelsHistory[i].begin(), mLabelsHistory[i].end(), 0)/nSamples;
+		double stdDev = 0;
+		for (unsigned j = 0; j < mLabelsHistory[i].size(); j++) {
+			double diff = mLabelsHistory[i][j] - mean;
+			stdDev += pow(diff, 2);
+		}
+		stdDev = sqrt(stdDev/nSamples);
+
+		mLabelsStatistics[i].first = mean;
+		mLabelsStatistics[i].second = stdDev;
+	}
 }
