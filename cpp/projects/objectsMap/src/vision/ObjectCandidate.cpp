@@ -84,7 +84,7 @@ std::pair<int, double> ObjectCandidate::cathegory() const {
 		}
 	}
 
-	return pair<unsigned, float>(maxIndex, maxProb);
+	return pair<int, double>(maxIndex, maxProb);
 }
 
 //---------------------------------------------------------------------------------------------------------------------

@@ -295,7 +295,7 @@ void Gui::drawCathegory(const ObjectCandidate & _candidate) {
 	Point2i startPointLeft = Point2i(bb1.x, bb1.y);
 	Point2i startPointRight = Point2i(bb2.x + mLeftImage.cols, bb2.y);
 
-	std::pair<unsigned, float> cathegory = _candidate.cathegory();
+	std::pair<int, double> cathegory = _candidate.cathegory();
 
 	string text = to_string(cathegory.first) + ": " + to_string(cathegory.second);
 	putText(mPairStereo, text, startPointLeft, FONT_HERSHEY_PLAIN, 1, Scalar(_candidate.B() ,_candidate.G(), _candidate.R()),1);
