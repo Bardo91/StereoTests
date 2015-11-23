@@ -112,8 +112,7 @@ void Gui::clearMap() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawCandidate(const ObjectCandidate & _candidate)
-{
+void Gui::drawCandidate(const ObjectCandidate & _candidate) {
 	addCluster(_candidate.cloud(), 4, _candidate.R(), _candidate.G(), _candidate.B());
 	reprojectCloud(_candidate.cloud(), _candidate.R(), _candidate.G(), _candidate.B());
 	drawCathegory(_candidate);

@@ -59,12 +59,13 @@ void ObjectCandidate::addView(cv::Mat _view, std::vector<double> _probs) {
 	mViewHistory.push_back(_view);
 	
 	if (mLabelsHistory.size() == 0) {
-		mLabelsHistory.push_back(_probs);
-	} else {
-		for (unsigned i = 0 ; i < mLabelsHistory.size() ; i++) {
-			mLabelsHistory[i].push_back(_probs[i]);
-		}
+		mLabelsHistory.resize(_probs.size());
+	} 
+
+	for (unsigned i = 0 ; i < mLabelsHistory.size() ; i++) {
+		mLabelsHistory[i].push_back(_probs[i]);
 	}
+	
 	calculateLabelsStatistics();
 }
 
@@ -91,12 +92,16 @@ std::pair<int, double> ObjectCandidate::cathegory() const {
 //---------------------------------------------------------------------------------------------------------------------
 void ObjectCandidate::calculateLabelsStatistics() {
 	if (mLabelsStatistics.size() == 0) {
-		mLabelsHistory.resize(mLabelsHistory[0].size());
+		mLabelsStatistics.resize(mLabelsHistory.size());
 	}
 
 	for (unsigned i = 0; i < mLabelsHistory.size(); i++) {
 		int nSamples = mLabelsHistory[i].size();
-		double mean = std::accumulate(mLabelsHistory[i].begin(), mLabelsHistory[i].end(), 0)/nSamples;
+		double mean = 0;
+		for (unsigned j = 0; j < mLabelsHistory[i].size();j++) {
+			mean += mLabelsHistory[i][j];
+		}
+		mean /= mLabelsHistory[i].size();
 		double stdDev = 0;
 		for (unsigned j = 0; j < mLabelsHistory[i].size(); j++) {
 			double diff = mLabelsHistory[i][j] - mean;
