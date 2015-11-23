@@ -46,10 +46,9 @@ bool MainApplication::step() {
 	double t3 = mTimer->getTime();
 	if(!stepUpdateCameraRotation()) return false;
 	double t4 = mTimer->getTime();
-	vector<ObjectCandidate> candidates;
-	if(!stepGetCandidates(candidates)) return false;
+	if(!stepGetCandidates()) return false;
 	double t5 = mTimer->getTime();
-	if(!stepCathegorizeCandidates(candidates, frame1, frame2)) return false;
+	if(!stepCathegorizeCandidates(mCandidates, frame1, frame2)) return false;
 	double t6 = mTimer->getTime();
 
 	tGetImages.push_back(t1-t0);
@@ -228,7 +227,7 @@ bool MainApplication::stepUpdateCameraRotation() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepGetCandidates(vector<ObjectCandidate> &_candidates){
+bool MainApplication::stepGetCandidates(){
 	ModelCoefficients plane = mMap.extractFloor(mMap.cloud().makeShared());
 	if (plane.values.size() == 0)
 		return false;
@@ -239,12 +238,14 @@ bool MainApplication::stepGetCandidates(vector<ObjectCandidate> &_candidates){
 	vector<PointIndices> mClusterIndices;
 	mClusterIndices = mMap.clusterCloud(cropedCloud);
 	
+	vector<ObjectCandidate> newCandidates;
 	//create candidates from indices
 	for (PointIndices indices : mClusterIndices) {
-		ObjectCandidate candidate(indices, cropedCloud, true);
+		ObjectCandidate candidate(indices, cropedCloud);
 		if(mMap.distanceToPlane(candidate.cloud(), plane) < 0.05)
-			_candidates.push_back(candidate);
+			newCandidates.push_back(candidate);
 	}
+	ObjectCandidate::matchSequentialCandidates(mCandidates, newCandidates);
 	
 	return true;
 }

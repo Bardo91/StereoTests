@@ -36,7 +36,7 @@ private:
 	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
 	bool stepUpdateMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
 	bool stepUpdateCameraRotation();
-	bool stepGetCandidates(std::vector<ObjectCandidate> &_candidates);
+	bool stepGetCandidates();
 	bool stepCathegorizeCandidates(std::vector<ObjectCandidate> &_candidates, const cv::Mat &_frame1,const  cv::Mat &_frame2);
 
 private:
@@ -44,6 +44,7 @@ private:
 	EnvironmentMap		mMap;
 	Gui					*mGui;
 	RecognitionSystem	*mRecognitionSystem;
+	std::vector<ObjectCandidate> mCandidates;
 
 	BOViL::plot::Graph2d mTimePlot;
 	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates, tCathegorize;

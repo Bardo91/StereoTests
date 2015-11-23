@@ -12,19 +12,18 @@ using namespace cv;
 using namespace std;
 
 //---------------------------------------------------------------------------------------------------------------------
-ObjectCandidate::ObjectCandidate(PointIndices _pointIndices, PointCloud<PointXYZ>::Ptr _cloud, bool _copyCloudPoints = false)
+ObjectCandidate::ObjectCandidate(PointIndices _pointIndices, PointCloud<PointXYZ>::Ptr _cloud)
 {
 	mPointIndices = _pointIndices;
-	mCloud =  PointCloud<PointXYZ>::Ptr(new PointCloud<PointXYZ>);
-	if (_copyCloudPoints) {
-		for (int index : _pointIndices.indices)
-			mCloud->push_back(_cloud->points[index]);
-		mCloud->width = mCloud->points.size();
-		mCloud->height = 1;
-		mCloud->is_dense = true;
-	}
-	mR = rand() * 255 / RAND_MAX; 
-	mG = rand() * 255 / RAND_MAX; 
+	mCloud = PointCloud<PointXYZ>::Ptr(new PointCloud<PointXYZ>);
+	for (int index : _pointIndices.indices)
+		mCloud->push_back(_cloud->points[index]);
+	mCloud->width = mCloud->points.size();
+	mCloud->height = 1;
+	mCloud->is_dense = true;
+	computeCentroid();
+	mR = rand() * 255 / RAND_MAX;
+	mG = rand() * 255 / RAND_MAX;
 	mB = rand() * 255 / RAND_MAX;
 
 }
@@ -42,6 +41,10 @@ void ObjectCandidate::addView(cv::Mat _view) {
 //---------------------------------------------------------------------------------------------------------------------
 pcl::PointCloud<pcl::PointXYZ>::Ptr ObjectCandidate::cloud() const {
 	return mCloud;
+}
+
+Eigen::Vector4f ObjectCandidate::centroid() const{
+	return mCentroid;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -77,4 +80,20 @@ std::pair<unsigned, float> ObjectCandidate::cathegory() const {
 	}
 
 	return pair<unsigned, float>(maxIndex, lastData[maxIndex]);
+}
+
+void ObjectCandidate::matchSequentialCandidates(vector<ObjectCandidate> &_globalCandidates, vector<ObjectCandidate> &_newCandidates)
+{
+	if (_globalCandidates.size() != 0) //in the first step _globalCandidates is empty, which is handled in else
+	{
+	} 
+	else
+	{
+		_globalCandidates = _newCandidates;
+	}
+}
+
+void ObjectCandidate::computeCentroid()
+{
+	compute3DCentroid(*mCloud, mCentroid);
 }
