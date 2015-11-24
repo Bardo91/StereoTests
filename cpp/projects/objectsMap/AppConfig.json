@@ -62,7 +62,7 @@
 	{
 		"bow":
 		{
-			"modelPath":"canjuiboxcrasen.svm",
+			"modelPath":"canjuiboxcrasen",
 			"histogramMatcher":
 			{
 				"vocabularySize":500,
