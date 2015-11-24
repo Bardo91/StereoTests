@@ -109,6 +109,9 @@ void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f
 void Gui::clearMap() {
 	m3dViewer->removeAllPointClouds(mViewPortMapViewer);
 	m3dViewer->removeAllShapes(mViewPortMapViewer);
+	for (string name : m3dTexts) {
+		m3dViewer->removeText3D(name);
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -123,6 +126,15 @@ void Gui::addCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cluster, unsig
 	mPcCounter++;
 	m3dViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cluster, _r, _g, _b),"Cluster_"+to_string(mPcCounter),mViewPortMapViewer);
 	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, _pointSize, "Cluster_"+to_string(mPcCounter),mViewPortMapViewer);
+
+
+	double width, height, deep;
+	PointXYZ centroid = centroidPC(_cluster, width, height, deep);
+	
+	string textCoord = "(" + to_string(centroid.x) + ", " + to_string(centroid.y) + ", " + to_string(centroid.z) + ")";
+	string textDim = "[" + to_string(width) + ", " + to_string(height) + ", " + to_string(deep) + "]";
+	m3dViewer->addText3D(textCoord + "\n" + textDim, centroid, 0.01, _r, _g, _b, "Cluster_Text_"+to_string(mPcCounter));
+	m3dTexts.push_back("Cluster_Text_"+to_string(mPcCounter));
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -342,6 +354,41 @@ PointCloud<PointXYZRGB>::Ptr Gui::colorizePointCloud(const PointCloud<PointXYZ>:
 		colorizedCloud->push_back(p);
 	}
 	return colorizedCloud;
+}
+
+pcl::PointXYZ Gui::centroidPC(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, double &_width, double &_height, double &_deep) {
+	double minX=9999999999, minY=9999999999, minZ=9999999999, maxX=-9999999999, maxY=-9999999999, maxZ=-9999999999;
+	
+	PointXYZ centroid(0,0,0);
+	for (PointXYZ point : *_cloud) {
+		centroid.x +=  point.x;
+		centroid.y +=  point.y;
+		centroid.z +=  point.z;
+
+		if(point.x < minX)
+			minX = point.x;
+		if(point.y < minY)
+			minY = point.y;
+		if(point.z < minZ)
+			minZ = point.z;
+
+		if(point.x > maxX)
+			maxX = point.x;
+		if(point.y > maxY)
+			maxY = point.y;
+		if(point.z > maxZ)
+			maxZ = point.z;
+	}
+
+	_width = maxX-minX;
+	_height = maxZ-minZ;
+	_deep = maxY-minY;
+
+	centroid.x = centroid.x /_cloud->size();
+	centroid.y = centroid.y /_cloud->size();
+	centroid.z = centroid.z /_cloud->size();
+
+	return centroid;
 }
 
 //---------------------------------------------------------------------------------------------------------------------

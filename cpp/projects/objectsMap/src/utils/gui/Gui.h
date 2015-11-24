@@ -121,19 +121,24 @@ private:	// Private methods
 	Gui(std::string _name, StereoCameras& _stereoCameras);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr colorizePointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, int _r, int _g, int _b);
 
+	pcl::PointXYZ centroidPC(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, double &_width, double &_height, double &_deep);
+
 private:	// Members
 	static Gui	*mInstance;
 	
 	std::string	mName;	// Base name for all windows.
 	
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> m3dViewer;
-	int mViewPortMapViewer = 0, mViewportPcViewer = 1;
+	int mViewPortMapViewer = 1, mViewportPcViewer = 2;
 
 	cv::Mat mLeftImage, mRightImage, mPairStereo;
 
 	unsigned mPcCounter = 0;	// This variable is used to generate different names between pointcloud inside the vizualizer.
 								// 666 TODO: check it.
 	StereoCameras& mStereoCameras;
+
+	// List of drawed objects
+	std::vector<std::string> m3dTexts;
 };	//	class Gui
 
 #endif	//	GUI_H_
