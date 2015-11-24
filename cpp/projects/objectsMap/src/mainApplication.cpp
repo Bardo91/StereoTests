@@ -71,6 +71,8 @@ bool MainApplication::step() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+// Private Interface
+//---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::loadArguments(int _argc, char ** _argv) {
 	if (_argc != 2) {
 		cerr << "Bad input arguments" << endl;
@@ -132,6 +134,25 @@ bool MainApplication::initRecognitionSystem() {
 		return true;
 	}else
 		return false;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::initLoadGt() {
+	if (mConfig.contains("groundTruth") && mConfig["groundTruth"].contains("path")) {
+		ifstream file;
+		file.open(mConfig["groundTruth"]["path"]);
+		assert(file.is_open());
+		Json gtCandidates;
+		if (gtCandidates.parse(file)) {
+
+		}
+		else {
+			return false;
+		}
+	}
+	else {
+		return false;
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
