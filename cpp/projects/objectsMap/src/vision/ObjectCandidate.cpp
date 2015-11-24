@@ -86,7 +86,7 @@ void ObjectCandidate::matchSequentialCandidates(vector<ObjectCandidate> &_global
 {
 	//in the first step _globalCandidates is empty, which is handled in else
 	if (_globalCandidates.size() != 0) {
-		float threshold = 0.2;
+		float threshold = 0.05;
 		vector<int> matchIndex;
 		vector<float> matchDistance;
 		for (ObjectCandidate newCandidate:_newCandidates) {
@@ -95,22 +95,24 @@ void ObjectCandidate::matchSequentialCandidates(vector<ObjectCandidate> &_global
 			for (ObjectCandidate candidate : _globalCandidates) {
 				distances.push_back((cent - candidate.centroid()).norm());
 			}
-			 vector<float>::iterator it = min_element(distances.begin(), distances.end());
-			 int index = it - distances.begin();
-				 matchDistance.push_back(*it);
-			 if (*it < threshold) 
-				 matchIndex.push_back(index);
-			 else 
-				 matchIndex.push_back(-1);
+			vector<float>::iterator it = min_element(distances.begin(), distances.end());
+			int index = it - distances.begin();
+			matchDistance.push_back(*it);
+			if (*it < threshold) 
+				matchIndex.push_back(index);
+			else 
+				matchIndex.push_back(-1);
 		}
-		//here I need to take care if 2 global candidates match with the same new candidate
+		// 666 here I need to take care if 2 global candidates match with the same new candidate
 		for (int i = 0; i < _newCandidates.size(); i++) {
 			int match = matchIndex[i];
 			if (match == -1) {
+				cout << "No match found, distance to closest is: " << matchDistance[i] << " adding new candidate" << endl;
 				_globalCandidates.push_back(_newCandidates[i]);
 			}
 			else {
 				_globalCandidates[match].update(_newCandidates[i]);
+				cout << i << ":found match with " << match << " distance is " << matchDistance[i] << endl;
 			}
 		}
 	} 

@@ -11,7 +11,7 @@
 #include <pcl/PointIndices.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl\common\centroid.h>
+#include <pcl/common/centroid.h>
 #include <opencv2/opencv.hpp>
 
 class ObjectCandidate
