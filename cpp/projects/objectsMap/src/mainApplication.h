@@ -52,6 +52,8 @@ private:
 	BOViL::STime *mTimer;
 
 	cjson::Json mConfig;
+
+	std::vector<ObjectCandidate> mCandidateGroundTruth;	// 666 Debug.
 };
 
 #endif	//	MAINAPPLICATION_H_

@@ -27,6 +27,7 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 	result &= initGui();
 	result &= init3dMap();
 	result &= initRecognitionSystem();
+	result &= initLoadGt();
 
 	mTimer = BOViL::STime::get();
 
@@ -144,7 +145,27 @@ bool MainApplication::initLoadGt() {
 		assert(file.is_open());
 		Json gtCandidates;
 		if (gtCandidates.parse(file)) {
+			unsigned numObjs = int(gtCandidates["metadata"]["numObjects"]);
+			unsigned numLabels = int(gtCandidates["metadata"]["numLabels"]);
+			mCandidateGroundTruth.resize(numObjs);
 
+			Json mArrayObjs = gtCandidates["data"];
+			for (unsigned i = 0; i < numObjs; i++) {
+				vector<double> probs(numLabels, 0);
+				probs[int(mArrayObjs(i)["label"])] = 1.0;
+
+				PointXYZ point( mArrayObjs(i)["position"]["x"],
+								mArrayObjs(i)["position"]["y"],
+								mArrayObjs(i)["position"]["z"]);
+
+				PointCloud<PointXYZ> cloud;
+				cloud.push_back(point);
+
+				ObjectCandidate candidate(cloud.makeShared());
+
+				mCandidateGroundTruth.push_back(candidate);
+			}
+			return true;
 		}
 		else {
 			return false;
