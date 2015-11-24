@@ -31,6 +31,14 @@ ObjectCandidate::ObjectCandidate(PointIndices _pointIndices, PointCloud<PointXYZ
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+ObjectCandidate::ObjectCandidate(pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud) {
+	mCloud =  PointCloud<PointXYZ>::Ptr(_cloud);
+	mR = rand() * 255 / RAND_MAX; 
+	mG = rand() * 255 / RAND_MAX; 
+	mB = rand() * 255 / RAND_MAX;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 ObjectCandidate::~ObjectCandidate() {
 
 }

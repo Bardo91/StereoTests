@@ -17,6 +17,7 @@ class ObjectCandidate
 {
 public:
 	ObjectCandidate(pcl::PointIndices _pointIndeces, pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, bool _copyCloudPoints);
+	ObjectCandidate(pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud);
 	~ObjectCandidate();
 
 	/// Add a view to it's history
