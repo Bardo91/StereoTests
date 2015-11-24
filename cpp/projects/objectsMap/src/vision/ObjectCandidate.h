@@ -37,14 +37,14 @@ public:
 	void addView(cv::Mat _view, std::vector<double> _cathegories);
 	std::pair<unsigned, float>  cathegory() const;
 
-	static void matchSequentialCandidates(std::vector<ObjectCandidate> &_globalCandidates, std::vector<ObjectCandidate> &_newCandidates);
-
+ 	static void matchSequentialCandidates(std::vector<ObjectCandidate> &_globalCandidates, std::vector<ObjectCandidate> &_newCandidates);
+ 
 private:
 	void computeCentroid();
 	void update(ObjectCandidate &_nextInstance);
 	pcl::PointIndices mPointIndices;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr mCloud;
-	Eigen::Vector4f mCentroid; 
+	Eigen::Matrix<float,4,1,Eigen::DontAlign> mCentroid;
 	unsigned mR, mG, mB;
 
 	std::vector<cv::Mat> mViewHistory;

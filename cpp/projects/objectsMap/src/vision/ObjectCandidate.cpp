@@ -121,7 +121,9 @@ void ObjectCandidate::matchSequentialCandidates(vector<ObjectCandidate> &_global
 
 void ObjectCandidate::computeCentroid()
 {
-	compute3DCentroid(*mCloud, mCentroid);
+	Eigen::Vector4f temp;
+	compute3DCentroid(*mCloud, temp);
+	mCentroid = temp; // PointXYZ(temp[0], temp[1], temp[2]);
 }
 
 void ObjectCandidate::update(ObjectCandidate & _nextInstance)
