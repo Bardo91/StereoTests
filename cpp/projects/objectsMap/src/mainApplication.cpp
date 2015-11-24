@@ -147,7 +147,6 @@ bool MainApplication::initLoadGt() {
 		if (gtCandidates.parse(file)) {
 			unsigned numObjs = int(gtCandidates["metadata"]["numObjects"]);
 			unsigned numLabels = int(gtCandidates["metadata"]["numLabels"]);
-			mCandidateGroundTruth.resize(numObjs);
 
 			Json mArrayObjs = gtCandidates["data"];
 			for (unsigned i = 0; i < numObjs; i++) {
