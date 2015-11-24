@@ -41,6 +41,7 @@ public:
 
 private:
 	void computeCentroid();
+	void update(ObjectCandidate &_nextInstance);
 	pcl::PointIndices mPointIndices;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr mCloud;
 	Eigen::Vector4f mCentroid; 

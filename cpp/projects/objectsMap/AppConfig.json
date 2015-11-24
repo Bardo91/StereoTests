@@ -63,7 +63,7 @@
 			{
 				"vocabularySize":500,
 				"descriptor":"SIFT",
-				"matcher":"Flann-Based"
+				"matcher":"FlannBased"
 			},
 			"svm":
 			{
