@@ -31,6 +31,7 @@ private:
 	bool initGui				();
 	bool init3dMap				();
 	bool initRecognitionSystem	();
+	bool initLoadGt				();	// 666 Debug.
 
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
 	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
@@ -39,6 +40,7 @@ private:
 	bool stepGetCandidates(std::vector<ObjectCandidate> &_candidates);
 	bool stepCathegorizeCandidates(std::vector<ObjectCandidate> &_candidates, const cv::Mat &_frame1,const  cv::Mat &_frame2);
 
+	bool stepCheckGroundTruth();	// 666 Debug.
 private:
 	StereoCameras		*mCameras;
 	EnvironmentMap		mMap;
