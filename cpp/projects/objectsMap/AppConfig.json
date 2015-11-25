@@ -56,7 +56,8 @@
 		"minClusterSize":15,
 		"maxClusterSize":200,
 		"floorDistanceThreshold":0.01,
-		"floorMaxIters":1000
+    "floorMaxIters": 1000,
+    "consecutiveClusterCentroidMatchingThreshold": 0.05
 	},
 	"recognitionSystem":
 	{

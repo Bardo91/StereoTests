@@ -38,11 +38,9 @@ public:
 	void addView(cv::Mat _view, std::vector<double> _probs);
 	std::pair<int, double>  cathegory() const;
 
-	static void matchSequentialCandidates(std::vector<ObjectCandidate> &_globalCandidates, std::vector<ObjectCandidate> &_newCandidates);
+	static void matchSequentialCandidates(std::vector<ObjectCandidate> &_globalCandidates, std::vector<ObjectCandidate> &_newCandidates, float _threshold);
 
 	static std::vector<std::pair<int, float>> matchCandidates(std::vector<ObjectCandidate> & _querryCandidate, std::vector<ObjectCandidate> & _targetCandidate, float _threshold);
-
-	static void matchWithGroundTruth(std::vector<ObjectCandidate> &_gtCandidates, std::vector<ObjectCandidate> &_querryCandidates);
 
 private:
 	void computeCentroid();

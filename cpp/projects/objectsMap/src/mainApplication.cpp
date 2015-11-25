@@ -298,7 +298,7 @@ bool MainApplication::stepGetCandidates(){
 		if(mMap.distanceToPlane(candidate.cloud(), plane) < 0.05)
 			newCandidates.push_back(candidate);
 	}
-	ObjectCandidate::matchSequentialCandidates(mCandidates, newCandidates);
+	ObjectCandidate::matchSequentialCandidates(mCandidates, newCandidates, mConfig["mapParams"]["consecutiveClusterCentroidMatchingThreshold"]);
 	
 	return true;
 }
@@ -360,7 +360,8 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 bool MainApplication::stepCheckGroundTruth()
 {
 	if (mCandidates.size() != 0 && mCandidateGroundTruth.size() != 0) {
-		float threshold = 0.05;
+		cout << "---------------- Recognition results ----------------" << endl;
+		float threshold = mConfig["mapParams"]["consecutiveClusterCentroidMatchingThreshold"];
 		vector<pair<int, float>> matchIndexDist = ObjectCandidate::matchCandidates(mCandidates, mCandidateGroundTruth, threshold);
 		for (int i = 0; i < mCandidates.size(); i++) {
 			int match = matchIndexDist[i].first;

@@ -100,12 +100,11 @@ std::pair<int, double> ObjectCandidate::cathegory() const {
 	return pair<int, double>(maxIndex, maxProb);
 }
 
-void ObjectCandidate::matchSequentialCandidates(vector<ObjectCandidate> &_globalCandidates, vector<ObjectCandidate> &_newCandidates)
+void ObjectCandidate::matchSequentialCandidates(vector<ObjectCandidate> &_globalCandidates, vector<ObjectCandidate> &_newCandidates, float _threshold)
 {
 	//in the first step _globalCandidates is empty, which is handled in else
 	if (_globalCandidates.size() != 0) {
-		float threshold = 0.05;
-		vector<pair<int, float>> matchIndexDist = matchCandidates(_newCandidates, _globalCandidates, threshold);
+		vector<pair<int, float>> matchIndexDist = matchCandidates(_newCandidates, _globalCandidates, _threshold);
 
 		// 666 here I need to take care if 2 new candidates match with the same global candidate
 		for (int i = 0; i < _newCandidates.size(); i++) {
@@ -142,32 +141,6 @@ std::vector<std::pair<int, float>> ObjectCandidate::matchCandidates(vector<Objec
 			matchIndexDist.push_back(pair<int, float>(-1, *it));
 	}
 	return matchIndexDist;
-}
-
-void ObjectCandidate::matchWithGroundTruth(std::vector<ObjectCandidate> &_gtCandidates, std::vector<ObjectCandidate> &_querryCandidates)
-{
-	float threshold = 0.05;
-	vector<pair<int, float>> matchIndexDist = matchCandidates(_querryCandidates, _gtCandidates, threshold);
-	for (int i = 0; i < _querryCandidates.size(); i++) {
-		int match = matchIndexDist[i].first;
-		if (match == -1) {
-			cout << "No match found, distance to closest is: " << matchIndexDist[i].second  << endl;
-		}
-		else {
-			int gtLabel = _gtCandidates[match].cathegory().first;
-			int querryCandidateLabel = _querryCandidates[i].cathegory().first;
-			if (gtLabel == querryCandidateLabel)
-			{
-				cout << i << ":label " << gtLabel << " with probability " << _querryCandidates[i].cathegory().second << endl;
-			} 
-			else
-			{
-				cout << i << ":wrong match with " << querryCandidateLabel << " with probability " << _querryCandidates[i].cathegory().second << endl;
-			}
-			
-		}
-	}
-
 }
 
 void ObjectCandidate::computeCentroid()

@@ -114,9 +114,6 @@ public:		// Public interface
 	/// needed to update the viewer
 	void spinOnce();
 
-	/// the input cloud should have sensor orientation and origin info. Using the inverse of that we transform the point cloud to the current camera view and show it there
-	void drawCloudWithSensorDataToPcViewer(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
-
 private:	// Private methods
 	Gui(std::string _name, StereoCameras& _stereoCameras);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr colorizePointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, int _r, int _g, int _b);
