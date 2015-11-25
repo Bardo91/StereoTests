@@ -36,6 +36,7 @@ ObjectCandidate::ObjectCandidate(pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud) {
 	mR = rand() * 255 / RAND_MAX; 
 	mG = rand() * 255 / RAND_MAX; 
 	mB = rand() * 255 / RAND_MAX;
+	computeCentroid();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -129,14 +130,10 @@ std::vector<std::pair<int, float>> ObjectCandidate::matchCandidates(vector<Objec
 	vector<pair<int, float>> matchIndexDist;
 	for (ObjectCandidate newCandidate : _querryCandidate) {
 		Eigen::Vector4f cent = newCandidate.centroid();
-		cout << cent << endl;
 		vector<float> distances;
 		for (ObjectCandidate candidate : _targetCandidate) {
-			Eigen::Vector4f tar = candidate.centroid();
-			distances.push_back((cent - tar).norm());
-			cout << tar << "," << distances.back() << " ";
+			distances.push_back((cent - candidate.centroid()).norm());
 		}
-		cout << endl;
 		vector<float>::iterator it = min_element(distances.begin(), distances.end());
 		int index = it - distances.begin();
 		if (*it < _threshold)

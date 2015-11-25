@@ -162,7 +162,7 @@ bool MainApplication::initLoadGt() {
 				cloud.push_back(point);
 
 				ObjectCandidate candidate(cloud.makeShared());
-
+				candidate.addView(Mat(), probs);
 				mCandidateGroundTruth.push_back(candidate);
 			}
 			return true;
@@ -349,25 +349,31 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 
 bool MainApplication::stepCheckGroundTruth()
 {
-	float threshold = 0.05;
-	vector<pair<int, float>> matchIndexDist = ObjectCandidate::matchCandidates(mCandidates, mCandidateGroundTruth, threshold);
-	for (int i = 0; i < mCandidates.size(); i++) {
-		int match = matchIndexDist[i].first;
-		if (match == -1) {
-			cout << "No match found, distance to closest is: " << matchIndexDist[i].second << endl;
-		}
-		else {
-			int gtLabel = mCandidateGroundTruth[match].cathegory().first;
-			int querryCandidateLabel = mCandidates[i].cathegory().first;
-			if (gtLabel == querryCandidateLabel)
-			{
-				cout << i << ":label " << gtLabel << " with probability " << mCandidates[i].cathegory().second << endl;
+	if (mCandidates.size() != 0 && mCandidateGroundTruth.size() != 0) {
+		float threshold = 0.05;
+		vector<pair<int, float>> matchIndexDist = ObjectCandidate::matchCandidates(mCandidates, mCandidateGroundTruth, threshold);
+		for (int i = 0; i < mCandidates.size(); i++) {
+			int match = matchIndexDist[i].first;
+			if (match == -1) {
+				cout << "No match found, distance to closest is: " << matchIndexDist[i].second << endl;
 			}
-			else
-			{
-				cout << i << ":wrong match with " << querryCandidateLabel << " with probability " << mCandidates[i].cathegory().second << endl;
-			}
+			else {
+				int gtLabel = mCandidateGroundTruth[match].cathegory().first;
+				int querryCandidateLabel = mCandidates[i].cathegory().first;
+				if (gtLabel == querryCandidateLabel)
+				{
+					cout << i << ":label " << gtLabel << " with probability " << mCandidates[i].cathegory().second << endl;
+				}
+				else
+				{
+					cout << i << ":wrong match with " << querryCandidateLabel << " with probability " << mCandidates[i].cathegory().second << endl;
+				}
 
+			}
 		}
+		return true;
+	}
+	else {
+		return false;
 	}
 }
