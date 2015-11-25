@@ -344,3 +344,28 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 
 	return true;
 }
+
+bool MainApplication::stepCheckGroundTruth()
+{
+	float threshold = 0.05;
+	vector<pair<int, float>> matchIndexDist = ObjectCandidate::matchCandidates(mCandidates, mCandidateGroundTruth, threshold);
+	for (int i = 0; i < mCandidates.size(); i++) {
+		int match = matchIndexDist[i].first;
+		if (match == -1) {
+			cout << "No match found, distance to closest is: " << matchIndexDist[i].second << endl;
+		}
+		else {
+			int gtLabel = mCandidateGroundTruth[match].cathegory().first;
+			int querryCandidateLabel = mCandidates[i].cathegory().first;
+			if (gtLabel == querryCandidateLabel)
+			{
+				cout << i << ":label " << gtLabel << " with probability " << mCandidates[i].cathegory().second << endl;
+			}
+			else
+			{
+				cout << i << ":wrong match with " << querryCandidateLabel << " with probability " << mCandidates[i].cathegory().second << endl;
+			}
+
+		}
+	}
+}
