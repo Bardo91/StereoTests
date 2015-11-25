@@ -36,6 +36,7 @@ ObjectCandidate::ObjectCandidate(pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud) {
 	mR = rand() * 255 / RAND_MAX; 
 	mG = rand() * 255 / RAND_MAX; 
 	mB = rand() * 255 / RAND_MAX;
+	computeCentroid();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -104,38 +105,69 @@ void ObjectCandidate::matchSequentialCandidates(vector<ObjectCandidate> &_global
 	//in the first step _globalCandidates is empty, which is handled in else
 	if (_globalCandidates.size() != 0) {
 		float threshold = 0.05;
-		vector<int> matchIndex;
-		vector<float> matchDistance;
-		for (ObjectCandidate newCandidate:_newCandidates) {
-			Eigen::Vector4f cent = newCandidate.centroid();
-			vector<float> distances;
-			for (ObjectCandidate candidate : _globalCandidates) {
-				distances.push_back((cent - candidate.centroid()).norm());
-			}
-			vector<float>::iterator it = min_element(distances.begin(), distances.end());
-			int index = it - distances.begin();
-			matchDistance.push_back(*it);
-			if (*it < threshold) 
-				matchIndex.push_back(index);
-			else 
-				matchIndex.push_back(-1);
-		}
-		// 666 here I need to take care if 2 global candidates match with the same new candidate
+		vector<pair<int, float>> matchIndexDist = matchCandidates(_newCandidates, _globalCandidates, threshold);
+
+		// 666 here I need to take care if 2 new candidates match with the same global candidate
 		for (int i = 0; i < _newCandidates.size(); i++) {
-			int match = matchIndex[i];
+			int match = matchIndexDist[i].first;
 			if (match == -1) {
-				cout << "No match found, distance to closest is: " << matchDistance[i] << " adding new candidate" << endl;
+				cout << "No match found, distance to closest is: " << matchIndexDist[i].second << " adding new candidate" << endl;
 				_globalCandidates.push_back(_newCandidates[i]);
 			}
 			else {
 				_globalCandidates[match].update(_newCandidates[i]);
-				cout << i << ":found match with " << match << " distance is " << matchDistance[i] << endl;
+				cout << i << ":found match with " << match << " distance is " << matchIndexDist[i].second << endl;
 			}
 		}
 	} 
 	else{	
 		_globalCandidates = _newCandidates;
 	}
+}
+
+std::vector<std::pair<int, float>> ObjectCandidate::matchCandidates(vector<ObjectCandidate> & _querryCandidate, vector<ObjectCandidate> & _targetCandidate, float _threshold)
+{
+	vector<pair<int, float>> matchIndexDist;
+	for (ObjectCandidate newCandidate : _querryCandidate) {
+		Eigen::Vector4f cent = newCandidate.centroid();
+		vector<float> distances;
+		for (ObjectCandidate candidate : _targetCandidate) {
+			distances.push_back((cent - candidate.centroid()).norm());
+		}
+		vector<float>::iterator it = min_element(distances.begin(), distances.end());
+		int index = it - distances.begin();
+		if (*it < _threshold)
+			matchIndexDist.push_back(pair<int, float>(index, *it));
+		else
+			matchIndexDist.push_back(pair<int, float>(-1, *it));
+	}
+	return matchIndexDist;
+}
+
+void ObjectCandidate::matchWithGroundTruth(std::vector<ObjectCandidate> &_gtCandidates, std::vector<ObjectCandidate> &_querryCandidates)
+{
+	float threshold = 0.05;
+	vector<pair<int, float>> matchIndexDist = matchCandidates(_querryCandidates, _gtCandidates, threshold);
+	for (int i = 0; i < _querryCandidates.size(); i++) {
+		int match = matchIndexDist[i].first;
+		if (match == -1) {
+			cout << "No match found, distance to closest is: " << matchIndexDist[i].second  << endl;
+		}
+		else {
+			int gtLabel = _gtCandidates[match].cathegory().first;
+			int querryCandidateLabel = _querryCandidates[i].cathegory().first;
+			if (gtLabel == querryCandidateLabel)
+			{
+				cout << i << ":label " << gtLabel << " with probability " << _querryCandidates[i].cathegory().second << endl;
+			} 
+			else
+			{
+				cout << i << ":wrong match with " << querryCandidateLabel << " with probability " << _querryCandidates[i].cathegory().second << endl;
+			}
+			
+		}
+	}
+
 }
 
 void ObjectCandidate::computeCentroid()
