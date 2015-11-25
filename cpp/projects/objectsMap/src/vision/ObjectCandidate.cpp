@@ -129,10 +129,14 @@ std::vector<std::pair<int, float>> ObjectCandidate::matchCandidates(vector<Objec
 	vector<pair<int, float>> matchIndexDist;
 	for (ObjectCandidate newCandidate : _querryCandidate) {
 		Eigen::Vector4f cent = newCandidate.centroid();
+		cout << cent << endl;
 		vector<float> distances;
 		for (ObjectCandidate candidate : _targetCandidate) {
-			distances.push_back((cent - candidate.centroid()).norm());
+			Eigen::Vector4f tar = candidate.centroid();
+			distances.push_back((cent - tar).norm());
+			cout << tar << "," << distances.back() << " ";
 		}
+		cout << endl;
 		vector<float>::iterator it = min_element(distances.begin(), distances.end());
 		int index = it - distances.begin();
 		if (*it < _threshold)

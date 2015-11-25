@@ -51,6 +51,8 @@ bool MainApplication::step() {
 	double t5 = mTimer->getTime();
 	if(!stepCathegorizeCandidates(mCandidates, frame1, frame2)) return false;
 	double t6 = mTimer->getTime();
+	if (!stepCheckGroundTruth()) return false;
+
 
 	tGetImages.push_back(t1-t0);
 	tTriangulate.push_back(tGetImages[tGetImages.size()-1] + t2-t1);
