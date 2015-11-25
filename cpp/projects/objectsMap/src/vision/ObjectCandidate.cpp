@@ -143,6 +143,32 @@ std::vector<std::pair<int, float>> ObjectCandidate::matchCandidates(vector<Objec
 	return matchIndexDist;
 }
 
+void ObjectCandidate::matchWithGroundTruth(std::vector<ObjectCandidate> &_gtCandidates, std::vector<ObjectCandidate> &_querryCandidates)
+{
+	float threshold = 0.05;
+	vector<pair<int, float>> matchIndexDist = matchCandidates(_querryCandidates, _gtCandidates, threshold);
+	for (int i = 0; i < _querryCandidates.size(); i++) {
+		int match = matchIndexDist[i].first;
+		if (match == -1) {
+			cout << "No match found, distance to closest is: " << matchIndexDist[i].second  << endl;
+		}
+		else {
+			int gtLabel = _gtCandidates[match].cathegory().first;
+			int querryCandidateLabel = _querryCandidates[i].cathegory().first;
+			if (gtLabel == querryCandidateLabel)
+			{
+				cout << i << ":label " << gtLabel << " with probability " << _querryCandidates[i].cathegory().second << endl;
+			} 
+			else
+			{
+				cout << i << ":wrong match with " << querryCandidateLabel << " with probability " << _querryCandidates[i].cathegory().second << endl;
+			}
+			
+		}
+	}
+
+}
+
 void ObjectCandidate::computeCentroid()
 {
 	Eigen::Vector4f temp;
