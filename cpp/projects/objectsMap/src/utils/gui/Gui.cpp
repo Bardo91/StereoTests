@@ -179,9 +179,11 @@ void Gui::drawBoundBoxes(const vector<Rect>& _boxes, bool _isLeft, unsigned _r, 
 	Scalar color = Scalar(_b, _g, _r);
 	int offset = _isLeft?0:mLeftImage.cols;
 
+	Rect validFrame(0,offset,mLeftImage.cols, mLeftImage.rows);
+
 	for (Rect box : _boxes) {
 		box.x += offset;
-		rectangle(mPairStereo, box, color);
+		rectangle(mPairStereo, box&validFrame, color);
 	}
 	imshow(mName + "_StereoViewer", mPairStereo);
 }
@@ -191,10 +193,10 @@ void Gui::drawBox(const cv::Rect & _box, bool _isLeft, unsigned _r, unsigned _g,
 	Scalar color = Scalar(_b, _g, _r);
 
 	int offset = _isLeft?0:mLeftImage.cols;
-
+	Rect validFrame(0,offset,mLeftImage.cols, mLeftImage.rows);
 	Rect box = _box;
 	box.x += offset;
-	rectangle(mPairStereo, box, color);
+	rectangle(mPairStereo, box&validFrame, color);
 
 	imshow(mName + "_StereoViewer", mPairStereo);
 }
@@ -287,10 +289,12 @@ void Gui::drawCathegory(const ObjectCandidate & _candidate) {
 	vector<Point2f> reprojection1 = mStereoCameras.project3dPointsWCS(points3d, true);
 	vector<Point2f> reprojection2 = mStereoCameras.project3dPointsWCS(points3d, false);
 
-	Rect bb1 = boundRect(reprojection1);
-	Rect bb2 = boundRect(reprojection2);
+	Rect validFrame(0,0,mLeftImage.cols, mLeftImage.rows);
+	Rect bb1 = boundRect(reprojection1)&validFrame;
+	Rect bb2 = boundRect(reprojection2)&validFrame;
 	drawBox(bb1, true, _candidate.R() ,_candidate.G(), _candidate.B());
 	drawBox(bb2, false,  _candidate.R() ,_candidate.G(), _candidate.B());
+	
 	
 	Point2i startPointLeft = Point2i(bb1.x, bb1.y);
 	Point2i startPointRight = Point2i(bb2.x + mLeftImage.cols, bb2.y);
