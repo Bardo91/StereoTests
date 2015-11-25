@@ -193,7 +193,7 @@ void Gui::drawBox(const cv::Rect & _box, bool _isLeft, unsigned _r, unsigned _g,
 	Scalar color = Scalar(_b, _g, _r);
 
 	int offset = _isLeft?0:mLeftImage.cols;
-	Rect validFrame(0,offset,mLeftImage.cols, mLeftImage.rows);
+	Rect validFrame(offset,0,mLeftImage.cols, mLeftImage.rows);
 	Rect box = _box;
 	box.x += offset;
 	rectangle(mPairStereo, box&validFrame, color);
@@ -286,6 +286,7 @@ void Gui::drawCathegory(const ObjectCandidate & _candidate) {
 	vector<Point3f> points3d;
 	for (const PointXYZ point : *_candidate.cloud())
 		points3d.push_back(Point3f(point.x, point.y, point.z));
+
 	vector<Point2f> reprojection1 = mStereoCameras.project3dPointsWCS(points3d, true);
 	vector<Point2f> reprojection2 = mStereoCameras.project3dPointsWCS(points3d, false);
 
@@ -302,7 +303,9 @@ void Gui::drawCathegory(const ObjectCandidate & _candidate) {
 	std::pair<int, double> cathegory = _candidate.cathegory();
 
 	string text = to_string(cathegory.first) + ": " + to_string(cathegory.second);
+	std::cout << "x: " << startPointLeft.x << ", y: " << startPointLeft.y << ". " + text << endl;;
 	putText(mPairStereo, text, startPointLeft, FONT_HERSHEY_PLAIN, 1, Scalar(_candidate.B() ,_candidate.G(), _candidate.R()),1);
+	std::cout << "x: " << startPointRight.x << ", y: " << startPointRight.y << ". " + text << endl;
 	putText(mPairStereo, text, startPointRight, FONT_HERSHEY_PLAIN, 1, Scalar(_candidate.B() ,_candidate.G(), _candidate.R()),1);
 	
 }
