@@ -303,11 +303,8 @@ void Gui::drawCathegory(const ObjectCandidate & _candidate) {
 	std::pair<int, double> cathegory = _candidate.cathegory();
 
 	string text = to_string(cathegory.first) + ": " + to_string(cathegory.second);
-	std::cout << "x: " << startPointLeft.x << ", y: " << startPointLeft.y << ". " + text << endl;;
 	putText(mPairStereo, text, startPointLeft, FONT_HERSHEY_PLAIN, 1, Scalar(_candidate.B() ,_candidate.G(), _candidate.R()),1);
-	std::cout << "x: " << startPointRight.x << ", y: " << startPointRight.y << ". " + text << endl;
 	putText(mPairStereo, text, startPointRight, FONT_HERSHEY_PLAIN, 1, Scalar(_candidate.B() ,_candidate.G(), _candidate.R()),1);
-	
 }
 
 //---------------------------------------------------------------------------------------------------------------------
