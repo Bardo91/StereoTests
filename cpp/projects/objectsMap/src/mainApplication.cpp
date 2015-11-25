@@ -31,7 +31,12 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 
 	mTimer = BOViL::STime::get();
 
-	assert(result);
+	if (result) {
+		std::cout << "Main application configured and initiallized" << std::endl;
+	}
+	else {
+		std::cerr << "Main application could not be neither configured and initialized" <<std::endl;
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -77,11 +82,16 @@ bool MainApplication::loadArguments(int _argc, char ** _argv) {
 	if (_argc != 2) {
 		cerr << "Bad input arguments" << endl;
 		return false;
-	} else {
+	}
+	else {
 		ifstream file;
 		file.open(string(_argv[1]));
-		assert(file.is_open());
-		return mConfig.parse(file);
+		if (file.is_open())
+			return mConfig.parse(file);
+		else {
+			std::cout << "Can't open main configuration file" << std::endl;
+			return false;
+		}
 	}
 }
 
