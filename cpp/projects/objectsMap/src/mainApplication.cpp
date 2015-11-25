@@ -334,12 +334,12 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 		vector<Point2f> reprojection1 = mCameras->project3dPointsWCS(points3d, true);
 		vector<Point2f> reprojection2 = mCameras->project3dPointsWCS(points3d, false);
 
-
-		Mat view = _frame1(boundBox(reprojection1));
+		Rect validFrame(0,0,_frame1.cols, _frame1.rows);
+		Mat view = _frame1(boundBox(reprojection1)&validFrame);
 		std::vector<double> probs1 = mRecognitionSystem->categorize(view);
 		candidate.addView(view, probs1);
 
-		Mat view2 = _frame2(boundBox(reprojection2));
+		Mat view2 = _frame2(boundBox(reprojection2)&validFrame);
 		std::vector<double> probs2 = mRecognitionSystem->categorize(view2);
 		candidate.addView(view2, probs2);
 
