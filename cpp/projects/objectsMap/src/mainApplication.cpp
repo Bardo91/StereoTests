@@ -344,3 +344,12 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 
 	return true;
 }
+
+//---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::stepCheckGroundTruth() {
+	if(mCandidateGroundTruth.size() == 0)
+		return false;
+
+
+	return true;
+}
