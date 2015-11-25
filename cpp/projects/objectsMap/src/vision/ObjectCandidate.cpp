@@ -14,18 +14,18 @@ using namespace std;
 //---------------------------------------------------------------------------------------------------------------------
 // Public Interface
 //---------------------------------------------------------------------------------------------------------------------
-ObjectCandidate::ObjectCandidate(PointIndices _pointIndices, PointCloud<PointXYZ>::Ptr _cloud, bool _copyCloudPoints = false) {
+ObjectCandidate::ObjectCandidate(PointIndices _pointIndices, PointCloud<PointXYZ>::Ptr _cloud)
+{
 	mPointIndices = _pointIndices;
-	mCloud =  PointCloud<PointXYZ>::Ptr(new PointCloud<PointXYZ>);
-	if (_copyCloudPoints) {
-		for (int index : _pointIndices.indices)
-			mCloud->push_back(_cloud->points[index]);
-		mCloud->width = mCloud->points.size();
-		mCloud->height = 1;
-		mCloud->is_dense = true;
-	}
-	mR = rand() * 255 / RAND_MAX; 
-	mG = rand() * 255 / RAND_MAX; 
+	mCloud = PointCloud<PointXYZ>::Ptr(new PointCloud<PointXYZ>);
+	for (int index : _pointIndices.indices)
+		mCloud->push_back(_cloud->points[index]);
+	mCloud->width = mCloud->points.size();
+	mCloud->height = 1;
+	mCloud->is_dense = true;
+	computeCentroid();
+	mR = rand() * 255 / RAND_MAX;
+	mG = rand() * 255 / RAND_MAX;
 	mB = rand() * 255 / RAND_MAX;
 
 }
@@ -51,6 +51,10 @@ void ObjectCandidate::addView(cv::Mat _view) {
 //---------------------------------------------------------------------------------------------------------------------
 pcl::PointCloud<pcl::PointXYZ>::Ptr ObjectCandidate::cloud() const {
 	return mCloud;
+}
+
+Eigen::Vector4f ObjectCandidate::centroid() const{
+	return mCentroid;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -93,6 +97,59 @@ std::pair<int, double> ObjectCandidate::cathegory() const {
 	}
 
 	return pair<int, double>(maxIndex, maxProb);
+}
+
+void ObjectCandidate::matchSequentialCandidates(vector<ObjectCandidate> &_globalCandidates, vector<ObjectCandidate> &_newCandidates)
+{
+	//in the first step _globalCandidates is empty, which is handled in else
+	if (_globalCandidates.size() != 0) {
+		float threshold = 0.05;
+		vector<int> matchIndex;
+		vector<float> matchDistance;
+		for (ObjectCandidate newCandidate:_newCandidates) {
+			Eigen::Vector4f cent = newCandidate.centroid();
+			vector<float> distances;
+			for (ObjectCandidate candidate : _globalCandidates) {
+				distances.push_back((cent - candidate.centroid()).norm());
+			}
+			vector<float>::iterator it = min_element(distances.begin(), distances.end());
+			int index = it - distances.begin();
+			matchDistance.push_back(*it);
+			if (*it < threshold) 
+				matchIndex.push_back(index);
+			else 
+				matchIndex.push_back(-1);
+		}
+		// 666 here I need to take care if 2 global candidates match with the same new candidate
+		for (int i = 0; i < _newCandidates.size(); i++) {
+			int match = matchIndex[i];
+			if (match == -1) {
+				cout << "No match found, distance to closest is: " << matchDistance[i] << " adding new candidate" << endl;
+				_globalCandidates.push_back(_newCandidates[i]);
+			}
+			else {
+				_globalCandidates[match].update(_newCandidates[i]);
+				cout << i << ":found match with " << match << " distance is " << matchDistance[i] << endl;
+			}
+		}
+	} 
+	else{	
+		_globalCandidates = _newCandidates;
+	}
+}
+
+void ObjectCandidate::computeCentroid()
+{
+	Eigen::Vector4f temp;
+	compute3DCentroid(*mCloud, temp);
+	mCentroid = temp; // PointXYZ(temp[0], temp[1], temp[2]);
+}
+
+void ObjectCandidate::update(ObjectCandidate & _nextInstance)
+{
+	mPointIndices = _nextInstance.mPointIndices;
+	mCloud = _nextInstance.mCloud;
+	computeCentroid();
 }
 
 //---------------------------------------------------------------------------------------------------------------------

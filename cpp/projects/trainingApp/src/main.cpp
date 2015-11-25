@@ -58,7 +58,7 @@ int main(int _argc, char ** _argv) {
 			createTrainingImages(cameras, config, images);
 		}
 		else {
-			int index = 1;
+			int index = 0;
 			for (;;) {
 				string left = string(config["cameras"]["left1"]);
 				string right = string(config["cameras"]["right1"]);
@@ -68,8 +68,8 @@ int main(int _argc, char ** _argv) {
 				Mat frame1 = imread(left);	//cameras->camera(0).frame();
 				Mat frame2 = imread(right);	//cameras->camera(1).frame();
 				if (frame1.rows != 0 && frame2.rows != 0) {
-					resize(frame1, frame1, Size(150,150));
-					resize(frame2, frame2, Size(150,150));
+					//resize(frame1, frame1, Size(150,150));
+					//resize(frame2, frame2, Size(150,150));
 					images.push_back(frame1);
 					images.push_back(frame2);
 					Mat display;
@@ -98,7 +98,7 @@ int main(int _argc, char ** _argv) {
 			if(frame.rows == 0)
 				break;
 			else {
-				resize(frame, frame, Size(150, 150));
+				//resize(frame, frame, Size(150, 150));
 				cvImages.push_back(frame);
 			}
 		}
