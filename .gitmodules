@@ -4,3 +4,6 @@
 [submodule "cpp/lib/libsvmpp"]
 	path = cpp/lib/libsvmpp
 	url = https://github.com/Bardo91/libsvmpp
+[submodule "cpp/lib/DroneApplications"]
+	path = cpp/lib/DroneApplications
+	url = https://github.com/Bardo91/DroneApplications.git
