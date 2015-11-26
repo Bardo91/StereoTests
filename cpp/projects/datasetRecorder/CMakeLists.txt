@@ -37,6 +37,9 @@ LINK_DIRECTORIES(${OpenCV_LIB_DIR})
 add_executable(datasetRecorder ${DATASETRECORDER_SOURCE_FILES})
 
 target_include_directories(datasetRecorder PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_include_directories(datasetRecorder PUBLIC ${PROJECT_SOURCE_DIR}/../lib/DroneApplications/src/code)
 target_include_directories(datasetRecorder PUBLIC ${OpenCV_INCLUDE_DIRS})
+
+target_link_libraries(datasetRecorder LINK_PUBLIC DroneApplications)
 target_link_libraries(datasetRecorder LINK_PUBLIC ${OpenCV_LIBS})
 
