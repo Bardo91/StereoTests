@@ -34,7 +34,7 @@ LINK_DIRECTORIES(${OpenCV_LIB_DIR})
 
 
 # Add Executable
-add_executable(datasetRecorder ${BAR_TASK_SOURCE_FILES})
+add_executable(datasetRecorder ${DATASETRECORDER_SOURCE_FILES})
 
 target_include_directories(datasetRecorder PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(datasetRecorder PUBLIC ${OpenCV_INCLUDE_DIRS})
