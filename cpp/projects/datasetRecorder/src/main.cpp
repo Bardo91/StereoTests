@@ -30,22 +30,24 @@
 
 
 //---------------------------------------------------------------------------------------------------------------------
-volatile bool running = false;
+volatile bool running = true;
 std::mutex mutex;
 
 int main(int _argc, char ** _argv) {
 	BOViL::STime::init();
 
 	// Start a thread to stop other ones.
-	std::thread stopThread([]() {
+	std::thread stopThread([&]() {
 		int cmd = 1;
 		while(cmd != 0) {
 			std::cout << "If you want to close, enter 0" << std::endl;
 			std::cin >> cmd;
 		}
+		running = false;
 	});
 
 	std::string folderName = "experiment_"+std::to_string(time(NULL))+"/";
+	do_mkdir(folderName);
 
 	// Start a thread for capturing imu.
 	std::thread imuThread([&]() {
@@ -102,9 +104,21 @@ int main(int _argc, char ** _argv) {
 		}
 	});
 
+	BOViL::STime *timer = BOViL::STime::get();
+	while (running) {
+		timer->mDelay(100);
+	}
 
-	
+	timer->delay(1);
 
+	if(stopThread.joinable())
+		stopThread.join();
+
+	if(imuThread.joinable())
+		imuThread.join();
+
+	if(frameThread.joinable())
+		frameThread.join();
 
 }
 
