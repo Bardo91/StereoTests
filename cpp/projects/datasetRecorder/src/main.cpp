@@ -34,7 +34,15 @@ volatile bool running = true;
 std::mutex mutex;
 
 int main(int _argc, char ** _argv) {
+	#if defined(_HAS_ROS_LIBRARIES_)
+	std::cout <<  "Initializing ros" << std::endl;
+	ros::init(_argc, _argv, "Dataset_Recorder");
+	#endif
+
+
 	BOViL::STime::init();
+	BOViL::STime *timerg = BOViL::STime::get();
+	
 
 	// Start a thread to stop other ones.
 	std::thread stopThread([&]() {
@@ -55,17 +63,22 @@ int main(int _argc, char ** _argv) {
 		BOViL::STime *timer = BOViL::STime::get();
 		ImuData imuData;
 
+		timer->delay(1);
 		std::ofstream file(folderName+"imudata.txt");
 
 		while (running) {
+		#if defined(_HAS_ROS_LIBRARIES_)
+		ros::spinOnce();
+		#endif
 			double t = timer->getTime();
 			imuData = imu.get();
 
 			file << t << ", " <<
 					imuData.mAltitude << ", " <<
-					imuData.mEulerAngles[0] << ", " <<
-					imuData.mEulerAngles[1] << ", " <<
-					imuData.mEulerAngles[2] << ", " <<
+					imuData.mQuaternion[0] << ", " <<
+					imuData.mQuaternion[1] << ", " <<
+					imuData.mQuaternion[2] << ", " <<
+					imuData.mQuaternion[3] << ", " <<
 					imuData.mLinearSpeed[0] << ", " <<
 					imuData.mLinearSpeed[1] << ", " <<
 					imuData.mLinearSpeed[2] << ", " <<
@@ -78,10 +91,11 @@ int main(int _argc, char ** _argv) {
 					imuData.mAngularAcc[0] << ", " <<
 					imuData.mAngularAcc[1] << ", " <<
 					imuData.mAngularAcc[2] << std::endl;
+			timer->mDelay(1);
 		}
-
 	});
 
+	timerg->delay(1);
 
 	// Start a thread for capturing images
 	std::thread frameThread([&]() {
@@ -109,7 +123,7 @@ int main(int _argc, char ** _argv) {
 		timer->mDelay(100);
 	}
 
-	timer->delay(1);
+	timerg->delay(1);
 
 	if(stopThread.joinable())
 		stopThread.join();

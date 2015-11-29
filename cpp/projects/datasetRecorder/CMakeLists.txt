@@ -33,6 +33,18 @@ set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBIN
 LINK_DIRECTORIES(${OpenCV_LIB_DIR})
 
 
+find_package(catkin COMPONENTS
+	roscpp
+	std_msgs
+	sensor_msgs
+	std_srvs
+	message_generation
+)
+
+if(catkin_FOUND)
+	add_definitions(-D_HAS_ROS_LIBRARIES_)
+endif()
+
 # Add Executable
 add_executable(datasetRecorder ${DATASETRECORDER_SOURCE_FILES})
 
