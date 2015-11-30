@@ -4,3 +4,6 @@
 [submodule "cpp/lib/DroneApplications"]
 	path = cpp/lib/DroneApplications
 	url = https://github.com/Bardo91/DroneApplications.git
+[submodule "cpp/lib/cjson"]
+	path = cpp/lib/cjson
+	url = https://github.com/Bardo91/cjson.git
