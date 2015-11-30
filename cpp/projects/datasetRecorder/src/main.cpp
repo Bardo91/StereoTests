@@ -5,14 +5,16 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#include <core/comm/Socket.h>
 #include <core/time/time.h>
 #include <implementations/sensors/MavrosSensor.h>
 #include <opencv2/opencv.hpp>
 
+
 #include <fstream>
 #include <thread> 
 #include <mutex>
-
+#include <string>
 
 //---------------------------------------------------------------------------------------------------------------------
 #ifdef _WIN32
@@ -31,13 +33,17 @@
 
 //---------------------------------------------------------------------------------------------------------------------
 volatile bool running = true;
-std::mutex mutex;
+volatile bool display = false;
+std::mutex displayMutex;
+
 
 int main(int _argc, char ** _argv) {
 	#if defined(_HAS_ROS_LIBRARIES_)
 	std::cout <<  "Initializing ros" << std::endl;
 	ros::init(_argc, _argv, "Dataset_Recorder");
 	#endif
+
+	BOViL::comm::Socket *socket = nullptr;
 
 
 	BOViL::STime::init();
@@ -46,11 +52,21 @@ int main(int _argc, char ** _argv) {
 
 	// Start a thread to stop other ones.
 	std::thread stopThread([&]() {
-		int cmd = 1;
+		int cmd = -1;
 		while(cmd != 0) {
 			std::cout << "If you want to close, enter 0" << std::endl;
+			std::cout << "If you want to enable/disable sent of images throught a socket, enter 1" << std::endl;
 			std::cin >> cmd;
+			if (cmd == 1) {
+				display = !display;
+			}
 		}
+		if (socket != nullptr && socket->getSocketDescriptor() != -1) {
+			closesocket(socket->getSocketDescriptor());
+			socket = nullptr;
+		}
+
+		display = false;
 		running = false;
 	});
 
@@ -96,7 +112,7 @@ int main(int _argc, char ** _argv) {
 	});
 
 	timerg->delay(1);
-
+	cv::Mat sFrame1, sFrame2;
 	// Start a thread for capturing images
 	std::thread frameThread([&]() {
 		cv::VideoCapture cam1(0);
@@ -111,10 +127,68 @@ int main(int _argc, char ** _argv) {
 			cam1 >> frame1;
 			cam2 >> frame2;
 
+			if (display) {
+				displayMutex.lock();
+				frame1.copyTo(sFrame1);
+				frame2.copyTo(sFrame2);
+				displayMutex.unlock();
+			}
+
 			timeSpan << t << std::endl;
 			cv::imwrite(folderName+ "cam1_"+std::to_string(index)+".jpg", frame1);
 			cv::imwrite(folderName+ "cam2_"+std::to_string(index)+".jpg", frame2);
 			index++;
+		}
+	});
+
+	// Display thread
+	std::thread displayThread([&]() {
+		while (running) {
+			while (display) {
+				if(socket == nullptr)
+					socket = BOViL::comm::Socket::createSocket(BOViL::comm::eSocketType::serverTCP, "5098");
+				
+				unsigned char *inBuff = new unsigned char[1024];
+				int inLen = socket->receiveMsg(inBuff, 1024);
+				if (inLen == -1) {
+					socket->closeSocket();
+					socket = nullptr;
+					timerg->delay(5);
+				}
+				else {
+					std::string inMsg = std::string((char*)inBuff, inLen);
+					if (inMsg == "send") {
+						cv::Mat frame;
+						displayMutex.lock();
+						cv::hconcat(sFrame1, sFrame2, frame);
+						displayMutex.unlock();
+
+						cv::resize(frame, frame, cv::Size(240, 80));
+
+						int sizes[] = {frame.rows, frame.cols, frame.channels()};
+						int outLen = socket->sendMsg((unsigned char*) sizes, sizeof(int)*3);
+						if (outLen == -1) {
+							socket->closeSocket();
+							socket = nullptr;
+							timerg->delay(5);
+						}
+
+						outLen = socket->sendMsg(frame.data, frame.rows*frame.cols*frame.channels());
+						if (outLen == -1) {
+							socket->closeSocket();
+							socket = nullptr;
+							timerg->delay(5);
+						}
+					}
+					else {
+						socket->closeSocket();
+						socket = nullptr;
+						timerg->delay(5);
+					}
+				}
+
+				delete inBuff;
+			}
 		}
 	});
 
@@ -133,6 +207,10 @@ int main(int _argc, char ** _argv) {
 
 	if(frameThread.joinable())
 		frameThread.join();
+
+	if(displayThread.joinable())
+		displayThread.join();
+
 
 }
 
