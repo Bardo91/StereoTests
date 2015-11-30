@@ -11,3 +11,5 @@
 ###	Eclipse files	###
 *.cproject
 *.project
+
+*.idea
