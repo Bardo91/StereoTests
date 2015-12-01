@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 project(StereoTests)
 
 # Collect all sources
-file(GLOB_RECURSE EKFHEXA_SOURCE_FILES "src/*.cpp" "src/*.h" "src/*.inl")
+file(GLOB_RECURSE EKFHEXA_SOURCE_FILES "src/*.cpp" "src/*.h" "src/*.inl" "../objectsMap/src/utils/gui/graph2d*")
 
 # Clasify sources according to folder structure.
 # This creates a nice layout for the project in visual studio
@@ -54,6 +54,6 @@ target_include_directories(ekfHexa PUBLIC ${PROJECT_SOURCE_DIR}/../lib/DroneAppl
 target_include_directories(ekfHexa PUBLIC ${OpenCV_INCLUDE_DIRS})
 
 target_link_libraries(ekfHexa LINK_PUBLIC DroneApplications)
-target_link_libraries(ekfHexa LINK_PUBLIC bovil)
+target_link_libraries(ekfHexa LINK_PUBLIC BOViL)
 target_link_libraries(ekfHexa LINK_PUBLIC ${OpenCV_LIBS})
 

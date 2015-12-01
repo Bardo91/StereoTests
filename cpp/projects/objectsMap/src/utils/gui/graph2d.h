@@ -58,7 +58,7 @@ namespace BOViL {
 			cv::Mat				mLastRender;
 			std::vector<Graph>	mGraphs;
 
-			double mMinX=0, mMinY=0, mMaxX = 1, mMaxY = 0.5;
+			double mMinX=0, mMinY=0, mMaxX = 1, mMaxY = 0.0001;
 
 		};	// class Graph2d.
 
