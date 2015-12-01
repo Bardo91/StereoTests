@@ -1,0 +1,26 @@
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		Author:	Pablo Ramon Soria
+//		Date:	2015-12-01
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+#ifndef EKFIMU_H_
+#define EKFIMU_H_
+
+
+#include <algorithms/state_estimators/ExtendedKalmanFilter.h>
+
+class EkfImu : public BOViL::algorithms::ExtendedKalmanFilter {
+public:
+
+protected:
+	void updateJf(const double _incT);
+	void updateHZk();
+	void updateJh();
+
+};
+
+
+#endif	//	EKFIMU_H_
