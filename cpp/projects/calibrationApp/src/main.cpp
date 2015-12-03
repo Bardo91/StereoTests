@@ -8,8 +8,8 @@ using namespace std;
 
 int main(int _argc, char ** _argv) {
 
-	float squareSize = 0.0223;
-	cv::Size cornerCount(7, 11); //7 11
+	float squareSize = 0.0415;
+	cv::Size cornerCount(11,7); //7 11
 	string leftPath = "C:/Users/GRVC/Desktop/CalibrationF/img_cam1_%d.jpg";
 	string rightPath = "C:/Users/GRVC/Desktop/CalibrationF/img_cam2_%d.jpg";
 	string savePath = "calib";
