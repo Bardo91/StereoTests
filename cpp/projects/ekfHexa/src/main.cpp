@@ -76,14 +76,14 @@ int main(int _argc, char ** _argv) {
 	//BOViL::plot::Graph2d angleImuGraph("AngleImu");
 	
 	std::vector<std::vector<double>> pos(3), speed(3), acc(3), angle(3), angularSpeed(3), angleImu(3), accImu(3);
+	std::vector<double> vTime;
 
 	double previousT;
 	imuData = imu->get();
-	previousT = imuData.mTimeSpan - 0.01;
 	Eigen::Vector3d gravity = Eigen::Vector3d::Zero();
 	//cv::waitKey();
 	// calculate offset.
-	for (int i = 0;i < 200; i++) {
+	for (int i = 0;i < 1500; i++) {
 		imuData = imu->get();
 
 		Eigen::Quaternion<double> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
@@ -91,10 +91,9 @@ int main(int _argc, char ** _argv) {
 		linAcc << imuData.mLinearAcc[0],  imuData.mLinearAcc[1], imuData.mLinearAcc[2];
 
 		gravity += q*linAcc;
-
 	}
 
-	gravity = gravity / 200;
+	gravity = gravity / 1500;
 
 
 
@@ -110,18 +109,18 @@ int main(int _argc, char ** _argv) {
 	x0.block<3,1>(9,0) = q*linAcc - gravity;
 
 	ekf.setUpEKF(Q, R, x0);
-	ekf.parameters({ 0,0,0 }, {0,0,0}, q*linAcc - gravity, {0.3,0.7,0.5});
-
+	ekf.parameters({ 0,0,0 }, {-1,-1,-1}, q*linAcc - gravity, {0.3,0.7,0.5});
+	previousT=imuData.mTimeSpan;
 
 
 	// Start
-	for(int i = 0;i < 100; i++) {
+	for(int i = 0;i < 1000; i++) {
 		#if defined(_HAS_ROS_LIBRARIES_)
 		ros::spinOnce();
 		#endif
 		double t = timer->getTime();
 		imuData = imu->get();
-
+		vTime.push_back(imuData.mTimeSpan);
 		Eigen::MatrixXd zk(6,1);
 	
 		Eigen::Quaternion<double> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
@@ -162,20 +161,19 @@ int main(int _argc, char ** _argv) {
 
 	
 	posGraph.clean();
-	posGraph.draw(pos[0], 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	posGraph.draw(pos[1], 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	posGraph.draw(pos[2], 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
+	posGraph.draw(vTime,pos[0], 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	posGraph.draw(vTime,pos[1], 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	posGraph.draw(vTime,pos[2], 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
 	
 	speedGraph.clean();
-	speedGraph.draw(speed[0], 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	speedGraph.draw(speed[1], 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	speedGraph.draw(speed[2], 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
+	speedGraph.draw(vTime,speed[0], 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	speedGraph.draw(vTime,speed[1], 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	speedGraph.draw(vTime,speed[2], 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
 	
 	accGraph.clean();
-	accGraph.draw(acc[0], 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	accGraph.draw(acc[1], 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	accGraph.draw(accImu[2], 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	accGraph.draw(acc[2], 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
+	accGraph.draw(vTime,acc[0], 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	accGraph.draw(vTime,acc[1], 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	accGraph.draw(vTime,acc[2], 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
 	
 	
 	//angleGraph.clean();
