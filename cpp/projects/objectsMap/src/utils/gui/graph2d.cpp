@@ -41,7 +41,7 @@ namespace BOViL {
 			double minY = *min_element(_y.begin(), _y.end());
 			double maxY = *max_element(_y.begin(), _y.end());
 
-			Graph graph = { _x, _y, Scalar(_r, _g, _b), _type };
+			Graph graph = { _x, _y, Scalar(_b, _g, _r), _type };
 			mGraphs.push_back(graph);
 
 			if (minX < mMinX || maxX > mMaxX || minY < mMinY || maxY > mMaxY) {
