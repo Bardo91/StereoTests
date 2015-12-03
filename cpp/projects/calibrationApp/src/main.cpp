@@ -9,9 +9,11 @@ using namespace std;
 int main(int _argc, char ** _argv) {
 
 	float squareSize = 0.0223;
-	cv::Size cornerCount(9, 16);
-	string savePath = "tralala";
-	StereoCameras cameras("cam1_%d", "cam2_%d");
+	cv::Size cornerCount(7, 11); //7 11
+	string leftPath = "C:/Users/GRVC/Desktop/CalibrationF/img_cam1_%d.jpg";
+	string rightPath = "C:/Users/GRVC/Desktop/CalibrationF/img_cam2_%d.jpg";
+	string savePath = "calib";
+	StereoCameras cameras(leftPath,rightPath );
 
 	vector<cv::Mat> framesLeft, framesRight;
 
@@ -19,7 +21,7 @@ int main(int _argc, char ** _argv) {
 	{
 		cv::Mat left, right;
 		cameras.frames(left, right);
-		if (left.size != 0)
+		if (left.cols != 0)
 		{
 			framesLeft.push_back(left);
 			framesRight.push_back(right);
