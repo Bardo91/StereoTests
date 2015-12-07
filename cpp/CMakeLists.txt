@@ -4,8 +4,8 @@ project(StereoTests)
 add_subdirectory(lib/cjson/src)
 add_subdirectory(lib/libsvmpp/src)
 add_subdirectory(lib/DroneApplications/src)
-add_subdirectory(lib/DroneApplications/lib/bovil/src)
-add_subdirectory(/lib/bovil/src)
+add_subdirectory(lib/bovil/src)
+add_subdirectory(lib/StereoLib/src)
 
 
 # Project directory
