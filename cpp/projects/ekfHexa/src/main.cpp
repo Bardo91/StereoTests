@@ -17,7 +17,7 @@
 
 #include "../../objectsMap/src/utils/gui/graph2d.h"
 #include "EkfImu.h"
-#include "EkfImuIcp.h"
+#include <StereoLib/EkfImuIcp.h>
 
 //---------------------------------------------------------------------------------------------------------------------
 #ifdef _WIN32

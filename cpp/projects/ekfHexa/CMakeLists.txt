@@ -52,8 +52,9 @@ target_include_directories(ekfHexa PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(ekfHexa PUBLIC ${PROJECT_SOURCE_DIR}/../lib/DroneApplications/src/code)
 target_include_directories(ekfHexa PUBLIC ${PROJECT_SOURCE_DIR}/../lib/bovil/src/code)
 target_include_directories(ekfHexa PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_include_directories(ekfHexa PUBLIC ${PROJECT_SOURCE_DIR}/../../lib/StereoLib/src)
 
 target_link_libraries(ekfHexa LINK_PUBLIC DroneApplications)
 target_link_libraries(ekfHexa LINK_PUBLIC BOViL)
 target_link_libraries(ekfHexa LINK_PUBLIC ${OpenCV_LIBS})
-
+target_link_libraries(ekfHexa LINK_PUBLIC StereoLib)
