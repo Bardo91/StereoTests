@@ -10,3 +10,6 @@
 [submodule "cpp/lib/bovil"]
 	path = cpp/lib/bovil
 	url = https://github.com/bardo91/bovil.git
+[submodule "cpp/lib/StereoLib"]
+	path = cpp/lib/StereoLib
+	url = https://github.com/Bardo91/StereoLib.git
