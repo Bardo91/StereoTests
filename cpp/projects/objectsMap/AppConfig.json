@@ -56,8 +56,8 @@
 		"minClusterSize":15,
 		"maxClusterSize":200,
 		"floorDistanceThreshold":0.01,
-    "floorMaxIters": 1000,
-    "consecutiveClusterCentroidMatchingThreshold": 0.05
+		"floorMaxIters": 1000,
+		"consecutiveClusterCentroidMatchingThreshold": 0.05
 	},
 	"recognitionSystem":
 	{
@@ -84,5 +84,12 @@
 				}
 			}
 		}
+	},
+	"ekf":
+	{
+		"source":"file",
+		"x0":[],
+		"Q":[],
+		"R":[]
 	}
 }

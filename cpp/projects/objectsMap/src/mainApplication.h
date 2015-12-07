@@ -15,6 +15,7 @@
 #include <StereoLib/map3d/EnvironmentMap.h>
 #include <StereoLib/ml/RecognitionSystem.h>
 #include <StereoLib/StereoCameras.h>
+#include <StereoLib/EkfImuIcp.h>
 
 #include <cjson/json.h>
 #include <pcl/point_cloud.h>
@@ -32,6 +33,7 @@ private:
 	bool initGui				();
 	bool init3dMap				();
 	bool initRecognitionSystem	();
+	bool initEkf				();
 	bool initLoadGt				();	// 666 Debug.
 
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
@@ -48,6 +50,8 @@ private:
 	Gui					*mGui;
 	RecognitionSystem	*mRecognitionSystem;
 	std::vector<ObjectCandidate> mCandidates;
+
+	EkfImuIcp mEkf;
 
 	BOViL::plot::Graph2d mTimePlot;
 	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates, tCathegorize;

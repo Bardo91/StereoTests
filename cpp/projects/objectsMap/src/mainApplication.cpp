@@ -150,6 +150,39 @@ bool MainApplication::initRecognitionSystem() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::initEkf() {
+	if (mConfig.contains("ekf")){
+		if (mConfig["ekf"]["source"] == "file") {
+			//Eigen::MatrixXd Q = Eigen::MatrixXd::Identity(12, 12)*0.01;
+			//Eigen::MatrixXd R = Eigen::MatrixXd::Identity(6, 6)*0.01;
+			//R.block<3, 3>(0, 0) = Eigen::MatrixXd::Identity(3, 3)*0.1;
+			//Eigen::MatrixXd x0 = Eigen::MatrixXd::Zero(12, 1);
+			//x0.block<3, 1>(9, 0) = q*linAcc - gravity;
+			//
+			//mEkf.setUpEKF(Q, R, x0);
+			//mEkf.parameters({ 0,0,0 }, { -1,-1,-1 }, q*linAcc - gravity, { 0.3,0.7,0.5 });
+			return true;
+		}
+		else if (mConfig["ekf"]["source"] == "real") {
+			//Eigen::MatrixXd Q = Eigen::MatrixXd::Identity(12, 12)*0.01;
+			//Eigen::MatrixXd R = Eigen::MatrixXd::Identity(6, 6)*0.01;
+			//R.block<3, 3>(0, 0) = Eigen::MatrixXd::Identity(3, 3)*0.1;
+			//Eigen::MatrixXd x0 = Eigen::MatrixXd::Zero(12, 1);
+			//x0.block<3, 1>(9, 0) = q*linAcc - gravity;
+			//
+			//mEkf.setUpEKF(Q, R, x0);
+			//mEkf.parameters({ 0,0,0 }, { -1,-1,-1 }, q*linAcc - gravity, { 0.3,0.7,0.5 });
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	else
+		return false;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::initLoadGt() {
 	if (mConfig.contains("groundTruth") && mConfig["groundTruth"].contains("path")) {
 		ifstream file;
