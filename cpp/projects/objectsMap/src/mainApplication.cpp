@@ -6,12 +6,13 @@
 
 
 #include "utils/gui/Gui.h"
-#include "ImageFilteringTools.h"
 #include "mainApplication.h"
 
 #include <cassert>
 #include <fstream>
 #include <iostream>
+
+#include <StereoLib/ImageFilteringTools.h>
 
 using namespace cjson;
 using namespace cv;

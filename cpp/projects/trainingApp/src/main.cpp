@@ -5,10 +5,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../../objectsMap/src/vision/ml/BoW.h"
-#include "../../objectsMap/src/vision/StereoCameras.h"
-#include "../../objectsMap/src/vision/ImageFilteringTools.h"
-
 #include <sstream>
 #include <Windows.h>
 #include <opencv2/opencv.hpp>
@@ -20,6 +16,10 @@
 #include <opencv2/xfeatures2d.hpp>
 
 #include <libsvmpp/Svmpp.h>
+
+#include <StereoLib/ml/BoW.h>
+#include <StereoLib/StereoCameras.h>
+#include <StereoLib/ImageFilteringTools.h>
 
 //using namespace algorithm;
 using namespace std;
