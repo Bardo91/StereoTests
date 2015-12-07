@@ -5,6 +5,7 @@ add_subdirectory(lib/cjson/src)
 add_subdirectory(lib/libsvmpp/src)
 add_subdirectory(lib/DroneApplications/src)
 add_subdirectory(lib/DroneApplications/lib/bovil/src)
+add_subdirectory(/lib/bovil/src)
 
 
 # Project directory

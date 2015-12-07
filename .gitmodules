@@ -7,3 +7,6 @@
 [submodule "cpp/lib/cjson"]
 	path = cpp/lib/cjson
 	url = https://github.com/Bardo91/cjson.git
+[submodule "cpp/lib/bovil"]
+	path = cpp/lib/bovil
+	url = https://github.com/bardo91/bovil.git

@@ -50,7 +50,7 @@ add_executable(ekfHexa ${EKFHEXA_SOURCE_FILES})
 
 target_include_directories(ekfHexa PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(ekfHexa PUBLIC ${PROJECT_SOURCE_DIR}/../lib/DroneApplications/src/code)
-target_include_directories(ekfHexa PUBLIC ${PROJECT_SOURCE_DIR}/../lib/DroneApplications/lib/bovil/src/code)
+target_include_directories(ekfHexa PUBLIC ${PROJECT_SOURCE_DIR}/../lib/bovil/src/code)
 target_include_directories(ekfHexa PUBLIC ${OpenCV_INCLUDE_DIRS})
 
 target_link_libraries(ekfHexa LINK_PUBLIC DroneApplications)
