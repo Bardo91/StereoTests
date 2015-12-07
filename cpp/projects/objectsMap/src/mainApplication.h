@@ -11,9 +11,10 @@
 #include "utils/gui/graph2d.h"
 #include "utils/gui/Gui.h"
 #include "utils/TimeTools.h"
-#include "vision/map3d/EnvironmentMap.h"
-#include "vision/ml/RecognitionSystem.h"
-#include "vision/StereoCameras.h"
+
+#include <StereoLib/map3d/EnvironmentMap.h>
+#include <StereoLib/ml/RecognitionSystem.h>
+#include <StereoLib/StereoCameras.h>
 
 #include <cjson/json.h>
 #include <pcl/point_cloud.h>

@@ -6,7 +6,7 @@
 
 
 #include "utils/gui/Gui.h"
-#include "vision/ImageFilteringTools.h"
+#include "ImageFilteringTools.h"
 #include "mainApplication.h"
 
 #include <cassert>
@@ -254,7 +254,10 @@ bool MainApplication::stepTriangulatePoints(const Mat &_frame1, const Mat &_fram
 bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud){
 	mGui->clearMap();
 	mGui->clearPcViewer();
-	mMap.addPoints(_cloud, mMap.Simple);
+	auto rotatedCloud = mMap.addPoints(_cloud, mMap.Simple);
+	if(rotatedCloud->size() != 0)
+		Gui::get()->addPointToPcViewer(rotatedCloud, 3, 255, 10, 10);
+
 	mGui->drawMap(mMap.cloud().makeShared());
 	mGui->addPointToPcViewer(_cloud);
 	mGui->spinOnce();
