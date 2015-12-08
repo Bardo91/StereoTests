@@ -14,6 +14,9 @@
 
 #include <StereoLib/ImageFilteringTools.h>
 
+#include <implementations/sensors/ImuSimulatorSensor.h>
+#include <implementations/sensors/MavrosSensor.h>
+
 using namespace cjson;
 using namespace cv;
 using namespace pcl;
@@ -29,6 +32,7 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 	result &= init3dMap();
 	result &= initRecognitionSystem();
 	result &= initLoadGt();
+	result &= initImuAndEkf();
 
 	mTimer = BOViL::STime::get();
 
@@ -150,20 +154,51 @@ bool MainApplication::initRecognitionSystem() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::initEkf() {
+bool MainApplication::initImuAndEkf() {
 	if (mConfig.contains("ekf")){
 		if (mConfig["ekf"]["source"] == "file") {
-			//Eigen::MatrixXd Q = Eigen::MatrixXd::Identity(12, 12)*0.01;
-			//Eigen::MatrixXd R = Eigen::MatrixXd::Identity(6, 6)*0.01;
-			//R.block<3, 3>(0, 0) = Eigen::MatrixXd::Identity(3, 3)*0.1;
-			//Eigen::MatrixXd x0 = Eigen::MatrixXd::Zero(12, 1);
-			//x0.block<3, 1>(9, 0) = q*linAcc - gravity;
-			//
-			//mEkf.setUpEKF(Q, R, x0);
-			//mEkf.parameters({ 0,0,0 }, { -1,-1,-1 }, q*linAcc - gravity, { 0.3,0.7,0.5 });
+			mImu = new ImuSimulatorSensor(mConfig["ekf"]["path"]);
+			Eigen::MatrixXd Q;
+			array<double, 12> qArray;
+			for (int i = 0; i < mConfig["ekf"]["Q"].size(); i++) {
+				qArray[i] = mConfig["ekf"]["Q"](i);
+			}
+			Q = Eigen::Matrix<double,12,1>(qArray.data()).asDiagonal();
+
+			Eigen::MatrixXd R;
+			array<double, 6> rArray;
+			for (int i = 0; i < mConfig["ekf"]["R"].size(); i++) {
+				rArray[i] = mConfig["ekf"]["R"](i);
+			}
+			R = Eigen::Matrix<double,6,1>(rArray.data()).asDiagonal();
+
+			Eigen::MatrixXd x0;
+			array<double, 12> x0Array;
+			for (int i = 0; i < mConfig["ekf"]["x0"].size(); i++) {
+				x0Array[i] = mConfig["ekf"]["x0"](i);
+			}
+			x0 = Eigen::Matrix<double,12,1>(x0Array.data());
+
+			mEkf.setUpEKF(Q, R, x0);
+
+			Eigen::MatrixXd sf, C1, C2, T;
+			array<double, 3> sfArray, c1Array,c2Array, tArray;
+
+			for (int i = 0; i < mConfig["ekf"]["ScaleFactor"].size(); i++) { sfArray[i] = mConfig["ekf"]["ScaleFactor"](i); }
+			for (int i = 0; i < mConfig["ekf"]["ScaleFactor"].size(); i++) { c1Array[i] = mConfig["ekf"]["C1"](i); }
+			for (int i = 0; i < mConfig["ekf"]["ScaleFactor"].size(); i++) { c2Array[i] = mConfig["ekf"]["C2"](i); }
+			for (int i = 0; i < mConfig["ekf"]["ScaleFactor"].size(); i++) { tArray[i] = mConfig["ekf"]["T"](i); }
+			sf = Eigen::Matrix<double,3,1>(sfArray.data());
+			C1 = Eigen::Matrix<double,3,1>(c1Array.data());
+			C2 = Eigen::Matrix<double,3,1>(c2Array.data());
+			T = Eigen::Matrix<double,3,1>(tArray.data());
+			
+			mEkf.parameters(sf,  C1, C2, T);
 			return true;
 		}
 		else if (mConfig["ekf"]["source"] == "real") {
+			// 666 TODO: not defined yet
+
 			//Eigen::MatrixXd Q = Eigen::MatrixXd::Identity(12, 12)*0.01;
 			//Eigen::MatrixXd R = Eigen::MatrixXd::Identity(6, 6)*0.01;
 			//R.block<3, 3>(0, 0) = Eigen::MatrixXd::Identity(3, 3)*0.1;

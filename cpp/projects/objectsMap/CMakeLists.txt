@@ -56,9 +56,12 @@ target_include_directories(objectsMap PUBLIC ${PROJECT_SOURCE_DIR}/../../lib/cjs
 target_include_directories(objectsMap PUBLIC ${PROJECT_SOURCE_DIR}/../../lib/bovil/src)
 target_include_directories(objectsMap PUBLIC ${PROJECT_SOURCE_DIR}/../../lib/libsvmpp/src)
 target_include_directories(objectsMap PUBLIC ${PROJECT_SOURCE_DIR}/../../lib/StereoLib/src)
+target_include_directories(objectsMap PUBLIC ${PROJECT_SOURCE_DIR}/../../lib/DroneApplications/src/code)
+
 target_link_libraries(objectsMap LINK_PUBLIC cjson)
 target_link_libraries(objectsMap LINK_PUBLIC BOViL)
 target_link_libraries(objectsMap LINK_PUBLIC libsvmpp)
+target_link_libraries(objectsMap LINK_PUBLIC StereoLib)
+target_link_libraries(objectsMap LINK_PUBLIC DroneApplications)
 target_link_libraries(objectsMap LINK_PUBLIC ${OpenCV_LIBS})
 target_link_libraries(objectsMap LINK_PUBLIC ${PCL_LIBRARIES})
-target_link_libraries(objectsMap LINK_PUBLIC StereoLib)
