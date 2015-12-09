@@ -2,11 +2,8 @@ cmake_minimum_required (VERSION 2.8)
 project(StereoTests)
 
 # Collect all sources
-file(GLOB_RECURSE CALIBRATIONAPP_SOURCE_FILES "src/*.cpp" "src/*.h" "src/*.inl" "../objectsMap/src/vision/StereoCameras.h" "../objectsMap/src/vision/StereoCameras.cpp"
-"../objectsMap/src/vision/Camera.h" "../objectsMap/src/vision/Camera.cpp"
-"../objectsMap/src/vision/ParallelFeatureMatcher.h" "../objectsMap/src/vision/ParallelFeatureMatcher.cpp"
-"../objectsMap/src/utils/gui/Gui.h" "../objectsMap/src/utils/gui/Gui.cpp"
-"../objectsMap/src/vision/ObjectCandidate.h" "../objectsMap/src/vision/ObjectCandidate.cpp")
+file(GLOB_RECURSE CALIBRATIONAPP_SOURCE_FILES "src/*.cpp" "src/*.h" "src/*.inl"
+"../objectsMap/src/utils/gui/Gui.h" "../objectsMap/src/utils/gui/Gui.cpp")
 
 # Compiler specific options
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -32,7 +29,8 @@ add_executable(calibrationApp ${CALIBRATIONAPP_SOURCE_FILES})
 
 target_include_directories(calibrationApp PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(calibrationApp PUBLIC ${OpenCV_INCLUDE_DIRS})
-
+target_include_directories(calibrationApp PUBLIC ${PROJECT_SOURCE_DIR}/../../lib/StereoLib/src)
+target_link_libraries(calibrationApp LINK_PUBLIC StereoLib)
 target_link_libraries(calibrationApp LINK_PUBLIC ${OpenCV_LIBS})
 target_link_libraries(calibrationApp LINK_PUBLIC ${PCL_LIBRARIES})
 
