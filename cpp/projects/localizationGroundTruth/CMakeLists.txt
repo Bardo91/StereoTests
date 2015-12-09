@@ -2,8 +2,7 @@ cmake_minimum_required (VERSION 2.8)
 project(StereoTests)
 
 # Collect all sources
-file(GLOB_RECURSE LOCALIZATIONGT_SOURCE_FILES "src/*.cpp" "src/*.h" "src/*.inl"
-"../objectsMap/src/utils/gui/Gui.h" "../objectsMap/src/utils/gui/Gui.cpp")
+file(GLOB_RECURSE LOCALIZATIONGT_SOURCE_FILES "src/*.cpp" "src/*.h" "src/*.inl")
 
 # Compiler specific options
 if(CMAKE_COMPILER_IS_GNUCXX)
