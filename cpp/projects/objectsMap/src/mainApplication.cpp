@@ -47,7 +47,9 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::step() {
 	Mat frame1, frame2;
+	ImuData imuData;
 	double t0 = mTimer->getTime();
+	if(!stepGetImuData(imuData)) return false;
 	if(!stepGetImages(frame1, frame2)) return false;
 	double t1 = mTimer->getTime();
 	PointCloud<PointXYZ>::Ptr cloud;
@@ -55,7 +57,7 @@ bool MainApplication::step() {
 	double t2 = mTimer->getTime();
 	if(!stepUpdateMap(cloud)) return false;
 	double t3 = mTimer->getTime();
-	if(!stepUpdateCameraRotation()) return false;
+	if(!stepUpdateCameraRotation(imuData)) return false;
 	double t4 = mTimer->getTime();
 	if(!stepGetCandidates()) return false;
 	double t5 = mTimer->getTime();
@@ -188,12 +190,20 @@ bool MainApplication::initImuAndEkf() {
 			for (int i = 0; i < mConfig["ekf"]["ScaleFactor"].size(); i++) { c1Array[i] = mConfig["ekf"]["C1"](i); }
 			for (int i = 0; i < mConfig["ekf"]["ScaleFactor"].size(); i++) { c2Array[i] = mConfig["ekf"]["C2"](i); }
 			for (int i = 0; i < mConfig["ekf"]["ScaleFactor"].size(); i++) { tArray[i] = mConfig["ekf"]["T"](i); }
+			
 			sf = Eigen::Matrix<double,3,1>(sfArray.data());
 			C1 = Eigen::Matrix<double,3,1>(c1Array.data());
 			C2 = Eigen::Matrix<double,3,1>(c2Array.data());
 			T = Eigen::Matrix<double,3,1>(tArray.data());
 			
 			mEkf.parameters(sf,  C1, C2, T);
+
+			mImu2CamT = AngleAxisf		(float(mConfig["ekf"]["Imu2Cam"]["x"])/180.0*M_PI, Vector3f::UnitX())
+						* AngleAxisf	(float(mConfig["ekf"]["Imu2Cam"]["y"])/180.0*M_PI,  Vector3f::UnitY())
+						* AngleAxisf	(float(mConfig["ekf"]["Imu2Cam"]["z"])/180.0*M_PI, Vector3f::UnitZ());
+			
+			mGravityOffImuSys = calculateGravityOffset();
+
 			return true;
 		}
 		else if (mConfig["ekf"]["source"] == "real") {
@@ -215,6 +225,26 @@ bool MainApplication::initImuAndEkf() {
 	}
 	else
 		return false;
+}
+
+Eigen::Vector3d MainApplication::calculateGravityOffset() {
+	Eigen::Vector3d gravity = Eigen::Vector3d::Zero();
+
+	// calculate offset.
+	int nSamples = mConfig["ekf"]["nSamplesForOffSet"];
+	for (int i = 0;i < nSamples; i++) {
+		ImuData imuData = mImu->get();
+
+		Eigen::Quaternion<double> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+		Eigen::Vector3d linAcc, angSpeed;
+		linAcc << imuData.mLinearAcc[0],  imuData.mLinearAcc[1], imuData.mLinearAcc[2];
+
+		gravity += q*linAcc;
+	}
+
+	gravity = gravity / nSamples;
+
+	return gravity;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -310,6 +340,12 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::stepGetImuData(ImuData &_imuData) {
+	_imuData = mImu->get();
+	return true;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepTriangulatePoints(const Mat &_frame1, const Mat &_frame2, PointCloud<PointXYZ>::Ptr &_points3d){
 	pair<int,int> disparityRange(mConfig["cameras"]["disparityRange"]["min"], mConfig["cameras"]["disparityRange"]["max"]);
 	int squareSize =  mConfig["cameras"]["templateSquareSize"];
@@ -334,11 +370,26 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud){
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepUpdateCameraRotation() {
-	//sorry but I didn't find a better way to transform between cv and eigen, there is a function eigen2cv but I have problems
-	Mat R(3,3, CV_32F), T(3,1, CV_32F);
+bool MainApplication::stepUpdateCameraRotation(const ImuData &_imuData) {
 	Matrix<float,3,3, RowMajor> rotation	= mMap.cloud().sensor_orientation_.conjugate().matrix();
 	Matrix<float,3,1> translation			= -(rotation*mMap.cloud().sensor_origin_.block<3, 1>(0, 0));
+	
+	Eigen::MatrixXd zk(6,1);
+
+	Eigen::Quaternion<double> q(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
+	Eigen::Vector3d linAcc;
+	linAcc << _imuData.mLinearAcc[0],  _imuData.mLinearAcc[1], _imuData.mLinearAcc[2];
+
+	linAcc = mImu2CamT*(q*linAcc - mGravityOffImuSys);
+	zk << translation, linAcc;
+
+	mEkf.stepEKF(zk, _imuData.mTimeSpan - mPreviousTime);
+	
+
+	auto state = mEkf.getStateVector();
+	translation = state.block<3,1>(0,0);
+	// Put Rotation and translation in OpenCV format
+	Mat R(3,3, CV_32F), T(3,1, CV_32F);
 	memcpy(R.data, rotation.data(),		sizeof(float)*9);
 	memcpy(T.data, translation.data(),	sizeof(float)*3);
 

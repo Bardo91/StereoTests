@@ -30,18 +30,20 @@ public:
 	bool step	();
 
 private:
-	bool loadArguments			(int _argc, char** _argv);
-	bool initCameras			();
-	bool initGui				();
-	bool init3dMap				();
-	bool initRecognitionSystem	();
-	bool initImuAndEkf			();
-	bool initLoadGt				();	// 666 Debug.
+	bool loadArguments						(int _argc, char** _argv);
+	bool initCameras						();
+	bool initGui							();
+	bool init3dMap							();
+	bool initRecognitionSystem				();
+	bool initImuAndEkf						();
+	Eigen::Vector3d calculateGravityOffset	();
+	bool initLoadGt							();	// 666 Debug.
 
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
+	bool stepGetImuData(ImuData &_imuData);
 	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
 	bool stepUpdateMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
-	bool stepUpdateCameraRotation();
+	bool stepUpdateCameraRotation(const ImuData &_imuData);
 	bool stepGetCandidates();
 	bool stepCathegorizeCandidates(std::vector<ObjectCandidate> &_candidates, const cv::Mat &_frame1,const  cv::Mat &_frame2);
 
@@ -53,8 +55,11 @@ private:
 	RecognitionSystem	*mRecognitionSystem;
 	std::vector<ObjectCandidate> mCandidates;
 
-	ImuSensor	*mImu;
-	EkfImuIcp	mEkf;
+	ImuSensor			*mImu;
+	double				mPreviousTime;
+	Eigen::Matrix3d		mImu2CamT;
+	Eigen::Vector3d		mGravityOffImuSys;
+	EkfImuIcp			mEkf;
 
 	BOViL::plot::Graph2d mTimePlot;
 	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates, tCathegorize;
