@@ -36,7 +36,7 @@ private:
 	bool init3dMap							();
 	bool initRecognitionSystem				();
 	bool initImuAndEkf						();
-	Eigen::Vector3d calculateGravityOffset	();
+	Eigen::Vector3f calculateGravityOffset	();
 	bool initLoadGt							();	// 666 Debug.
 
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
@@ -57,8 +57,8 @@ private:
 
 	ImuSensor			*mImu;
 	double				mPreviousTime;
-	Eigen::Matrix3d		mImu2CamT;
-	Eigen::Vector3d		mGravityOffImuSys;
+	Eigen::Matrix3f		mImu2CamT;
+	Eigen::Vector3f		mGravityOffImuSys;
 	EkfImuIcp			mEkf;
 
 	BOViL::plot::Graph2d mTimePlot;

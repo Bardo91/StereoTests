@@ -227,23 +227,23 @@ bool MainApplication::initImuAndEkf() {
 		return false;
 }
 
-Eigen::Vector3d MainApplication::calculateGravityOffset() {
-	Eigen::Vector3d gravity = Eigen::Vector3d::Zero();
-
+Eigen::Vector3f MainApplication::calculateGravityOffset() {
+	Eigen::Vector3f gravity = Eigen::Vector3f::Zero();
+	
 	// calculate offset.
 	int nSamples = mConfig["ekf"]["nSamplesForOffSet"];
 	for (int i = 0;i < nSamples; i++) {
 		ImuData imuData = mImu->get();
-
-		Eigen::Quaternion<double> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
-		Eigen::Vector3d linAcc, angSpeed;
+	
+		Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+		Eigen::Vector3f linAcc, angSpeed;
 		linAcc << imuData.mLinearAcc[0],  imuData.mLinearAcc[1], imuData.mLinearAcc[2];
-
+	
 		gravity += q*linAcc;
 	}
-
+	
 	gravity = gravity / nSamples;
-
+	
 	return gravity;
 }
 
@@ -374,20 +374,21 @@ bool MainApplication::stepUpdateCameraRotation(const ImuData &_imuData) {
 	Matrix<float,3,3, RowMajor> rotation	= mMap.cloud().sensor_orientation_.conjugate().matrix();
 	Matrix<float,3,1> translation			= -(rotation*mMap.cloud().sensor_origin_.block<3, 1>(0, 0));
 	
-	Eigen::MatrixXd zk(6,1);
-
-	Eigen::Quaternion<double> q(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
-	Eigen::Vector3d linAcc;
+	Eigen::MatrixXf zk(6,1);
+	
+	Eigen::Quaternion<float> q(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
+	Eigen::Matrix<float,3,1> linAcc;
 	linAcc << _imuData.mLinearAcc[0],  _imuData.mLinearAcc[1], _imuData.mLinearAcc[2];
-
+	
 	linAcc = mImu2CamT*(q*linAcc - mGravityOffImuSys);
 	zk << translation, linAcc;
 
-	mEkf.stepEKF(zk, _imuData.mTimeSpan - mPreviousTime);
+	mEkf.stepEKF(zk.cast<double>(), _imuData.mTimeSpan - mPreviousTime);
 	
-
-	auto state = mEkf.getStateVector();
+	
+	Eigen::Matrix<float,12,1> state = mEkf.getStateVector().cast<float>();
 	translation = state.block<3,1>(0,0);
+
 	// Put Rotation and translation in OpenCV format
 	Mat R(3,3, CV_32F), T(3,1, CV_32F);
 	memcpy(R.data, rotation.data(),		sizeof(float)*9);
@@ -395,7 +396,7 @@ bool MainApplication::stepUpdateCameraRotation(const ImuData &_imuData) {
 
 	R.convertTo(R, CV_64F);
 	T.convertTo(T, CV_64F);
-
+	
 	mCameras->updateGlobalRT(R, T);	
 	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
 
