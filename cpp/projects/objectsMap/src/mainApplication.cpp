@@ -389,10 +389,10 @@ bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Matrix4f &_positi
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud){
+bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, const Vector4f &_translationPrediction, const Quaternionf &_qRotationPrediction){
 	mGui->clearMap();
 	mGui->clearPcViewer();
-	auto rotatedCloud = mMap.addPoints(_cloud, mMap.Simple);
+	auto rotatedCloud = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple);
 	if(rotatedCloud->size() != 0)
 		Gui::get()->addPointToPcViewer(rotatedCloud, 3, 255, 10, 10);
 

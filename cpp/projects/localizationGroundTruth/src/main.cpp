@@ -11,15 +11,15 @@ using namespace cv;
 
 int main(int _argc, char ** _argv) {
 
-	float squareSize = 0.0223;
-	Size cornerCount(15, 10);
-	string leftPath = "C:/Users/GRVC/Desktop/experiment_1356999938/cam1_%d.jpg";
-	string rightPath = "C:/Users/GRVC/Desktop/experiment_1356999938/cam2_%d.jpg";
+	float squareSize = 0.0415;
+	Size cornerCount(11,7);
+	string leftPath = "C:/Users/GRVC/Desktop/Experiments/2015-12-04 12.00 objects,damping/cam1_%d.jpg";
+	string rightPath = "C:/Users/GRVC/Desktop/Experiments/2015-12-04 12.00 objects,damping/cam2_%d.jpg";
 	string savePath = "groundTruthPath";
 	StereoCameras cameras(leftPath, rightPath);
 	cameras.load("C:/Cprograms/grvc/Code git repo/StereoTests/cpp/build/projects/calibrationApp/calib");
 	string folderName = "GroundTruthFiles/";
-	std::ofstream file(folderName + "gtPath.txt");
+	std::ofstream file(folderName + "gtPath 2015-12-04 12.00 objects,damping.txt");
 
 
 	//namedWindow("Image View", 1);
@@ -40,7 +40,7 @@ int main(int _argc, char ** _argv) {
 
 		vector<Point2f> pointBuf;
 		cvtColor(left, leftGray, COLOR_BGR2GRAY);
-		bool found = findChessboardCorners(leftGray, cornerCount, pointBuf, CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE);
+		bool found = findChessboardCorners(leftGray, cornerCount, pointBuf, CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE | CALIB_CB_FAST_CHECK);
 		if (!found) {
 			file << i << ", NaN, NaN, NaN, NaN, NaN, NaN" << endl;
 			continue;
