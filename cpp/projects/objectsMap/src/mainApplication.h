@@ -44,7 +44,7 @@ private:
 	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
 	bool stepEkf(const ImuData &_imuData, Eigen::Matrix4f &_position, Eigen::Quaternion<float> &_quaternion);
 	bool stepUpdateMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
-	bool stepUpdateCameraRotation(const ImuData &_imuData);
+	bool stepUpdateCameraPose();
 	bool stepGetCandidates();
 	bool stepCathegorizeCandidates(std::vector<ObjectCandidate> &_candidates, const cv::Mat &_frame1,const  cv::Mat &_frame2);
 

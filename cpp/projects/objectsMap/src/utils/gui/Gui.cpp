@@ -112,10 +112,10 @@ void Gui::clearMap() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawCandidate(const ObjectCandidate & _candidate) {
+void Gui::drawCandidate(const ObjectCandidate & _candidate, const Eigen::Vector4f &_position, const Eigen::Quaternionf &_orientation) {
 	addCluster(_candidate.cloud(), 4, _candidate.R(), _candidate.G(), _candidate.B());
-	reprojectCloud(_candidate.cloud(), _candidate.R(), _candidate.G(), _candidate.B());
-	drawCathegory(_candidate);
+	reprojectCloud(_candidate.cloud(),_position, _orientation, _candidate.R(), _candidate.G(), _candidate.B());
+	drawCathegory(_candidate,_position, _orientation);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -263,13 +263,12 @@ Rect boundRect(vector<Point2f> _points2d) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, unsigned _r, unsigned _g, unsigned _b)
-{
+void Gui::reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, const Eigen::Vector4f &_position, const Eigen::Quaternionf &_orientation, unsigned _r, unsigned _g, unsigned _b) {
 	vector<Point3f> points3d;
 	for (const PointXYZ point : *_cloud)
 		points3d.push_back(Point3f(point.x, point.y, point.z));
-	vector<Point2f> reprojection1 = mStereoCameras.project3dPointsWCS(points3d, true);
-	vector<Point2f> reprojection2 = mStereoCameras.project3dPointsWCS(points3d, false);
+	vector<Point2f> reprojection1 = mStereoCameras.project3dPoints(points3d, true, _position, _orientation);
+	vector<Point2f> reprojection2 = mStereoCameras.project3dPoints(points3d, false, _position, _orientation);
 	drawPoints(reprojection1, true, _r, _g, _b);
 	drawPoints(reprojection2, false, _r, _g, _b);
 	// Calculate convexHull
@@ -282,13 +281,13 @@ void Gui::reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, unsig
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawCathegory(const ObjectCandidate & _candidate) {
+void Gui::drawCathegory(const ObjectCandidate & _candidate, const Eigen::Vector4f &_position, const Eigen::Quaternionf &_orientation) {
 	vector<Point3f> points3d;
 	for (const PointXYZ point : *_candidate.cloud())
 		points3d.push_back(Point3f(point.x, point.y, point.z));
 
-	vector<Point2f> reprojection1 = mStereoCameras.project3dPointsWCS(points3d, true);
-	vector<Point2f> reprojection2 = mStereoCameras.project3dPointsWCS(points3d, false);
+	vector<Point2f> reprojection1 = mStereoCameras.project3dPoints(points3d, true, _position, _orientation);
+	vector<Point2f> reprojection2 = mStereoCameras.project3dPoints(points3d, false, _position, _orientation);
 
 	Rect validFrame(0,0,mLeftImage.cols, mLeftImage.rows);
 	Rect bb1 = boundRect(reprojection1)&validFrame;
