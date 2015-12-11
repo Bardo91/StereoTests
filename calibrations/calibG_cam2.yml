@@ -1,0 +1,244 @@
+%YAML:1.0
+Matrix: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 6.1113047255816832e+02, 0., 3.1120526768411946e+02, 0.,
+       6.1031251687365329e+02, 2.5628469097128777e+02, 0., 0., 1. ]
+DistCoeffs: !!opencv-matrix
+   rows: 5
+   cols: 1
+   dt: d
+   data: [ 9.7704772329714459e-02, -2.1032010158130762e-01,
+       1.2991670564786737e-03, 4.9948850221287814e-04,
+       8.1951714233533687e-02 ]
+nRotVectors: 19
+RotVector0: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 4.2088317695656761e-02, 3.8595679373450882e-02,
+       3.8096304208178569e-02 ]
+RotVector1: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -1.0985669373053482e+00, 4.5333908876281269e-02,
+       -2.8902634786754087e+00 ]
+RotVector2: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -1.3833134589082929e-01, -5.7094785199450382e-01,
+       9.4949726578165514e-02 ]
+RotVector3: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -4.2429932516918256e-01, 2.1231435044423638e-02,
+       7.2951082938301520e-02 ]
+RotVector4: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.6391526674159660e-01, 5.4872039182424261e-02,
+       5.7509074921552425e-02 ]
+RotVector5: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.5941289209452106e-01, 6.6532113877231902e-02,
+       4.4478318229344678e-02 ]
+RotVector6: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.1988048524711473e-01, -5.1228354142575383e-01,
+       4.7592755586158324e-02 ]
+RotVector7: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -1.0159732791472524e+00, -2.1094011875091379e-01,
+       -2.9432805634807373e+00 ]
+RotVector8: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -7.6274098807293023e-01, 8.1253145690446966e-03,
+       2.4143353724306534e-02 ]
+RotVector9: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 1.3621404366774428e-01, -2.4578799677942376e-01,
+       5.9687430728370638e-01 ]
+RotVector10: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 2.6151291073620553e-01, 5.9837123019484927e-02,
+       5.1067513219795559e-02 ]
+RotVector11: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.8000349092930664e-02, 2.6864007394130601e-01,
+       3.0880992647207086e+00 ]
+RotVector12: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 8.1829723471546750e-03, 2.6254579509746596e-02,
+       8.3249499289997763e-03 ]
+RotVector13: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 9.8235672251490588e-02, 3.5111996033174098e-01,
+       1.0973720955823274e-02 ]
+RotVector14: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -5.9095576715207732e-01, -1.6919946346175102e-01,
+       3.0577683800606583e+00 ]
+RotVector15: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 5.1551484478812692e-02, -5.6012450989476839e-02,
+       3.1315669352725402e+00 ]
+RotVector16: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 2.3631147833140378e-01, 5.2566128320048766e-01,
+       5.0040157834596433e-01 ]
+RotVector17: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.1011412285717259e-02, -6.1397611959862120e-01,
+       1.8834678041699929e-01 ]
+RotVector18: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 1.6415975273526409e-01, 2.3999241922928467e-02,
+       5.0118620099706933e-02 ]
+nTransVectors: 19
+TransVector0: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.0273478794118613e-01, -1.8301720559172346e-01,
+       9.3868099925386994e-01 ]
+TransVector1: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 3.8678651096284655e-02, 4.8704731180972786e-02,
+       7.3313246256730158e-01 ]
+TransVector2: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.4612938877430471e-01, -2.5287251404672378e-01,
+       8.0790445529529209e-01 ]
+TransVector3: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.0480528551449182e-01, -1.9805163869078113e-01,
+       9.1558352484212491e-01 ]
+TransVector4: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.0982899871799674e-01, -2.8547028796976653e-01,
+       9.6499755295755230e-01 ]
+TransVector5: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.4083478709756604e-01, -4.5894711397294452e-02,
+       8.6261522905251342e-01 ]
+TransVector6: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.8343044671611634e-01, -1.6838034662939230e-01,
+       8.5176476689092151e-01 ]
+TransVector7: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 4.6168699669802221e-02, 8.9064561973981271e-02,
+       7.3928608112782401e-01 ]
+TransVector8: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.0701505570381599e-01, -6.2536362643573595e-02,
+       9.6558003528359027e-01 ]
+TransVector9: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.2940649434092739e-01, -1.8170879603583165e-01,
+       9.4961691513911417e-01 ]
+TransVector10: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.4543732669303589e-01, -2.3901808985205933e-01,
+       1.0291911961188196e+00 ]
+TransVector11: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 1.8870681593976738e-01, -1.5160877120890186e-03,
+       9.8321590406455850e-01 ]
+TransVector12: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.1235577057799313e-01, 8.3857540886120296e-02,
+       1.0900400965545367e+00 ]
+TransVector13: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.3901928673739456e-01, 3.0237372112364588e-02,
+       1.1172618478537721e+00 ]
+TransVector14: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 6.1567594185928179e-02, 2.2821269930723656e-01,
+       1.1392981873049266e+00 ]
+TransVector15: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 1.0314253665249222e-01, -7.9781480068854521e-02,
+       1.0784140627223529e+00 ]
+TransVector16: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.0184309227862463e-01, -2.1705627231912208e-01,
+       1.0427850673270842e+00 ]
+TransVector17: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.9145517060974163e-01, -2.1734456726064194e-01,
+       9.1516625560029530e-01 ]
+TransVector18: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.5370631524975632e-01, -1.4308569473103910e-01,
+       8.5557006983033712e-01 ]
