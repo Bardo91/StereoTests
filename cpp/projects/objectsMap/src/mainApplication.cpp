@@ -55,23 +55,27 @@ bool MainApplication::step() {
 	PointCloud<PointXYZ>::Ptr cloud;
 	if(!stepTriangulatePoints(frame1, frame2, cloud)) return false;
 	double t2 = mTimer->getTime();
-	if(!stepUpdateMap(cloud)) return false;
+	Eigen::Matrix4f position;
+	Eigen::Quaternion<float> orientation;
+	if(!stepEkf(imuData, position, orientation)) return false;
 	double t3 = mTimer->getTime();
-	if(!stepUpdateCameraRotation(imuData)) return false;
+	if(!stepUpdateMap(cloud)) return false;
 	double t4 = mTimer->getTime();
-	if(!stepGetCandidates()) return false;
+	if(!stepUpdateCameraRotation(imuData)) return false;
 	double t5 = mTimer->getTime();
-	if(!stepCathegorizeCandidates(mCandidates, frame1, frame2)) return false;
+	if(!stepGetCandidates()) return false;
 	double t6 = mTimer->getTime();
+	if(!stepCathegorizeCandidates(mCandidates, frame1, frame2)) return false;
+	double t7 = mTimer->getTime();
 	if (!stepCheckGroundTruth()) return false;
 
 
 	tGetImages.push_back(t1-t0);
 	tTriangulate.push_back(tGetImages[tGetImages.size()-1] + t2-t1);
-	tUpdateMap.push_back(tTriangulate[tTriangulate.size()-1] + t3-t2);
-	tUpdCam.push_back(tUpdateMap[tUpdateMap.size()-1] + t4-t3);
-	tCandidates.push_back(tUpdCam[tUpdCam.size()-1] + t5-t4);
-	tCathegorize.push_back(tCandidates[tCandidates.size()-1] + t6-t5);
+	tUpdateMap.push_back(tTriangulate[tTriangulate.size()-1] + t4-t3);
+	tUpdCam.push_back(tUpdateMap[tUpdateMap.size()-1] + t5-t4);
+	tCandidates.push_back(tUpdCam[tUpdCam.size()-1] + t6-t5);
+	tCathegorize.push_back(tCandidates[tCandidates.size()-1] + t7-t6);
 
 
 	mTimePlot.clean();
@@ -342,6 +346,11 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepGetImuData(ImuData &_imuData) {
 	_imuData = mImu->get();
+
+	if (mPreviousTime == -1) {	// Initialization.
+		mPreviousTime = _imuData.mTimeSpan - 0.01;
+	}
+
 	return true;
 }
 
@@ -353,6 +362,30 @@ bool MainApplication::stepTriangulatePoints(const Mat &_frame1, const Mat &_fram
 	_points3d = mCameras->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);	
 
 	return _points3d->size() != 0? true:false;
+}
+
+bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Matrix4f &_position, Eigen::Quaternion<float> &_quaternion) {
+
+	// Get and adapt imu data.
+	Eigen::Quaternion<float> q(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
+	Eigen::Matrix<float,3,1> linAcc;
+	linAcc << _imuData.mLinearAcc[0],  _imuData.mLinearAcc[1], _imuData.mLinearAcc[2];
+	linAcc = mImu2CamT*(q*linAcc - mGravityOffImuSys);
+	
+	// Create observable state variable vetor.
+	Eigen::MatrixXf zk(6,1);
+	zk << mMap.cloud().sensor_origin_, linAcc;
+
+	// Update EKF.
+	mEkf.stepEKF(zk.cast<double>(), _imuData.mTimeSpan - mPreviousTime);
+	mPreviousTime = _imuData.mTimeSpan;
+	
+	// Save state.
+	Eigen::Matrix<float,12,1> state = mEkf.getStateVector().cast<float>();
+	_position << state.block<3,1>(0,0), 1;
+	_quaternion = q;
+
+	return true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -373,21 +406,6 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud){
 bool MainApplication::stepUpdateCameraRotation(const ImuData &_imuData) {
 	Matrix<float,3,3, RowMajor> rotation	= mMap.cloud().sensor_orientation_.conjugate().matrix();
 	Matrix<float,3,1> translation			= -(rotation*mMap.cloud().sensor_origin_.block<3, 1>(0, 0));
-	
-	Eigen::MatrixXf zk(6,1);
-	
-	Eigen::Quaternion<float> q(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
-	Eigen::Matrix<float,3,1> linAcc;
-	linAcc << _imuData.mLinearAcc[0],  _imuData.mLinearAcc[1], _imuData.mLinearAcc[2];
-	
-	linAcc = mImu2CamT*(q*linAcc - mGravityOffImuSys);
-	zk << translation, linAcc;
-
-	mEkf.stepEKF(zk.cast<double>(), _imuData.mTimeSpan - mPreviousTime);
-	
-	
-	Eigen::Matrix<float,12,1> state = mEkf.getStateVector().cast<float>();
-	translation = state.block<3,1>(0,0);
 
 	// Put Rotation and translation in OpenCV format
 	Mat R(3,3, CV_32F), T(3,1, CV_32F);
@@ -398,6 +416,8 @@ bool MainApplication::stepUpdateCameraRotation(const ImuData &_imuData) {
 	T.convertTo(T, CV_64F);
 	
 	mCameras->updateGlobalRT(R, T);	
+
+	// 666 Debug
 	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
 
 	return true;
