@@ -61,7 +61,7 @@ bool MainApplication::step() {
 	double t3 = mTimer->getTime();
 	if(!stepUpdateMap(cloud, position, orientation)) return false;
 	double t4 = mTimer->getTime();
-	if(!stepUpdateCameraRotation(imuData)) return false;
+	if(!stepUpdateCameraPose()) return false;
 	double t5 = mTimer->getTime();
 	if(!stepGetCandidates()) return false;
 	double t6 = mTimer->getTime();
@@ -190,10 +190,10 @@ bool MainApplication::initImuAndEkf() {
 			Eigen::MatrixXd sf, C1, C2, T;
 			array<double, 3> sfArray, c1Array,c2Array, tArray;
 
-			for (int i = 0; i < mConfig["ekf"]["ScaleFactor"].size(); i++) { sfArray[i] = mConfig["ekf"]["ScaleFactor"](i); }
-			for (int i = 0; i < mConfig["ekf"]["ScaleFactor"].size(); i++) { c1Array[i] = mConfig["ekf"]["C1"](i); }
-			for (int i = 0; i < mConfig["ekf"]["ScaleFactor"].size(); i++) { c2Array[i] = mConfig["ekf"]["C2"](i); }
-			for (int i = 0; i < mConfig["ekf"]["ScaleFactor"].size(); i++) { tArray[i] = mConfig["ekf"]["T"](i); }
+			for (int i = 0; i < mConfig["ekf"]["bias"]["ScaleFactor"].size(); i++) { sfArray[i] = mConfig["ekf"]["bias"]["ScaleFactor"](i); }
+			for (int i = 0; i < mConfig["ekf"]["bias"]["C1"].size(); i++) { c1Array[i] = mConfig["ekf"]["bias"]["C1"](i); }
+			for (int i = 0; i < mConfig["ekf"]["bias"]["C2"].size(); i++) { c2Array[i] = mConfig["ekf"]["bias"]["C2"](i); }
+			for (int i = 0; i < mConfig["ekf"]["bias"]["T"].size(); i++) { tArray[i] = mConfig["ekf"]["bias"]["T"](i); }
 			
 			sf = Eigen::Matrix<double,3,1>(sfArray.data());
 			C1 = Eigen::Matrix<double,3,1>(c1Array.data());
@@ -403,21 +403,7 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepUpdateCameraRotation(const ImuData &_imuData) {
-	Matrix<float,3,3, RowMajor> rotation	= mMap.cloud().sensor_orientation_.conjugate().matrix();
-	Matrix<float,3,1> translation			= -(rotation*mMap.cloud().sensor_origin_.block<3, 1>(0, 0));
-
-	// Put Rotation and translation in OpenCV format
-	Mat R(3,3, CV_32F), T(3,1, CV_32F);
-	memcpy(R.data, rotation.data(),		sizeof(float)*9);
-	memcpy(T.data, translation.data(),	sizeof(float)*3);
-
-	R.convertTo(R, CV_64F);
-	T.convertTo(T, CV_64F);
-	
-	mCameras->updateGlobalRT(R, T);	
-
-	// 666 Debug
+bool MainApplication::stepUpdateCameraPose() {
 	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
 
 	return true;
@@ -477,8 +463,8 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 			Point3f point(pointpcl.x, pointpcl.y, pointpcl.z);
 			points3d.push_back(point);
 		}
-		vector<Point2f> reprojection1 = mCameras->project3dPointsWCS(points3d, true);
-		vector<Point2f> reprojection2 = mCameras->project3dPointsWCS(points3d, false);
+		vector<Point2f> reprojection1 = mCameras->project3dPoints(points3d, true, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_);
+		vector<Point2f> reprojection2 = mCameras->project3dPoints(points3d, false, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_);
 
 		Rect validFrame(0,0,_frame1.cols, _frame1.rows);
 		Mat view = _frame1(boundBox(reprojection1)&validFrame);
@@ -495,7 +481,7 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 		imshow("view2", view2);
 		waitKey();*/
 
-		mGui->drawCandidate(candidate);	
+		mGui->drawCandidate(candidate, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_);	
 	}
 
 	return true;

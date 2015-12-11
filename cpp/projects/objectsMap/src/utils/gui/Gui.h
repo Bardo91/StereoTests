@@ -44,7 +44,7 @@ public:		// Public interface
 	void clearMap();
 
 	/// Draw the object candidate point cloud and the image reprojection
-	void drawCandidate(const ObjectCandidate & _candidate);
+	void drawCandidate(const ObjectCandidate & _candidate, const Eigen::Vector4f &_position, const Eigen::Quaternionf &_orientation);
 
 	/// Add cluster of single object in the point cloud;
 	void addCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cluster,  unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b);
@@ -107,9 +107,9 @@ public:		// Public interface
 	/// \param _r: Red (0-255) channel of the final desired color for the _boxes
 	/// \param _g: green (0-255) channel of the final desired color for the _boxes
 	/// \param _b: blue (0-255) channel of the final desired color for the _boxes
-	void reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, unsigned _r = 255, unsigned _g = 255, unsigned _b = 255);
+	void reprojectCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud, const Eigen::Vector4f &_position, const Eigen::Quaternionf &_orientation, unsigned _r = 255, unsigned _g = 255, unsigned _b = 255);
 
-	void drawCathegory(const ObjectCandidate &_candidate);
+	void drawCathegory(const ObjectCandidate &_candidate, const Eigen::Vector4f &_position, const Eigen::Quaternionf &_orientation);
 
 	/// needed to update the viewer
 	void spinOnce();
