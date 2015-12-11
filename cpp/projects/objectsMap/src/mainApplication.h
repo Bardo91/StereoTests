@@ -42,7 +42,7 @@ private:
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
 	bool stepGetImuData(ImuData &_imuData);
 	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
-	bool stepEkf(const ImuData &_imuData, Eigen::Matrix4f &_position, Eigen::Quaternion<float> &_quaternion);
+	bool stepEkf(const ImuData &_imuData, Eigen::Vector4f &_position, Eigen::Quaternion<float> &_quaternion);
 	bool stepUpdateMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d, const Eigen::Vector4f &_translationPrediction, const Eigen::Quaternionf &_qRotationPrediction);
 	bool stepUpdateCameraRotation(const ImuData &_imuData);
 	bool stepGetCandidates();

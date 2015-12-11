@@ -55,11 +55,11 @@ bool MainApplication::step() {
 	PointCloud<PointXYZ>::Ptr cloud;
 	if(!stepTriangulatePoints(frame1, frame2, cloud)) return false;
 	double t2 = mTimer->getTime();
-	Eigen::Matrix4f position;
-	Eigen::Quaternion<float> orientation;
+	Vector4f position;
+	Quaternion<float> orientation;
 	if(!stepEkf(imuData, position, orientation)) return false;
 	double t3 = mTimer->getTime();
-	if(!stepUpdateMap(cloud)) return false;
+	if(!stepUpdateMap(cloud, position, orientation)) return false;
 	double t4 = mTimer->getTime();
 	if(!stepUpdateCameraRotation(imuData)) return false;
 	double t5 = mTimer->getTime();
@@ -364,7 +364,7 @@ bool MainApplication::stepTriangulatePoints(const Mat &_frame1, const Mat &_fram
 	return _points3d->size() != 0? true:false;
 }
 
-bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Matrix4f &_position, Eigen::Quaternion<float> &_quaternion) {
+bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Vector4f &_position, Eigen::Quaternion<float> &_quaternion) {
 
 	// Get and adapt imu data.
 	Eigen::Quaternion<float> q(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
