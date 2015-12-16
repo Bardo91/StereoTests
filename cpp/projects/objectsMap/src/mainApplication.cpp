@@ -24,7 +24,7 @@ using namespace std;
 using namespace Eigen;
 
 //---------------------------------------------------------------------------------------------------------------------
-MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time") {
+MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time"), mPositionPlot("Drone position") {
 	bool result = true;
 	result &= loadArguments(_argc, _argv);
 	result &= initCameras();
@@ -50,22 +50,76 @@ bool MainApplication::step() {
 	ImuData imuData;
 	double t0 = mTimer->getTime();
 	if(!stepGetImuData(imuData)) return false;
-	if(!stepGetImages(frame1, frame2)) return false;
+	
 	double t1 = mTimer->getTime();
 	PointCloud<PointXYZ>::Ptr cloud;
-	if(!stepTriangulatePoints(frame1, frame2, cloud)) return false;
+	bool haveImages = stepGetImages(frame1, frame2);
+	if (haveImages) {
+		if(!stepTriangulatePoints(frame1, frame2, cloud)) return false;
+	}
+	else {
+		// Get state vector in "north coordinate system"
+		Eigen::VectorXf X = mEkf.getStateVector().cast<float>();
+		Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+		Eigen::Translation3f sensorPos(X.block<3,1>(0,0));
+		
+		// Transform from north CS to camera's CS
+		Eigen::Transform<float,3, Affine> pose = sensorPos*q;
+		std::cout << "Blurry image! getting pose from current EKF step" << std::endl;
+		std::cout << pose.translation() << std::endl;
+		std::cout << pose.rotation() << std::endl;
+		std::cout << pose.matrix() << std::endl;
+
+		std::cout << "pose in camera coordinate system" << std::endl;
+		pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
+		std::cout << pose.translation() << std::endl;
+		std::cout << pose.rotation() << std::endl;
+		std::cout << pose.matrix() << std::endl;
+
+		// Update pose
+		Vector4f position;
+		position << pose.translation().block<3,1>(0,0), 1;
+		std::cout << position << std::endl;
+		mMap.updateSensorPose(position, Quaternionf(pose.rotation()));
+	}
+
 	double t2 = mTimer->getTime();
 	Vector4f position;
 	Quaternion<float> orientation;
 	if(!stepEkf(imuData, position, orientation)) return false;
+
 	double t3 = mTimer->getTime();
-	if(!stepUpdateMap(cloud, position, orientation)) return false;
+	if (haveImages) {
+		if (!stepUpdateMap(cloud, position, orientation)) return false;
+	}
+
+
+	// Store data of positions 666 debug
+	auto xEkf = mEkf.getStateVector();
+	auto xIcp = mMap.cloud().sensor_origin_;
+	posXekf.push_back(xEkf(0,0));
+	posYekf.push_back(xEkf(1,0));
+	posZekf.push_back(xEkf(2,0));
+	posXicp.push_back(xIcp(0,0));
+	posYicp.push_back(xIcp(1,0));
+	posZicp.push_back(xIcp(2,0));
+	mPositionPlot.draw(posXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	mPositionPlot.draw(posYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	mPositionPlot.draw(posZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
+	mPositionPlot.draw(posXicp, 255,0,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+	mPositionPlot.draw(posYicp, 0,255,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+	mPositionPlot.draw(posZicp, 0,0,255, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+	// <----------->
+
 	double t4 = mTimer->getTime();
 	if(!stepUpdateCameraPose()) return false;
+
 	double t5 = mTimer->getTime();
 	if(!stepGetCandidates()) return false;
+
 	double t6 = mTimer->getTime();
 	if(!stepCathegorizeCandidates(mCandidates, frame1, frame2)) return false;
+
 	double t7 = mTimer->getTime();
 	if (!stepCheckGroundTruth()) return false;
 
@@ -202,10 +256,14 @@ bool MainApplication::initImuAndEkf() {
 			
 			mEkf.parameters(sf,  C1, C2, T);
 
-			mImu2CamT = AngleAxisf		(float(mConfig["ekf"]["Imu2Cam"]["x"])/180.0*M_PI, Vector3f::UnitX())
-						* AngleAxisf	(float(mConfig["ekf"]["Imu2Cam"]["y"])/180.0*M_PI,  Vector3f::UnitY())
-						* AngleAxisf	(float(mConfig["ekf"]["Imu2Cam"]["z"])/180.0*M_PI, Vector3f::UnitZ());
+			auto imu2camQ = AngleAxisf	(float(mConfig["ekf"]["Imu2Cam"]["rot"]["z"])/180.0*M_PI, Vector3f::UnitZ())
+							* AngleAxisf	(float(mConfig["ekf"]["Imu2Cam"]["rot"]["y"])/180.0*M_PI,  Vector3f::UnitY())
+							*AngleAxisf		(float(mConfig["ekf"]["Imu2Cam"]["rot"]["x"])/180.0*M_PI, Vector3f::UnitX());
+			auto imu2CamT = Translation3f(	mConfig["ekf"]["Imu2Cam"]["trans"]["x"],
+											mConfig["ekf"]["Imu2Cam"]["trans"]["y"],
+											mConfig["ekf"]["Imu2Cam"]["trans"]["z"]);
 
+			mCam2Imu = (imu2CamT*imu2camQ).inverse();
 			mGravityOffImuSys = calculateGravityOffset();
 		
 
@@ -369,25 +427,54 @@ bool MainApplication::stepTriangulatePoints(const Mat &_frame1, const Mat &_fram
 }
 
 bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Vector4f &_position, Eigen::Quaternion<float> &_quaternion) {
+	if (mIsFirstIter) {
+		mInitialRot = Eigen::Quaternion<float>(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
+		mIsFirstIter = false;
+	}
+
 
 	// Get and adapt imu data.
 	Eigen::Quaternion<float> q(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
-	Eigen::Matrix<float,3,1> linAcc;
-	linAcc << _imuData.mLinearAcc[0],  _imuData.mLinearAcc[1], _imuData.mLinearAcc[2];
-	linAcc = mImu2CamT*(q*linAcc - mGravityOffImuSys);
+	Eigen::Matrix<float, 3, 1> linAcc;
+	linAcc << _imuData.mLinearAcc[0], _imuData.mLinearAcc[1], _imuData.mLinearAcc[2];
+	linAcc = q*linAcc - mGravityOffImuSys;
+
+	auto sensorPos = mMap.cloud().sensor_origin_;
+	auto sensorRot = mMap.cloud().sensor_orientation_;
+	Eigen::Matrix4f icpRes = Eigen::Matrix4f::Zero();
+	icpRes.block<3,3>(0,0) = sensorRot.matrix();
+	icpRes.block<4,1>(0,3) = sensorPos;
 	
+	auto sensorPoseNorthCS = mInitialRot*mCam2Imu.inverse()*Transform<float,3, Affine>(icpRes)*mCam2Imu;
+	std::cout << "Sensor position in north coordinate system" << std::endl;
+	std::cout << sensorPoseNorthCS.translation() << std::endl;
+	std::cout << sensorPoseNorthCS.rotation() << std::endl;
+	std::cout << sensorPoseNorthCS.matrix() << std::endl;
 	// Create observable state variable vetor.
-	Eigen::MatrixXf zk(6,1);
-	zk << mMap.cloud().sensor_origin_, linAcc;
+	Eigen::MatrixXf zk(6, 1);
+	zk << sensorPos.block<3,1>(0,0), linAcc;
 
 	// Update EKF.
 	mEkf.stepEKF(zk.cast<double>(), _imuData.mTimeSpan - mPreviousTime);
 	mPreviousTime = _imuData.mTimeSpan;
+
+	// Transform state
+	Eigen::Matrix<float, 12, 1> state = mEkf.getStateVector().cast<float>();
+	Transform<float,3, Affine> guess = Translation3f(state.block<3, 1>(0, 0)) * q;
+
+	guess = mCam2Imu*mInitialRot.inverse()*guess*mCam2Imu.inverse();
+
+	std::cout << "Guess in camera coordinate system" << std::endl;
+	std::cout << guess.translation() << std::endl;
+	std::cout << guess.rotation() << std::endl;
+	std::cout << guess.matrix() << std::endl;
+
+	Vector4f endPosition;
+	endPosition << guess.translation().block<3,1>(0,0), 1;
+	_position = endPosition;
+	_quaternion = Quaternionf(guess.rotation());
 	
 	// Save state.
-	Eigen::Matrix<float,12,1> state = mEkf.getStateVector().cast<float>();
-	_position << state.block<3,1>(0,0), 1;
-	_quaternion = mInitialRot.inverse() * q;
 
 	return true;
 }
@@ -472,12 +559,16 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 
 		Rect validFrame(0,0,_frame1.cols, _frame1.rows);
 		Mat view = _frame1(boundBox(reprojection1)&validFrame);
-		std::vector<double> probs1 = mRecognitionSystem->categorize(view);
-		candidate.addView(view, probs1);
+		if (view.rows > 20 && view.cols > 20) {
+			std::vector<double> probs1 = mRecognitionSystem->categorize(view);
+			candidate.addView(view, probs1);
+		}
 
 		Mat view2 = _frame2(boundBox(reprojection2)&validFrame);
-		std::vector<double> probs2 = mRecognitionSystem->categorize(view2);
-		candidate.addView(view2, probs2);
+		if (view2.rows > 20 && view2.cols > 20) {
+			std::vector<double> probs2 = mRecognitionSystem->categorize(view2);
+			candidate.addView(view2, probs2);
+		}
 
 		/*std::cout << "Image left: " << cathegories[0].first << ": " << cathegories[0].second << std::endl;
 		std::cout << "Image left: " << cathegories2[0].first << ": " << cathegories2[0].second << std::endl;

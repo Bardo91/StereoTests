@@ -56,15 +56,20 @@ private:
 	RecognitionSystem	*mRecognitionSystem;
 	std::vector<ObjectCandidate> mCandidates;
 
-	ImuSensor			*mImu;
-	double				mPreviousTime = -1;
-	Eigen::Matrix3f		mImu2CamT;
-	Eigen::Quaternionf	mInitialRot;
-	Eigen::Vector3f		mGravityOffImuSys;
-	EkfImuIcp			mEkf;
+	ImuSensor							*mImu;
+	double								mPreviousTime = -1;
+	Eigen::Transform<float,3,Eigen::Affine>	mCam2Imu;
+	Eigen::Quaternionf					mInitialRot;
+	bool								mIsFirstIter = true;
+	Eigen::Vector3f						mGravityOffImuSys;
+	EkfImuIcp							mEkf;
 
 	BOViL::plot::Graph2d mTimePlot;
 	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates, tCathegorize;
+	BOViL::plot::Graph2d mPositionPlot;
+	std::vector<double> posXekf, posYekf, posZekf;
+	std::vector<double> posXicp, posYicp, posZicp;
+
 	BOViL::STime *mTimer;
 
 	cjson::Json mConfig;

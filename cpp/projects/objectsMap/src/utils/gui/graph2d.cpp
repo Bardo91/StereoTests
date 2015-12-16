@@ -111,7 +111,11 @@ namespace BOViL {
 			case eDrawType::Lines:
 				drawLines(_graph);
 				break;
+			default:
+				std::cout << "Graph type not defined" << std::endl;
+				break;
 			}
+
 		}
 
 		//---------------------------------------------------------------------------------------------------------------------
