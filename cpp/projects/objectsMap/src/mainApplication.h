@@ -59,6 +59,7 @@ private:
 	ImuSensor			*mImu;
 	double				mPreviousTime = -1;
 	Eigen::Matrix3f		mImu2CamT;
+	Eigen::Quaternionf	mInitialRot;
 	Eigen::Vector3f		mGravityOffImuSys;
 	EkfImuIcp			mEkf;
 

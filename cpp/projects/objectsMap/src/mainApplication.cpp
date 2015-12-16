@@ -205,8 +205,9 @@ bool MainApplication::initImuAndEkf() {
 			mImu2CamT = AngleAxisf		(float(mConfig["ekf"]["Imu2Cam"]["x"])/180.0*M_PI, Vector3f::UnitX())
 						* AngleAxisf	(float(mConfig["ekf"]["Imu2Cam"]["y"])/180.0*M_PI,  Vector3f::UnitY())
 						* AngleAxisf	(float(mConfig["ekf"]["Imu2Cam"]["z"])/180.0*M_PI, Vector3f::UnitZ());
-			
+
 			mGravityOffImuSys = calculateGravityOffset();
+		
 
 			return true;
 		}
@@ -236,8 +237,9 @@ Eigen::Vector3f MainApplication::calculateGravityOffset() {
 	
 	// calculate offset.
 	int nSamples = mConfig["ekf"]["nSamplesForOffSet"];
+	ImuData imuData;
 	for (int i = 0;i < nSamples; i++) {
-		ImuData imuData = mImu->get();
+		 imuData = mImu->get();
 	
 		Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
 		Eigen::Vector3f linAcc, angSpeed;
@@ -245,7 +247,9 @@ Eigen::Vector3f MainApplication::calculateGravityOffset() {
 	
 		gravity += q*linAcc;
 	}
-	
+
+	mInitialRot = Eigen::Quaternion<float> (imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+
 	gravity = gravity / nSamples;
 	
 	return gravity;
@@ -383,7 +387,7 @@ bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Vector4f &_positi
 	// Save state.
 	Eigen::Matrix<float,12,1> state = mEkf.getStateVector().cast<float>();
 	_position << state.block<3,1>(0,0), 1;
-	_quaternion = q;
+	_quaternion = mInitialRot.inverse() * q;
 
 	return true;
 }

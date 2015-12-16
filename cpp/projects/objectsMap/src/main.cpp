@@ -25,7 +25,7 @@ int main(int _argc, char** _argv) {
 		cout << "<----------------------------- Step Number: " << stepNumber++ << " ----------------------------->" << endl;
 		
 		app.step();
-		cv::waitKey(5);
+		cv::waitKey();
 	}
 
 	system("PAUSE");
