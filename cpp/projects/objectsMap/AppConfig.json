@@ -58,7 +58,7 @@
 		"floorDistanceThreshold":0.01,
 		"floorMaxIters": 1000,
 		"consecutiveClusterCentroidMatchingThreshold": 0.05
-		"minFittingScore":0.01
+		"maxFittingScore":0.01
 	},
 	"recognitionSystem":
 	{

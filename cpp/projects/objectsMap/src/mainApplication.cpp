@@ -147,6 +147,9 @@ bool MainApplication::step() {
 		}
 	}
 
+	// Draw camera pose for display purpose.
+	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
+
 	// Iterate EKF
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {
 		if (!stepEkf(imuData)) {
@@ -193,46 +196,6 @@ bool MainApplication::step() {
 		return false;
 	else 
 		return true;
-
-
-	/*
-	Mat frame1, frame2;
-	ImuData imuData;
-	double t0 = mTimer->getTime();
-	if(!stepGetImuData(imuData)) return false;
-	
-	double t1 = mTimer->getTime();
-	PointCloud<PointXYZ>::Ptr cloud;
-	bool haveImages = stepGetImages(frame1, frame2);
-	if (haveImages) {
-		if(!stepTriangulatePoints(frame1, frame2, cloud)) return false;
-	}
-	else {
-		// Get state vector in "north coordinate system"
-		Eigen::VectorXf X = mEkf.getStateVector().cast<float>();
-		Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
-		Eigen::Translation3f sensorPos(X.block<3,1>(0,0));
-		
-		// Transform from north CS to camera's CS
-		Eigen::Transform<float,3, Affine> pose = sensorPos*q;
-		pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
-
-		// Update pose
-		Vector4f position;
-		position << pose.translation().block<3,1>(0,0), 1;
-		std::cout << position << std::endl;
-		mMap.updateSensorPose(position, Quaternionf(pose.rotation()));
-	}
-
-	double t2 = mTimer->getTime();
-	Vector4f position;
-	Quaternion<float> orientation;
-	if(!stepEkf(imuData, position, orientation)) return false;
-
-	double t3 = mTimer->getTime();
-	if (haveImages) {
-		if (!stepUpdateMap(cloud, position, orientation)) return false;
-	}*/
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -550,12 +513,9 @@ bool MainApplication::stepEkf(const ImuData & _imuData) {
 bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, const Vector4f &_translationPrediction, const Quaternionf &_qRotationPrediction){
 	mGui->clearMap();
 	mGui->clearPcViewer();
-	double score;
+
 	PointCloud<PointXYZ>::Ptr rotatedCloud;
-	bool hasConverged = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple, rotatedCloud, score);
-	if (score > double(mConfig["mapParams"]["minFittingScore"])) {
-		hasConverged = false;
-	}
+	bool hasConverged = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), rotatedCloud);
 
 	if(rotatedCloud->size() != 0)
 		Gui::get()->addPointToPcViewer(rotatedCloud, 3, 255, 10, 10);
