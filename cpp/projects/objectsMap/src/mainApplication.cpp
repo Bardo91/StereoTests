@@ -132,8 +132,8 @@ bool MainApplication::step() {
 				std::cout << "-> STEP: Error generating new point cloud" << std::endl;
 			}
 		}
-		// Else use forecastX to iterate over EKF
-		else {
+		// If we dont have good images or the ICP fails: use forecastX to iterate over EKF
+		if((errorBitList & (1 << BIT_MAST_ERROR_IMAGES)) || (errorBitList & (1 << BIT_MAST_ERROR_MAP))) {
 			// Get state vector in "north coordinate system"
 			Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
 			Eigen::Translation3f sensorPos(forecastX.block<3,1>(0,0));
@@ -550,14 +550,20 @@ bool MainApplication::stepEkf(const ImuData & _imuData) {
 bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, const Vector4f &_translationPrediction, const Quaternionf &_qRotationPrediction){
 	mGui->clearMap();
 	mGui->clearPcViewer();
-	auto rotatedCloud = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple);
+	double score;
+	PointCloud<PointXYZ>::Ptr rotatedCloud;
+	bool hasConverged = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple, rotatedCloud, score);
+	if (score > double(mConfig["mapParams"]["minFittingScore"])) {
+		hasConverged = false;
+	}
+
 	if(rotatedCloud->size() != 0)
 		Gui::get()->addPointToPcViewer(rotatedCloud, 3, 255, 10, 10);
 
 	mGui->drawMap(mMap.cloud().makeShared());
 	mGui->addPointToPcViewer(_cloud);
 	mGui->spinOnce();
-	return true;
+	return hasConverged;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
