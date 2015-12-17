@@ -23,6 +23,14 @@ using namespace pcl;
 using namespace std;
 using namespace Eigen;
 
+
+const int BIT_MAST_ERROR_IMU = 0;
+const int BIT_MAST_ERROR_IMAGES = 1;
+const int BIT_MAST_ERROR_FORECAST = 2;
+const int BIT_MAST_ERROR_TRIANGULATE = 3;
+const int BIT_MAST_ERROR_MAP = 4;
+const int BIT_MAST_ERROR_EKF = 5;
+
 //---------------------------------------------------------------------------------------------------------------------
 MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time"), mPositionPlot("Drone position") {
 	bool result = true;
@@ -46,6 +54,82 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::step() {
+	long errorBitList = 0;	// This variable store in each bit if each step was fine or not.
+
+	// Get Imu Data
+	ImuData imuData;
+	if (!stepGetImuData(imuData)) {
+		errorBitList |= (1<<BIT_MAST_ERROR_IMU);
+		std::cout << "-> STEP: Error getting imu data" << std::endl;
+	}
+	
+	// Get images and check if they are blurry or not.
+	Mat frame1, frame2;
+	if (!stepGetImages(frame1, frame2)){
+		errorBitList |= (1<<BIT_MAST_ERROR_IMAGES);
+		std::cout << "-> STEP: Error getting images data or images are blurry" << std::endl;
+	}
+
+	// Estimate position from previous step for either ICP or EKF depending on if the images are good or not.
+	Eigen::Vector4f forecastX = Eigen::Vector4f::Ones();
+	if (!(errorBitList & (1 << BIT_MAST_ERROR_IMU))) {
+		auto prevX = mEkf.getStateVector().cast<float>();
+		double incT = imuData.mTimeSpan - mPreviousTime;
+
+		// x(k) = x(k-1) + v(k-1)*incT + a(k-1)*incT*incT/2;
+		forecastX.block<3, 1>(0, 0) =	prevX.block<3, 1>(0, 0) +			
+										(Matrix3f::Identity()*incT)*prevX.block<3, 1>(3, 0) +
+										(Matrix3f::Identity()*(incT*incT / 2))*prevX.block<3, 1>(6, 0);
+	}
+	else {
+		errorBitList |= (1<<BIT_MAST_ERROR_FORECAST);
+		std::cout << "-> STEP: Error predicting new position" << std::endl;
+	}
+
+
+	// If images are fine: calculate the guess for the ICP in order to get current position estimation
+	// to iterate over EKF
+	PointCloud<PointXYZ>::Ptr cloud;
+	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))&&!(errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
+		Eigen::Quaternion<float> orientation(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+
+		// Transform from north CS to camera's CS
+		Eigen::Transform<float,3, Affine> pose = Eigen::Translation3f(forecastX.block<3,1>(0,0))*orientation;
+		pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
+
+		// Calculate new cloud from input images
+		if (stepTriangulatePoints(frame1, frame2, cloud)) {
+			// Update pose
+			Vector4f position;
+			position << pose.translation().block<3,1>(0,0), 1;
+
+			if (!stepUpdateMap(cloud, position, orientation)) {
+				errorBitList |= (1<<BIT_MAST_ERROR_MAP);
+				std::cout << "-> STEP: Error while updating map" << std::endl;
+			}
+		}
+		else {
+			errorBitList |= (1<<BIT_MAST_ERROR_TRIANGULATE);
+			std::cout << "-> STEP: Error generating new point cloud" << std::endl;
+		}
+	}
+
+	// Iterate EKF
+	Vector4f currentPos;
+	Quaternion<float> currentOri;
+	if (!stepEkf(imuData, currentPos, currentOri)) {
+		errorBitList |= (1<<BIT_MAST_ERROR_EKF);
+		std::cout << "-> STEP: Error during EKF" << std::endl;
+	}
+
+	// If any error occurs return false. And if not return true;
+	if (errorBitList) 
+		return false;
+	else 
+		return true;
+
+
+	/*
 	Mat frame1, frame2;
 	ImuData imuData;
 	double t0 = mTimer->getTime();
@@ -131,6 +215,7 @@ bool MainApplication::step() {
 	mTimePlot.draw(tCandidates	, 0, 255, 255,	BOViL::plot::Graph2d::eDrawType::Lines);
 	mTimePlot.show();
 	return true;
+	*/
 }
 
 //---------------------------------------------------------------------------------------------------------------------
