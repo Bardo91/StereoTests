@@ -30,6 +30,8 @@ const int BIT_MAST_ERROR_FORECAST = 2;
 const int BIT_MAST_ERROR_TRIANGULATE = 3;
 const int BIT_MAST_ERROR_MAP = 4;
 const int BIT_MAST_ERROR_EKF = 5;
+const int BIT_MAST_ERROR_GETCANDIDATES = 6;
+const int BIT_MAST_ERROR_CATEGORIZINGCANDIDATES = 7;
 
 //---------------------------------------------------------------------------------------------------------------------
 MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time"), mPositionPlot("Drone position"), mVelocityPlot("Drone Velocity") {
@@ -160,6 +162,17 @@ bool MainApplication::step() {
 	else {
 		errorBitList |= (1<<BIT_MAST_ERROR_EKF);
 		std::cout << "-> STEP: Cannot perform EKF" << std::endl;
+	}
+
+
+	if (!stepGetCandidates()) {
+		errorBitList |= (1<<BIT_MAST_ERROR_GETCANDIDATES);
+		std::cout << "-> STEP: Error getting candidates" << std::endl;
+	}
+
+	if (!stepCathegorizeCandidates(mCandidates, frame1, frame2)) {
+		errorBitList |= (1<<BIT_MAST_ERROR_CATEGORIZINGCANDIDATES);
+		std::cout << "-> STEP: Error cathegorizing candidates" << std::endl;
 	}
 
 	// <----------->
