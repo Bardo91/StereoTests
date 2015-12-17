@@ -9,9 +9,9 @@
 	},
 	"cameras":
 	{
-		"left":"C:/programming/CalibrationD/CalibrationD/SensorsCrawler_WhiteFloor_1/img_cam1_%d.jpg",
-		"right":"C:/programming/CalibrationD/CalibrationD/SensorsCrawler_WhiteFloor_1/img_cam2_%d.jpg",
-		"paramFile":"C:/programming/StereoTests/cpp/build/projects/calibrationTest/stereo_D",
+		"left":"C:/Users/Pablo RS/Desktop/Cropped sets/set3 - indoor handheld white floor/cam2 (%d).jpg",
+		"right":"C:/Users/Pablo RS/Desktop/Cropped sets/set3 - indoor handheld white floor/cam1 (%d).jpg",
+		"paramFile":"C:/Users/Pablo RS/Desktop/Cropped sets/set3 - indoor handheld white floor/calibH",
 		"leftRoi":
 		{
 			"x":30,
@@ -50,11 +50,11 @@
 		"icpMaxTransformationEpsilon":0.00000000000000000001,
 		"icpEuclideanEpsilon":0.00000000000000000001,
 		"icpMaxIcpIterations":1000,
-		"icpMaxCorrespondenceDistance":0.1,
+		"icpMaxCorrespondenceDistance":0.05,
 		"historySize":2,
 		"clusterAffiliationMaxDistance":0.035,
 		"minClusterSize":15,
-		"maxClusterSize":200,
+		"maxClusterSize":500,
 		"floorDistanceThreshold":0.01,
 		"floorMaxIters": 1000,
 		"consecutiveClusterCentroidMatchingThreshold": 0.05
@@ -88,7 +88,7 @@
 	"ekf":
 	{
 		"source":"file",
-		"path":"C:/Users/Pablo RS/Desktop/StereoDatasets/experiment_1356999938/experiment_1356999938/imu_icp.txt",
+		"path":"C:/Users/Pablo RS/Desktop/Cropped sets/set3 - indoor handheld white floor/imuData_Cropped.txt",
 		"bias":
 		{
 			"ScaleFactor":[0.0,0.0,0.0],
@@ -108,9 +108,19 @@
 				0.05,0.05,0.05],
 		"Imu2Cam":
 		{
-			"x":30,
-			"y":0,
-			"z":0
+			"rot":
+			{
+				"x":-150.0,
+				"y":0.0,
+				"z":-90.0
+			},
+			"trans":
+			{
+				"x":0.11,
+				"y":0.11,
+				"z":-0.16
+			}
+			
 		},
 		"nSamplesForOffSet":500
 	}
