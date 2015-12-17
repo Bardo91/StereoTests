@@ -175,6 +175,7 @@ bool MainApplication::step() {
 		std::cout << "-> STEP: Error cathegorizing candidates" << std::endl;
 	}
 
+
 	// <----------->
 	// Store and plot positions data 666 debug
 	auto xEkf = mEkf.getStateVector();
