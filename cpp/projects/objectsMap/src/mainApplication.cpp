@@ -56,21 +56,21 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 bool MainApplication::step() {
 	long errorBitList = 0;	// This variable store in each bit if each step was fine or not.
 
-	// Get Imu Data
+	// --> Get Imu Data
 	ImuData imuData;
 	if (!stepGetImuData(imuData)) {
 		errorBitList |= (1<<BIT_MAST_ERROR_IMU);
 		std::cout << "-> STEP: Error getting imu data" << std::endl;
 	}
 	
-	// Get images and check if they are blurry or not.
+	// --> Get images and check if they are blurry or not.
 	Mat frame1, frame2;
 	if (!stepGetImages(frame1, frame2)){
 		errorBitList |= (1<<BIT_MAST_ERROR_IMAGES);
 		std::cout << "-> STEP: Error getting images data or images are blurry" << std::endl;
 	}
 
-	// If system is not set-up yet.
+	// --> If system is not set-up yet.
 	if (mIsFirstIter){
 		// If current images are not good.
 		if ((errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
@@ -87,7 +87,7 @@ bool MainApplication::step() {
 
 	
 
-	// Estimate position from previous step for either ICP or EKF depending on if the images are good or not.
+	// --> Estimate position from previous step for either ICP or EKF depending on if the images are good or not.
 	Eigen::Vector4f forecastX = Eigen::Vector4f::Ones();
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_IMU))) {
 		auto prevX = mEkf.getStateVector().cast<float>();
@@ -104,30 +104,46 @@ bool MainApplication::step() {
 	}
 
 
-	// If images are fine: calculate the guess for the ICP in order to get current position estimation
-	// to iterate over EKF
 	PointCloud<PointXYZ>::Ptr cloud;
-	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))&&!(errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
-		Eigen::Quaternion<float> orientation(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+	// If forecast is fine.
+	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {
+		// If images are fine: calculate the guess for the ICP in order to get current position estimation
+		// to iterate over EKF
+		if (!(errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
+			Eigen::Quaternion<float> orientation(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
 
-		// Transform from north CS to camera's CS
-		Eigen::Transform<float,3, Affine> pose = Eigen::Translation3f(forecastX.block<3,1>(0,0))*orientation;
-		pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
+			// Transform from north CS to camera's CS
+			Eigen::Transform<float, 3, Affine> pose = Eigen::Translation3f(forecastX.block<3, 1>(0, 0))*orientation;
+			pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
 
-		// Calculate new cloud from input images
-		if (stepTriangulatePoints(frame1, frame2, cloud)) {
-			// Update pose
-			Vector4f position;
-			position << pose.translation().block<3,1>(0,0), 1;
+			// Calculate new cloud from input images
+			if (stepTriangulatePoints(frame1, frame2, cloud)) {
+				// Update pose
+				Vector4f position;
+				position << pose.translation().block<3, 1>(0, 0), 1;
 
-			if (!stepUpdateMap(cloud, position, orientation)) {
-				errorBitList |= (1<<BIT_MAST_ERROR_MAP);
-				std::cout << "-> STEP: Error while updating map" << std::endl;
+				if (!stepUpdateMap(cloud, position, Quaternionf(pose.rotation()))) {
+					errorBitList |= (1 << BIT_MAST_ERROR_MAP);
+					std::cout << "-> STEP: Error while updating map" << std::endl;
+				}
+			}
+			else {
+				errorBitList |= (1 << BIT_MAST_ERROR_TRIANGULATE);
+				std::cout << "-> STEP: Error generating new point cloud" << std::endl;
 			}
 		}
+		// Else use forecastX to iterate over EKF
 		else {
-			errorBitList |= (1<<BIT_MAST_ERROR_TRIANGULATE);
-			std::cout << "-> STEP: Error generating new point cloud" << std::endl;
+			// Get state vector in "north coordinate system"
+			Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+			Eigen::Translation3f sensorPos(forecastX.block<3,1>(0,0));
+
+			// Transform from north CS to camera's CS
+			Eigen::Transform<float,3, Affine> pose = sensorPos*q;
+			pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
+
+			// Update pose
+			mMap.updateSensorPose(pose.matrix().block<4,1>(0,3), Quaternionf(pose.rotation()));
 		}
 	}
 
@@ -148,7 +164,11 @@ bool MainApplication::step() {
 	// <----------->
 	// Store and plot positions data 666 debug
 	auto xEkf = mEkf.getStateVector();
-	auto xIcp = mMap.cloud().sensor_origin_;
+	auto xIcp = (mInitialRot*mCam2Imu.inverse()*
+				(Translation3f(mMap.cloud().sensor_origin_.block<3,1>(0,0))*mMap.cloud().sensor_orientation_)
+				*mCam2Imu).translation();
+
+
 	posXekf.push_back(xEkf(0,0));
 	posYekf.push_back(xEkf(1,0));
 	posZekf.push_back(xEkf(2,0));
@@ -510,7 +530,7 @@ bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Vector4f &_positi
 	auto sensorPoseNorthCS = mInitialRot*mCam2Imu.inverse()*Transform<float,3, Affine>(icpRes)*mCam2Imu;
 	// Create observable state variable vetor.
 	Eigen::MatrixXf zk(6, 1);
-	zk << sensorPos.block<3,1>(0,0), linAcc;
+	zk << sensorPoseNorthCS.translation(), linAcc;
 
 	// Update EKF.
 	mEkf.stepEKF(zk.cast<double>(), _imuData.mTimeSpan - mPreviousTime);
