@@ -65,16 +65,7 @@ bool MainApplication::step() {
 		
 		// Transform from north CS to camera's CS
 		Eigen::Transform<float,3, Affine> pose = sensorPos*q;
-		std::cout << "Blurry image! getting pose from current EKF step" << std::endl;
-		std::cout << pose.translation() << std::endl;
-		std::cout << pose.rotation() << std::endl;
-		std::cout << pose.matrix() << std::endl;
-
-		std::cout << "pose in camera coordinate system" << std::endl;
 		pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
-		std::cout << pose.translation() << std::endl;
-		std::cout << pose.rotation() << std::endl;
-		std::cout << pose.matrix() << std::endl;
 
 		// Update pose
 		Vector4f position;
@@ -357,15 +348,15 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 	bool isBlurry1, isBlurry2;
 	cout << "Blurriness: ";
 	_frame1 = mCameras->camera(0).frame();
-	cvtColor(_frame1, gray1, CV_BGR2GRAY);
 	if (_frame1.rows != 0) {
+		cvtColor(_frame1, gray1, CV_BGR2GRAY);
 		isBlurry1 = isBlurry(gray1, mConfig["cameras"]["blurThreshold"]);
 	}
 	else { return false; }
 
 	_frame2 = mCameras->camera(1).frame();
-	cvtColor(_frame2, gray2, CV_BGR2GRAY);
 	if (_frame2.rows != 0) {
+		cvtColor(_frame2, gray2, CV_BGR2GRAY);
 		isBlurry2 = isBlurry(gray2, mConfig["cameras"]["blurThreshold"]);
 	}
 	else { return false; }
@@ -446,10 +437,6 @@ bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Vector4f &_positi
 	icpRes.block<4,1>(0,3) = sensorPos;
 	
 	auto sensorPoseNorthCS = mInitialRot*mCam2Imu.inverse()*Transform<float,3, Affine>(icpRes)*mCam2Imu;
-	std::cout << "Sensor position in north coordinate system" << std::endl;
-	std::cout << sensorPoseNorthCS.translation() << std::endl;
-	std::cout << sensorPoseNorthCS.rotation() << std::endl;
-	std::cout << sensorPoseNorthCS.matrix() << std::endl;
 	// Create observable state variable vetor.
 	Eigen::MatrixXf zk(6, 1);
 	zk << sensorPos.block<3,1>(0,0), linAcc;
@@ -463,11 +450,6 @@ bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Vector4f &_positi
 	Transform<float,3, Affine> guess = Translation3f(state.block<3, 1>(0, 0)) * q;
 
 	guess = mCam2Imu*mInitialRot.inverse()*guess*mCam2Imu.inverse();
-
-	std::cout << "Guess in camera coordinate system" << std::endl;
-	std::cout << guess.translation() << std::endl;
-	std::cout << guess.rotation() << std::endl;
-	std::cout << guess.matrix() << std::endl;
 
 	Vector4f endPosition;
 	endPosition << guess.translation().block<3,1>(0,0), 1;
@@ -502,6 +484,10 @@ bool MainApplication::stepUpdateCameraPose() {
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepGetCandidates(){
+	if (mMap.cloud().size() < 10) {
+		return false;
+	}
+
 	ModelCoefficients plane = mMap.extractFloor(mMap.cloud().makeShared());
 	if (plane.values.size() == 0)
 		return false;
