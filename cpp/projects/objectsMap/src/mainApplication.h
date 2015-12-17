@@ -42,7 +42,7 @@ private:
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
 	bool stepGetImuData(ImuData &_imuData);
 	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
-	bool stepEkf(const ImuData &_imuData, Eigen::Vector4f &_position, Eigen::Quaternion<float> &_quaternion);
+	bool stepEkf(const ImuData &_imuData);
 	bool stepUpdateMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d, const Eigen::Vector4f &_translationPrediction, const Eigen::Quaternionf &_qRotationPrediction);
 	bool stepUpdateCameraPose();
 	bool stepGetCandidates();
@@ -66,8 +66,8 @@ private:
 
 	BOViL::plot::Graph2d mTimePlot;
 	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates, tCathegorize;
-	BOViL::plot::Graph2d mPositionPlot;
-	std::vector<double> posXekf, posYekf, posZekf;
+	BOViL::plot::Graph2d mPositionPlot, mVelocityPlot;
+	std::vector<double> posXekf, posYekf, posZekf, velXekf, velYekf, velZekf;
 	std::vector<double> posXicp, posYicp, posZicp;
 
 	BOViL::STime *mTimer;

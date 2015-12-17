@@ -70,9 +70,9 @@ int main(int _argc, char ** _argv) {
 
 	BOViL::STime *timer = BOViL::STime::get();
 
-	//onlyAccTest(imu);
+	onlyAccTest(imu);
 	
-	accIcpTest(imu);
+	//accIcpTest(imu);
 }
 
 Eigen::Vector3d extractGravity(ImuSensor * _imu, int _dataUsed) {
@@ -108,7 +108,7 @@ void onlyAccTest(ImuSensor * _imu) {
 	Eigen::Vector3d gravity = Eigen::Vector3d::Zero();
 	
 	// calculate offset.
-	for (int i = 0;i < 500; i++) {
+	for (int i = 0;i < 200; i++) {
 		imuData = _imu->get();
 
 		Eigen::Quaternion<double> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
@@ -118,7 +118,7 @@ void onlyAccTest(ImuSensor * _imu) {
 		gravity += q*linAcc;
 	}
 
-	gravity = gravity / 500;
+	gravity = gravity / 200;
 
 
 
@@ -139,7 +139,7 @@ void onlyAccTest(ImuSensor * _imu) {
 
 
 	// Start
-	for(int i = 0;i < 2400; i++) {
+	for(int i = 0;i < 100; i++) {
 		#if defined(_HAS_ROS_LIBRARIES_)
 		ros::spinOnce();
 		#endif

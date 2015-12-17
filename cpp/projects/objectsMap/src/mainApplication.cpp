@@ -32,7 +32,7 @@ const int BIT_MAST_ERROR_MAP = 4;
 const int BIT_MAST_ERROR_EKF = 5;
 
 //---------------------------------------------------------------------------------------------------------------------
-MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time"), mPositionPlot("Drone position") {
+MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time"), mPositionPlot("Drone position"), mVelocityPlot("Drone Velocity") {
 	bool result = true;
 	result &= loadArguments(_argc, _argv);
 	result &= initCameras();
@@ -102,7 +102,7 @@ bool MainApplication::step() {
 		errorBitList |= (1<<BIT_MAST_ERROR_FORECAST);
 		std::cout << "-> STEP: Error predicting new position" << std::endl;
 	}
-
+	
 
 	PointCloud<PointXYZ>::Ptr cloud;
 	// If forecast is fine.
@@ -148,10 +148,8 @@ bool MainApplication::step() {
 	}
 
 	// Iterate EKF
-	Vector4f currentPos;
-	Quaternion<float> currentOri;
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {
-		if (!stepEkf(imuData, currentPos, currentOri)) {
+		if (!stepEkf(imuData)) {
 			errorBitList |= (1<<BIT_MAST_ERROR_EKF);
 			std::cout << "-> STEP: Error during EKF" << std::endl;
 		}
@@ -172,6 +170,9 @@ bool MainApplication::step() {
 	posXekf.push_back(xEkf(0,0));
 	posYekf.push_back(xEkf(1,0));
 	posZekf.push_back(xEkf(2,0));
+	velXekf.push_back(xEkf(3,0));
+	velYekf.push_back(xEkf(4,0));
+	velZekf.push_back(xEkf(5,0));
 	posXicp.push_back(xIcp(0,0));
 	posYicp.push_back(xIcp(1,0));
 	posZicp.push_back(xIcp(2,0));
@@ -181,6 +182,10 @@ bool MainApplication::step() {
 	mPositionPlot.draw(posXicp, 255,0,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
 	mPositionPlot.draw(posYicp, 0,255,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
 	mPositionPlot.draw(posZicp, 0,0,255, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+	
+	mVelocityPlot.draw(velXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	mVelocityPlot.draw(velYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	mVelocityPlot.draw(velZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
 	// <----------->
 
 	// If any error occurs return false. And if not return true;
@@ -514,7 +519,7 @@ bool MainApplication::stepTriangulatePoints(const Mat &_frame1, const Mat &_fram
 	return _points3d->size() != 0? true:false;
 }
 
-bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Vector4f &_position, Eigen::Quaternion<float> &_quaternion) {
+bool MainApplication::stepEkf(const ImuData & _imuData) {
 	// Get and adapt imu data.
 	Eigen::Quaternion<float> q(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
 	Eigen::Matrix<float, 3, 1> linAcc;
@@ -528,37 +533,17 @@ bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Vector4f &_positi
 	icpRes.block<4,1>(0,3) = sensorPos;
 	
 	auto sensorPoseNorthCS = mInitialRot*mCam2Imu.inverse()*Transform<float,3, Affine>(icpRes)*mCam2Imu;
+
 	// Create observable state variable vetor.
 	Eigen::MatrixXf zk(6, 1);
 	zk << sensorPoseNorthCS.translation(), linAcc;
 
 	// Update EKF.
+	std::cout << "-> STEP: Increment of time in EKF: " << _imuData.mTimeSpan - mPreviousTime << std::endl;
 	mEkf.stepEKF(zk.cast<double>(), _imuData.mTimeSpan - mPreviousTime);
 	mPreviousTime = _imuData.mTimeSpan;
-
-	// Transform state
-	Eigen::Matrix<float, 12, 1> state = mEkf.getStateVector().cast<float>();
-	Transform<float,3, Affine> guess = Translation3f(state.block<3, 1>(0, 0)) * q;
-
-	guess = mCam2Imu*mInitialRot.inverse()*guess*mCam2Imu.inverse();
-
-	Vector4f endPosition;
-	endPosition << guess.translation().block<3,1>(0,0), 1;
-	_position = endPosition;
-	_quaternion = Quaternionf(guess.rotation());
 	
-	std::cout << "->STEP: EKF prediction of position: " << std::endl;
-	std::cout << _position << std::endl;
-	std::cout << "->STEP: EKF prediction of orientation: " << std::endl;
-	std::cout << _quaternion.matrix() << std::endl;
-
-	if (_quaternion.matrix().hasNaN() || _position.hasNaN()) {
-		cerr << "-> STEP:  ---> CRITICAL ERROR! EKF prediction has nans!!! <---" << endl;
-		return false;
-	}
-	else {
-		return true;
-	}
+	return true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
