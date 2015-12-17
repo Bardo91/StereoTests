@@ -70,6 +70,23 @@ bool MainApplication::step() {
 		std::cout << "-> STEP: Error getting images data or images are blurry" << std::endl;
 	}
 
+	// If system is not set-up yet.
+	if (mIsFirstIter){
+		// If current images are not good.
+		if ((errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
+			std::cout << "-> STEP: Waiting for a good image to set up system references" << std::endl;
+			return false; // Do not iterate until there is a good image to work with.
+		}
+		// If have good images. Initiallize references and keep going.
+		else {
+			mInitialRot = Eigen::Quaternion<float>(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+			mIsFirstIter = false;
+			std::cout << "-> STEP: Set current orientation as initial orientation" << std::endl;
+		}
+	}
+
+	
+
 	// Estimate position from previous step for either ICP or EKF depending on if the images are good or not.
 	Eigen::Vector4f forecastX = Eigen::Vector4f::Ones();
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_IMU))) {
@@ -117,10 +134,34 @@ bool MainApplication::step() {
 	// Iterate EKF
 	Vector4f currentPos;
 	Quaternion<float> currentOri;
-	if (!stepEkf(imuData, currentPos, currentOri)) {
-		errorBitList |= (1<<BIT_MAST_ERROR_EKF);
-		std::cout << "-> STEP: Error during EKF" << std::endl;
+	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {
+		if (!stepEkf(imuData, currentPos, currentOri)) {
+			errorBitList |= (1<<BIT_MAST_ERROR_EKF);
+			std::cout << "-> STEP: Error during EKF" << std::endl;
+		}
 	}
+	else {
+		errorBitList |= (1<<BIT_MAST_ERROR_EKF);
+		std::cout << "-> STEP: Cannot perform EKF" << std::endl;
+	}
+
+	// <----------->
+	// Store and plot positions data 666 debug
+	auto xEkf = mEkf.getStateVector();
+	auto xIcp = mMap.cloud().sensor_origin_;
+	posXekf.push_back(xEkf(0,0));
+	posYekf.push_back(xEkf(1,0));
+	posZekf.push_back(xEkf(2,0));
+	posXicp.push_back(xIcp(0,0));
+	posYicp.push_back(xIcp(1,0));
+	posZicp.push_back(xIcp(2,0));
+	mPositionPlot.draw(posXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	mPositionPlot.draw(posYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
+	mPositionPlot.draw(posZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
+	mPositionPlot.draw(posXicp, 255,0,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+	mPositionPlot.draw(posYicp, 0,255,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+	mPositionPlot.draw(posZicp, 0,0,255, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+	// <----------->
 
 	// If any error occurs return false. And if not return true;
 	if (errorBitList) 
@@ -166,56 +207,7 @@ bool MainApplication::step() {
 	double t3 = mTimer->getTime();
 	if (haveImages) {
 		if (!stepUpdateMap(cloud, position, orientation)) return false;
-	}
-
-
-	// Store data of positions 666 debug
-	auto xEkf = mEkf.getStateVector();
-	auto xIcp = mMap.cloud().sensor_origin_;
-	posXekf.push_back(xEkf(0,0));
-	posYekf.push_back(xEkf(1,0));
-	posZekf.push_back(xEkf(2,0));
-	posXicp.push_back(xIcp(0,0));
-	posYicp.push_back(xIcp(1,0));
-	posZicp.push_back(xIcp(2,0));
-	mPositionPlot.draw(posXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mPositionPlot.draw(posYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mPositionPlot.draw(posZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
-	mPositionPlot.draw(posXicp, 255,0,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
-	mPositionPlot.draw(posYicp, 0,255,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
-	mPositionPlot.draw(posZicp, 0,0,255, BOViL::plot::Graph2d::eDrawType::FilledCircles);
-	// <----------->
-
-	double t4 = mTimer->getTime();
-	if(!stepUpdateCameraPose()) return false;
-
-	double t5 = mTimer->getTime();
-	if(!stepGetCandidates()) return false;
-
-	double t6 = mTimer->getTime();
-	if(!stepCathegorizeCandidates(mCandidates, frame1, frame2)) return false;
-
-	double t7 = mTimer->getTime();
-	if (!stepCheckGroundTruth()) return false;
-
-
-	tGetImages.push_back(t1-t0);
-	tTriangulate.push_back(tGetImages[tGetImages.size()-1] + t2-t1);
-	tUpdateMap.push_back(tTriangulate[tTriangulate.size()-1] + t4-t3);
-	tUpdCam.push_back(tUpdateMap[tUpdateMap.size()-1] + t5-t4);
-	tCandidates.push_back(tUpdCam[tUpdCam.size()-1] + t6-t5);
-	tCathegorize.push_back(tCandidates[tCandidates.size()-1] + t7-t6);
-
-
-	mTimePlot.clean();
-	mTimePlot.draw(tGetImages	, 255, 0, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
-	mTimePlot.draw(tTriangulate	, 0, 255, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
-	mTimePlot.draw(tUpdateMap, 0, 0, 255,	BOViL::plot::Graph2d::eDrawType::Lines);
-	mTimePlot.draw(tUpdCam		, 255, 255, 0,	BOViL::plot::Graph2d::eDrawType::Lines);
-	mTimePlot.draw(tCandidates	, 0, 255, 255,	BOViL::plot::Graph2d::eDrawType::Lines);
-	mTimePlot.show();
-	return true;
-	*/
+	}*/
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -503,12 +495,6 @@ bool MainApplication::stepTriangulatePoints(const Mat &_frame1, const Mat &_fram
 }
 
 bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Vector4f &_position, Eigen::Quaternion<float> &_quaternion) {
-	if (mIsFirstIter) {
-		mInitialRot = Eigen::Quaternion<float>(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
-		mIsFirstIter = false;
-	}
-
-
 	// Get and adapt imu data.
 	Eigen::Quaternion<float> q(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
 	Eigen::Matrix<float, 3, 1> linAcc;
@@ -541,9 +527,18 @@ bool MainApplication::stepEkf(const ImuData & _imuData, Eigen::Vector4f &_positi
 	_position = endPosition;
 	_quaternion = Quaternionf(guess.rotation());
 	
-	// Save state.
+	std::cout << "->STEP: EKF prediction of position: " << std::endl;
+	std::cout << _position << std::endl;
+	std::cout << "->STEP: EKF prediction of orientation: " << std::endl;
+	std::cout << _quaternion.matrix() << std::endl;
 
-	return true;
+	if (_quaternion.matrix().hasNaN() || _position.hasNaN()) {
+		cerr << "-> STEP:  ---> CRITICAL ERROR! EKF prediction has nans!!! <---" << endl;
+		return false;
+	}
+	else {
+		return true;
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
