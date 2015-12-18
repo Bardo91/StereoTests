@@ -43,22 +43,22 @@
 	},
 	"mapParams":
 	{
-		"voxelSize":0.02,
+		"voxelSize":0.035,
 		"outlierMeanK":10,
 		"outlierStdDev":0.05,
 		"outlierSetNegative":false,
 		"icpMaxTransformationEpsilon":0.00000000000000000001,
 		"icpEuclideanEpsilon":0.00000000000000000001,
 		"icpMaxIcpIterations":1000,
-		"icpMaxCorrespondenceDistance":0.05,
+		"icpMaxCorrespondenceDistance":1.0,
 		"historySize":2,
-		"clusterAffiliationMaxDistance":0.035,
+		"clusterAffiliationMaxDistance":0.045,
 		"minClusterSize":15,
 		"maxClusterSize":500,
 		"floorDistanceThreshold":0.01,
 		"floorMaxIters": 1000,
 		"consecutiveClusterCentroidMatchingThreshold": 0.05
-		"maxFittingScore":0.01
+		"maxFittingScore":0.005
 	},
 	"recognitionSystem":
 	{
@@ -111,15 +111,15 @@
 		{
 			"rot":
 			{
-				"x":-150.0,
+				"x":-158.0,
 				"y":0.0,
 				"z":-90.0
 			},
 			"trans":
 			{
-				"x":0.11,
-				"y":0.11,
-				"z":-0.16
+				"x":0.092,
+				"y":0.124,
+				"z":-0.145
 			}
 			
 		},
