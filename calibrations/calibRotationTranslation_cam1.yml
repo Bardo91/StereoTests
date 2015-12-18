@@ -1,0 +1,88 @@
+%YAML:1.0
+Matrix: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 6.1430554205295061e+02, 0., 3.1125646205907861e+02, 0.,
+       6.1220080346205236e+02, 2.5678646326943363e+02, 0., 0., 1. ]
+DistCoeffs: !!opencv-matrix
+   rows: 5
+   cols: 1
+   dt: d
+   data: [ 1.2682469608019531e-01, -6.4313714707904379e-01,
+       1.8042177027347798e-03, -1.0667970525533735e-03,
+       1.4011390673095465e+00 ]
+nRotVectors: 6
+RotVector0: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 2.1852250742448953e-01, 2.2473253054621306e-01,
+       -1.5335710324819443e+00 ]
+RotVector1: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.2637607894574078e-01, -3.3190578373970653e-01,
+       -1.5184904749641575e+00 ]
+RotVector2: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.9536851386211127e-01, -3.1201576756564697e-01,
+       -1.5112241174243146e+00 ]
+RotVector3: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 1.8827512828886886e-01, 6.3414391453795982e-01,
+       1.4371321408071203e+00 ]
+RotVector4: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 3.2329608780545316e-01, -6.8013036018777617e-01,
+       -1.3430715139285681e+00 ]
+RotVector5: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 5.2220808123085827e-01, 3.9291728989730329e-01,
+       1.5315917868713314e+00 ]
+nTransVectors: 6
+TransVector0: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.1449463293053431e-01, 1.9331830287538129e-01,
+       1.0324725904557377e+00 ]
+TransVector1: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.0114879753579205e-01, 3.7259153289915622e-02,
+       6.9586117194536468e-01 ]
+TransVector2: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -3.0677147586550002e-01, 4.2205993478048168e-02,
+       6.9904803191480780e-01 ]
+TransVector3: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 3.3677898668867709e-02, -1.9003152622287786e-01,
+       6.9303225305609495e-01 ]
+TransVector4: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -2.4554624727088784e-01, 6.0987388284581119e-02,
+       6.5685650895711734e-01 ]
+TransVector5: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ 1.0017786856950307e-01, -1.0385301014120210e-01,
+       8.0792112326665100e-01 ]
