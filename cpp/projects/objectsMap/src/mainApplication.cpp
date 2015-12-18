@@ -188,7 +188,6 @@ bool MainApplication::step() {
 				(Translation3f(mMap.cloud().sensor_origin_.block<3,1>(0,0))*mMap.cloud().sensor_orientation_)
 				*mCam2Imu).translation();
 
-
 	posXekf.push_back(xEkf(0,0));
 	posYekf.push_back(xEkf(1,0));
 	posZekf.push_back(xEkf(2,0));
@@ -198,12 +197,18 @@ bool MainApplication::step() {
 	posXicp.push_back(xIcp(0,0));
 	posYicp.push_back(xIcp(1,0));
 	posZicp.push_back(xIcp(2,0));
+	posXfore.push_back(forecastX(0,0));
+	posYfore.push_back(forecastX(1,0));
+	posZfore.push_back(forecastX(2,0));
 	mPositionPlot.draw(posXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	mPositionPlot.draw(posYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	mPositionPlot.draw(posZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
 	mPositionPlot.draw(posXicp, 255,0,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
 	mPositionPlot.draw(posYicp, 0,255,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
 	mPositionPlot.draw(posZicp, 0,0,255, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+	mPositionPlot.draw(posXfore, 255,0,0, BOViL::plot::Graph2d::eDrawType::Circles);
+	mPositionPlot.draw(posYfore, 0,255,0, BOViL::plot::Graph2d::eDrawType::Circles);
+	mPositionPlot.draw(posZfore, 0,0,255, BOViL::plot::Graph2d::eDrawType::Circles);
 	
 	mVelocityPlot.draw(velXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	mVelocityPlot.draw(velYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);

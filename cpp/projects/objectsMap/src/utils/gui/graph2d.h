@@ -42,6 +42,7 @@ namespace BOViL {
 			void drawAxis();
 			void drawGraph(const Graph &_graph);
 			void drawPoints(const Graph &_graph);
+			void drawCircles(const Graph &_graph);
 			void drawLines(const Graph &_graph);
 
 			void cleanGraph();
