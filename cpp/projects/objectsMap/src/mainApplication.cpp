@@ -99,6 +99,8 @@ bool MainApplication::step() {
 		forecastX.block<3, 1>(0, 0) =	prevX.block<3, 1>(0, 0) +			
 										(Matrix3f::Identity()*incT)*prevX.block<3, 1>(3, 0) +
 										(Matrix3f::Identity()*(incT*incT / 2))*prevX.block<3, 1>(6, 0);
+		std::cout << "-> STEP: Forecast from previous state is" << std::endl;
+		std::cout << forecastX<<std::endl;
 	}
 	else {
 		errorBitList |= (1<<BIT_MAST_ERROR_FORECAST);
@@ -134,6 +136,7 @@ bool MainApplication::step() {
 				std::cout << "-> STEP: Error generating new point cloud" << std::endl;
 			}
 		}
+
 		// If we dont have good images or the ICP fails: use forecastX to iterate over EKF
 		if((errorBitList & (1 << BIT_MAST_ERROR_IMAGES)) || (errorBitList & (1 << BIT_MAST_ERROR_MAP))) {
 			// Get state vector in "north coordinate system"
@@ -158,6 +161,8 @@ bool MainApplication::step() {
 			errorBitList |= (1<<BIT_MAST_ERROR_EKF);
 			std::cout << "-> STEP: Error during EKF" << std::endl;
 		}
+		std::cout << "-> STEP: EKF state after iteration with current data" << std::endl;
+		std::cout << mEkf.getStateVector().transpose() << std::endl;
 	}
 	else {
 		errorBitList |= (1<<BIT_MAST_ERROR_EKF);
@@ -553,12 +558,12 @@ bool MainApplication::stepGetCandidates(){
 		return false;
 	}
 
-	ModelCoefficients plane = mMap.extractFloor(mMap.cloud().makeShared());
-	if (plane.values.size() == 0)
-		return false;
-	mGui->drawPlane(plane, 0,0,1.5);
+	//ModelCoefficients plane = mMap.extractFloor(mMap.cloud().makeShared());
+	//if (plane.values.size() == 0)
+	//	return false;
+	//mGui->drawPlane(plane, 0,0,1.5);
 	PointCloud<PointXYZ>::Ptr cropedCloud = mMap.cloud().makeShared();
-	mMap.cropCloud(cropedCloud, plane);
+	//mMap.cropCloud(cropedCloud, plane);
 
 	vector<PointIndices> mClusterIndices;
 	mClusterIndices = mMap.clusterCloud(cropedCloud);
@@ -567,7 +572,7 @@ bool MainApplication::stepGetCandidates(){
 	//create candidates from indices
 	for (PointIndices indices : mClusterIndices) {
 		ObjectCandidate candidate(indices, cropedCloud);
-		if(mMap.distanceToPlane(candidate.cloud(), plane) < 0.05)
+		/*if(mMap.distanceToPlane(candidate.cloud(), plane) < 0.05)*/
 			newCandidates.push_back(candidate);
 	}
 	ObjectCandidate::matchSequentialCandidates(mCandidates, newCandidates, mConfig["mapParams"]["consecutiveClusterCentroidMatchingThreshold"]);
