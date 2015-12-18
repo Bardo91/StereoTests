@@ -69,6 +69,7 @@ private:
 	BOViL::plot::Graph2d mPositionPlot, mVelocityPlot;
 	std::vector<double> posXekf, posYekf, posZekf, velXekf, velYekf, velZekf;
 	std::vector<double> posXicp, posYicp, posZicp;
+	std::vector<double> posXfore, posYfore, posZfore;
 
 	BOViL::STime *mTimer;
 

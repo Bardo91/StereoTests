@@ -111,6 +111,9 @@ namespace BOViL {
 			case eDrawType::Lines:
 				drawLines(_graph);
 				break;
+			case eDrawType::Circles:
+				drawCircles(_graph);
+				break;
 			default:
 				std::cout << "Graph type not defined" << std::endl;
 				break;
@@ -127,6 +130,17 @@ namespace BOViL {
 				circle(mLastRender, point, 5, _graph.mColor, CV_FILLED);
 			}
 		}
+
+		//---------------------------------------------------------------------------------------------------------------------
+		void Graph2d::drawCircles(const Graph &_graph) {
+			for (unsigned i = 0; i < _graph.mX.size(); i++) {
+				int x = int(cOffsetHorizontal + (_graph.mX[i] > mMinX ? _graph.mX[i] - mMinX : mMinX - _graph.mX[i])/(mMaxX-mMinX)*(mWindowSize.width - cOffsetHorizontal*2));
+				int y = int((mWindowSize.height - cOffsetVertical) - (_graph.mY[i] > mMinY? _graph.mY[i] - mMinY:mMinY - _graph.mY[i])/(mMaxY-mMinY)*(mWindowSize.height - cOffsetVertical*2));
+				Point2i point(x,y);
+				circle(mLastRender, point, 5, _graph.mColor);
+			}
+		}
+
 
 		//---------------------------------------------------------------------------------------------------------------------
 		void Graph2d::drawLines(const Graph & _graph) {
