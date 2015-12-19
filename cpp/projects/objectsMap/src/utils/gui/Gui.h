@@ -38,7 +38,7 @@ public:		// Public interface
 	/// Draw a camera shape on the map.
 	/// \param _pos: Camera position.
 	///	\param _ori: Camera orientation.
-	void drawCamera(const Eigen::Matrix3f &_orientation, const Eigen::Vector4f &_position);
+	void drawCamera(const Eigen::Matrix3f &_orientation, const Eigen::Vector4f &_position, unsigned _r = 255, unsigned _g =255, unsigned _b = 255);
 
 	/// Clear map viewer.
 	void clearMap();

@@ -59,17 +59,17 @@ void Gui::drawLine(const pcl::PointXYZ & _p1, const pcl::PointXYZ & _p2, unsigne
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f & _position) {
+void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f & _position, unsigned _r , unsigned _g , unsigned _b) {
 	// Create a pointcloud vertically oriented in the origin
 	pcl::PointCloud<pcl::PointXYZ> camera;
-	camera.push_back(PointXYZ(0.05, 0.05, 0));
-	camera.push_back(PointXYZ(-0.05, 0.05, 0));
-	camera.push_back(PointXYZ(-0.05, -0.05, 0));
-	camera.push_back(PointXYZ(0.05, -0.05, 0));
-	camera.push_back(PointXYZ(0.1, 0.1, 0.2));
-	camera.push_back(PointXYZ(-0.1, 0.1, 0.2));
-	camera.push_back(PointXYZ(-0.1, -0.1, 0.2));
-	camera.push_back(PointXYZ(0.1, -0.1, 0.2));
+	camera.push_back(PointXYZ(0.07, 0.05, 0));
+	camera.push_back(PointXYZ(-0.07, 0.05, 0));
+	camera.push_back(PointXYZ(-0.07, -0.05, 0));
+	camera.push_back(PointXYZ(0.07, -0.05, 0));
+	camera.push_back(PointXYZ(0.12, 0.1, 0.2));
+	camera.push_back(PointXYZ(-0.12, 0.1, 0.2));
+	camera.push_back(PointXYZ(-0.12, -0.1, 0.2));
+	camera.push_back(PointXYZ(0.12, -0.1, 0.2));
 
 	// Rotate and move camera to the desired position and orientation.
 	Matrix4f transformation = Matrix4f::Zero();
@@ -85,23 +85,30 @@ void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f
 	PointXYZ p1 = cameraRotated[3];
 	for (unsigned i = 0; i < 4; i++) {
 		PointXYZ p2 = cameraRotated[i];
-		drawLine(p1, p2);
+		drawLine(p1,p2, _r, _g, _b);
 		p1 = p2;
 	}
 
 	p1 = cameraRotated[4];
 	for (unsigned i = 4; i < 8; i++) {
 		PointXYZ p2 = cameraRotated[i];
-		drawLine(p1, p2);
+		drawLine(p1, p2, _r, _g, _b);
 		p1 = p2;
 	}
 
 	for (unsigned i = 0; i < 4; i++) {
 		PointXYZ p1 = cameraRotated[i];
 		PointXYZ p2 = cameraRotated[i+4];
-		drawLine(p1, p2);
+		drawLine(p1, p2, _r, _g, _b);
 	}
 
+	// Marker on top
+	ModelCoefficients coef;
+	coef.values.push_back((cameraRotated[0].x + cameraRotated[1].x)/2);
+	coef.values.push_back((cameraRotated[0].y + cameraRotated[1].y)/2);
+	coef.values.push_back((cameraRotated[0].z + cameraRotated[1].z)/2);
+	coef.values.push_back(0.01);
+	m3dViewer->addSphere(coef,"cameraTop", mViewPortMapViewer);
 
 }
 
