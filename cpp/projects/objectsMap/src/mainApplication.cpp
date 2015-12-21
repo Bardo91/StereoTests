@@ -41,7 +41,7 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 	result &= initGui();
 	result &= init3dMap();
 	result &= initRecognitionSystem();
-	result &= initLoadGt();
+	//result &= initLoadGt();
 	result &= initImuAndEkf();
 
 	mTimer = BOViL::STime::get();
@@ -140,7 +140,7 @@ bool MainApplication::step() {
 				Vector4f position;
 				position << pose.translation().block<3, 1>(0, 0), 1;
 
-				if (!stepUpdateMap(cloud, position, Quaternionf(pose.rotation()))) {
+				if (!stepUpdateMap(cloud, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_)) {
 					errorBitList |= (1 << BIT_MAST_ERROR_MAP);
 					std::cout << "-> STEP: Error while updating map" << std::endl;
 				}
@@ -162,7 +162,8 @@ bool MainApplication::step() {
 			pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
 
 			// Update pose
-			mMap.updateSensorPose(pose.matrix().block<4,1>(0,3), Quaternionf(pose.rotation()));
+			//mMap.updateSensorPose(pose.matrix().block<4,1>(0,3), Quaternionf(pose.rotation()));
+			mMap.updateSensorPose(pose.matrix().block<4, 1>(0, 3), mMap.cloud().sensor_orientation_);
 		}
 	}
 
