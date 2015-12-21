@@ -56,6 +56,9 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::step() {
+	mGui->clearMap();
+	mGui->clearPcViewer();
+
 	long errorBitList = 0;	// This variable store in each bit if each step was fine or not.
 
 	// --> Get Imu Data
@@ -101,6 +104,17 @@ bool MainApplication::step() {
 										(Matrix3f::Identity()*(incT*incT / 2))*prevX.block<3, 1>(6, 0);
 		std::cout << "-> STEP: Forecast from previous state is" << std::endl;
 		std::cout << forecastX<<std::endl;
+
+		/**/
+		Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+		Eigen::Translation3f sensorPos(forecastX.block<3,1>(0,0));
+
+		Eigen::Transform<float,3, Affine> pose = sensorPos*q;
+		pose =  mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
+		mGui->drawCamera(pose.rotation(),pose.matrix().block<4,1>(0,3), 0,0,255);
+		mGui->spinOnce();
+		/**/
+
 	}
 	else {
 		errorBitList |= (1<<BIT_MAST_ERROR_FORECAST);
@@ -154,6 +168,7 @@ bool MainApplication::step() {
 
 	// Draw camera pose for display purpose.
 	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
+	mGui->spinOnce();
 
 	// Iterate EKF
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {

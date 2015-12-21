@@ -108,7 +108,7 @@ void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f
 	coef.values.push_back((cameraRotated[0].y + cameraRotated[1].y)/2);
 	coef.values.push_back((cameraRotated[0].z + cameraRotated[1].z)/2);
 	coef.values.push_back(0.01);
-	m3dViewer->addSphere(coef,"cameraTop", mViewPortMapViewer);
+	m3dViewer->addSphere(coef,"cameraTop"+to_string(mPcCounter++), mViewPortMapViewer);
 
 }
 
