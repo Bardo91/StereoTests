@@ -34,7 +34,7 @@ const int BIT_MAST_ERROR_GETCANDIDATES = 6;
 const int BIT_MAST_ERROR_CATEGORIZINGCANDIDATES = 7;
 
 //---------------------------------------------------------------------------------------------------------------------
-MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time"), mPositionPlot("Drone position"), mVelocityPlot("Drone Velocity") {
+MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time"), mPositionPlot("Drone position"), mVelocityPlot("Drone Velocity"), mQuatPlot("Drone and ICP quaternion"), mThresholdPlot("ICP error") {
 	bool result = true;
 	result &= loadArguments(_argc, _argv);
 	result &= initCameras();
@@ -64,19 +64,19 @@ bool MainApplication::step() {
 	// --> Get Imu Data
 	ImuData imuData;
 	if (!stepGetImuData(imuData)) {
-		errorBitList |= (1<<BIT_MAST_ERROR_IMU);
+		errorBitList |= (1 << BIT_MAST_ERROR_IMU);
 		std::cout << "-> STEP: Error getting imu data" << std::endl;
 	}
-	
+
 	// --> Get images and check if they are blurry or not.
 	Mat frame1, frame2;
-	if (!stepGetImages(frame1, frame2)){
-		errorBitList |= (1<<BIT_MAST_ERROR_IMAGES);
+	if (!stepGetImages(frame1, frame2)) {
+		errorBitList |= (1 << BIT_MAST_ERROR_IMAGES);
 		std::cout << "-> STEP: Error getting images data or images are blurry" << std::endl;
 	}
 
 	// --> If system is not set-up yet.
-	if (mIsFirstIter){
+	if (mIsFirstIter) {
 		// If current images are not good.
 		if ((errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
 			std::cout << "-> STEP: Waiting for a good image to set up system references" << std::endl;
@@ -162,8 +162,8 @@ bool MainApplication::step() {
 			pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
 
 			// Update pose
-			//mMap.updateSensorPose(pose.matrix().block<4,1>(0,3), Quaternionf(pose.rotation()));
-			mMap.updateSensorPose(pose.matrix().block<4, 1>(0, 3), mMap.cloud().sensor_orientation_);
+			mMap.updateSensorPose(pose.matrix().block<4,1>(0,3), Quaternionf(pose.rotation()));
+			//mMap.updateSensorPose(pose.matrix().block<4, 1>(0, 3), mMap.cloud().sensor_orientation_);
 		}
 	}
 
@@ -216,6 +216,8 @@ bool MainApplication::step() {
 	posXfore.push_back(forecastX(0,0));
 	posYfore.push_back(forecastX(1,0));
 	posZfore.push_back(forecastX(2,0));
+	threshold.push_back(mMap.fittingScore());
+	mThresholdPlot.draw(threshold, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Lines);
 	mPositionPlot.draw(posXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	mPositionPlot.draw(posYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	mPositionPlot.draw(posZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
