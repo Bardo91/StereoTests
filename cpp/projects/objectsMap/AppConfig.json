@@ -9,9 +9,9 @@
 	},
 	"cameras":
 	{
-		"left":"C:/Users/Pablo RS/Desktop/Cropped sets/set3 - indoor handheld white floor/cam2 (%d).jpg",
-		"right":"C:/Users/Pablo RS/Desktop/Cropped sets/set3 - indoor handheld white floor/cam1 (%d).jpg",
-		"paramFile":"C:/Users/Pablo RS/Desktop/Cropped sets/set3 - indoor handheld white floor/calibH",
+		"left":"C:/Users/Pablo RS/Desktop/2015-12-18/translation_rotation/cm2 (%d).jpg",
+		"right":"C:/Users/Pablo RS/Desktop/2015-12-18/translation_rotation/cm1 (%d).jpg",
+		"paramFile":"C:/programming/StereoTests/calibrations/calibRotationTranslation",
 		"leftRoi":
 		{
 			"x":30,
@@ -26,14 +26,14 @@
 			"width":610,
 			"height":480
 		},
-		"blurThreshold":1.3,
+		"blurThreshold":1.2,
 		"disparityRange":
 		{
 			"min":60,
 			"max":400
 		}, 
 		"templateSquareSize":21,
-		"maxReprojectionError":3,
+		"maxReprojectionError":6,
 		"pointRanges":
 		{
 			"x":{"min":-3, "max":3},
@@ -43,28 +43,33 @@
 	},
 	"mapParams":
 	{
-		"voxelSize":0.035,
-		"outlierMeanK":10,
+		"voxelSize":0.005,
+		"outlierMeanK":15,
 		"outlierStdDev":0.05,
 		"outlierSetNegative":false,
 		"icpMaxTransformationEpsilon":0.00000000000000000001,
 		"icpEuclideanEpsilon":0.00000000000000000001,
 		"icpMaxIcpIterations":1000,
-		"icpMaxCorrespondenceDistance":1.0,
-		"historySize":2,
-		"clusterAffiliationMaxDistance":0.045,
+		"icpMaxCorrespondenceDistance":0.3,
+		"historySize":3,
+		"clusterAffiliationMaxDistance":0.035,
 		"minClusterSize":15,
 		"maxClusterSize":500,
 		"floorDistanceThreshold":0.01,
 		"floorMaxIters": 1000,
 		"consecutiveClusterCentroidMatchingThreshold": 0.05
-		"maxFittingScore":0.005
+		"maxFittingScore":0.001
 	},
 	"recognitionSystem":
 	{
 		"bow":
 		{
 			"modelPath":"sensorCrawlerNeg",
+			"multiscale":
+			{
+				"nScales":3,
+				"scaleFactor":0.75
+			},
 			"histogramMatcher":
 			{
 				"vocabularySize":500,
@@ -89,7 +94,7 @@
 	"ekf":
 	{
 		"source":"file",
-		"path":"C:/Users/Pablo RS/Desktop/Cropped sets/set3 - indoor handheld white floor/imuData_Cropped.txt",
+		"path":"C:/Users/Pablo RS/Desktop/2015-12-18/translation_rotation/imuData_Cropped.txt",
 		"bias":
 		{
 			"ScaleFactor":[0.0,0.0,0.0],
