@@ -33,32 +33,33 @@
 			"max":400
 		}, 
 		"templateSquareSize":21,
-		"maxReprojectionError":6,
+		"maxReprojectionError":4,
 		"pointRanges":
 		{
 			"x":{"min":-3, "max":3},
 			"y":{"min":-3, "max":3},
 			"z":{"min":0.4, "max":1.5}
-		}
+		}, 
+		"maxTemplateScore":0.005
 	},
 	"mapParams":
 	{
 		"voxelSize":0.005,
-		"outlierMeanK":15,
+		"outlierMeanK":10,
 		"outlierStdDev":0.05,
 		"outlierSetNegative":false,
 		"icpMaxTransformationEpsilon":0.00000000000000000001,
 		"icpEuclideanEpsilon":0.00000000000000000001,
 		"icpMaxIcpIterations":1000,
-		"icpMaxCorrespondenceDistance":0.3,
-		"historySize":3,
+		"icpMaxCorrespondenceDistance":0.8,
+		"historySize":1,
 		"clusterAffiliationMaxDistance":0.035,
 		"minClusterSize":15,
 		"maxClusterSize":500,
 		"floorDistanceThreshold":0.01,
 		"floorMaxIters": 1000,
 		"consecutiveClusterCentroidMatchingThreshold": 0.05
-		"maxFittingScore":0.001
+		"maxFittingScore":0.003
 	},
 	"recognitionSystem":
 	{

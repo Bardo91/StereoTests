@@ -519,7 +519,7 @@ bool MainApplication::stepTriangulatePoints(const Mat &_frame1, const Mat &_fram
 	pair<int,int> disparityRange(mConfig["cameras"]["disparityRange"]["min"], mConfig["cameras"]["disparityRange"]["max"]);
 	int squareSize =  mConfig["cameras"]["templateSquareSize"];
 	int maxReprojectionError = mConfig["cameras"]["maxReprojectionError"];
-	_points3d = mCameras->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);	
+	_points3d = mCameras->pointCloud(_frame1, _frame2, disparityRange, squareSize,mConfig["cameras"]["maxTemplateScore"], maxReprojectionError);	
 
 	return _points3d->size() != 0? true:false;
 }
