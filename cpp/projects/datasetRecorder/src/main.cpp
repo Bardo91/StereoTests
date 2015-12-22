@@ -10,11 +10,12 @@
 #include <implementations/sensors/MavrosSensor.h>
 #include <opencv2/opencv.hpp>
 
-
+#include <condition_variable>
 #include <fstream>
 #include <thread> 
 #include <mutex>
 #include <string>
+#include <atomic>
 
 //---------------------------------------------------------------------------------------------------------------------
 #ifdef _WIN32
@@ -107,7 +108,8 @@ int main(int _argc, char ** _argv) {
 					imuData.mAngularAcc[0] << ", " <<
 					imuData.mAngularAcc[1] << ", " <<
 					imuData.mAngularAcc[2] << std::endl;
-			timer->mDelay(1);
+			//timer->mDelay(1);
+			file.flush();
 		}
 	});
 
@@ -115,17 +117,44 @@ int main(int _argc, char ** _argv) {
 	cv::Mat sFrame1, sFrame2;
 	// Start a thread for capturing images
 	std::thread frameThread([&]() {
+		std::condition_variable captureTrigger;
+		std::mutex				captureMutex;
+		std::atomic<int>		nCaptures = 0;
+
+		auto captureCallback = [&](cv::VideoCapture &_camera, cv::Mat &_frame) {
+			std::unique_lock<std::mutex> locker(captureMutex);
+			
+			while (running) {
+				captureTrigger.wait(locker);
+				_camera >> _frame;
+				nCaptures++;
+			}
+		};
+		
+		
 		cv::VideoCapture cam1(0);
 		cv::VideoCapture cam2(1);
 		BOViL::STime *timer = BOViL::STime::get();
 		cv::Mat frame1, frame2;	
 		
 		std::ofstream timeSpan(folderName+"timespan.txt");
+		
+		std::thread capture1(captureCallback,cam1, frame1);
+		std::thread capture2(captureCallback,cam2, frame2);
+		
+		timer->delay(1);
+		std::cout << "Cameras are ready!" << std::endl;
+
 		int index = 0;
 		while (running) {
+			captureTrigger.notify_all();
 			double t = timer->getTime();
-			cam1 >> frame1;
-			cam2 >> frame2;
+
+			timer->mDelay(5);
+			while (nCaptures < 2) {
+				timer->mDelay(1);
+			}
+			nCaptures = 0; 
 
 			if (display) {
 				displayMutex.lock();
