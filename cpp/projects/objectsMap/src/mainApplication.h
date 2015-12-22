@@ -66,11 +66,11 @@ private:
 
 	BOViL::plot::Graph2d mTimePlot;
 	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates, tCathegorize;
-	BOViL::plot::Graph2d mPositionPlot, mVelocityPlot, mThresholdPlot, mQuatPlot;
+	BOViL::plot::Graph2d mPositionPlot, mVelocityPlot, mThresholdPlot;
 	std::vector<double> posXekf, posYekf, posZekf, velXekf, velYekf, velZekf;
 	std::vector<double> posXicp, posYicp, posZicp;
 	std::vector<double> posXfore, posYfore, posZfore;
-	std::vector<double> threshold, quatX, quatY, quatZ, quatW, icpX, icpY, icpZ, icpW;
+	std::vector<double> threshold;
 
 	BOViL::STime *mTimer;
 

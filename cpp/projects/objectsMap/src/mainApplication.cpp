@@ -34,7 +34,7 @@ const int BIT_MAST_ERROR_GETCANDIDATES = 6;
 const int BIT_MAST_ERROR_CATEGORIZINGCANDIDATES = 7;
 
 //---------------------------------------------------------------------------------------------------------------------
-MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time"), mPositionPlot("Drone position"), mVelocityPlot("Drone Velocity"), mQuatPlot("Drone and ICP quaternion"), mThresholdPlot("ICP error") {
+MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time"), mPositionPlot("Drone position"), mVelocityPlot("Drone Velocity"), mThresholdPlot("ICP error") {
 	bool result = true;
 	result &= loadArguments(_argc, _argv);
 	result &= initCameras();
@@ -162,6 +162,11 @@ bool MainApplication::step() {
 			pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
 
 			// Update pose
+			if (mMap.useICPresult()) {
+				mMap.useICPresult(false);
+				mMap.updateSensorPose(mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_);
+			}
+			else
 			mMap.updateSensorPose(pose.matrix().block<4,1>(0,3), Quaternionf(pose.rotation()));
 			//mMap.updateSensorPose(pose.matrix().block<4, 1>(0, 3), mMap.cloud().sensor_orientation_);
 		}
@@ -203,6 +208,7 @@ bool MainApplication::step() {
 	auto xIcp = (mInitialRot*mCam2Imu.inverse()*
 				(Translation3f(mMap.cloud().sensor_origin_.block<3,1>(0,0))*mMap.cloud().sensor_orientation_)
 				*mCam2Imu).translation();
+
 
 	posXekf.push_back(xEkf(0,0));
 	posYekf.push_back(xEkf(1,0));
