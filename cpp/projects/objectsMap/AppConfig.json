@@ -5,13 +5,13 @@
 	},
 	"groundTruth":
 	{
-		"path":"C:/programming/CalibrationD/CalibrationD/SensorsCrawler_WhiteFloor_1/gt.txt"
+		"path":"C:/Users/GRVC/Desktop/train3d/gtCategories.txt"
 	},
 	"cameras":
 	{
-		"left":"C:/Users/Pablo RS/Desktop/2015-12-18/translation_rotation/cm2 (%d).jpg",
-		"right":"C:/Users/Pablo RS/Desktop/2015-12-18/translation_rotation/cm1 (%d).jpg",
-		"paramFile":"C:/programming/StereoTests/calibrations/calibRotationTranslation",
+		"left":"C:/Users/GRVC/Desktop/2015-12-18/translation_rotation/cam2 (%d).jpg",
+		"right":"C:/Users/GRVC/Desktop/2015-12-18/translation_rotation/cam1 (%d).jpg",
+		"paramFile":"C:/Cprograms/grvc/Code git repo/StereoTests/calibrations/calibRotationTranslation",
 		"leftRoi":
 		{
 			"x":30,
@@ -51,15 +51,15 @@
 		"icpMaxTransformationEpsilon":0.00000000000000000001,
 		"icpEuclideanEpsilon":0.00000000000000000001,
 		"icpMaxIcpIterations":1000,
-		"icpMaxCorrespondenceDistance":0.8,
-		"historySize":1,
+		"icpMaxCorrespondenceDistance":0.05,
+		"historySize":2,
 		"clusterAffiliationMaxDistance":0.035,
 		"minClusterSize":15,
 		"maxClusterSize":500,
 		"floorDistanceThreshold":0.01,
 		"floorMaxIters": 1000,
-		"consecutiveClusterCentroidMatchingThreshold": 0.05
-		"maxFittingScore":0.003
+		"consecutiveClusterCentroidMatchingThreshold": 0.05,
+		"maxFittingScore":0.001
 	},
 	"recognitionSystem":
 	{
@@ -95,7 +95,7 @@
 	"ekf":
 	{
 		"source":"file",
-		"path":"C:/Users/Pablo RS/Desktop/2015-12-18/translation_rotation/imuData_Cropped.txt",
+		"path":"C:/Users/GRVC/Desktop/2015-12-18/translation_rotation/imuData_Cropped.txt",
 		"bias":
 		{
 			"ScaleFactor":[0.0,0.0,0.0],
@@ -129,6 +129,6 @@
 			}
 			
 		},
-		"nSamplesForOffSet":200
+		"nSamplesForOffSet":320
 	}
 }
