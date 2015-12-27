@@ -229,16 +229,8 @@ Rect bound(vector<Point2f> _points2d) {
 
 //---------------------------------------------------------------------------------------------------------------------
 void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const Mat &_frame1, const Mat &_frame2, Mat &_viewLeft, Mat &_viewRight){
-	vector<Point2f> pointsLeft = _cameras->project3dPoints(_cloud, true, { 0,0,0,1 }, {0,0,1,0});
-	Eigen::Matrix<float,4,1>					translation;
-	Eigen::Matrix<float,3,3, Eigen::RowMajor>	rotation;
-	
-	Mat R = _cameras->rotation(), T = _cameras->translation();
-	memcpy(rotation.data(),		R.data,	sizeof(float)*9);
-	memcpy(translation.data(),	T.data,	sizeof(float)*3);
-	translation(3,0) = 1;
-
-	vector<Point2f> pointsRight  = _cameras->project3dPoints(_cloud, false, translation, Eigen::Quaternionf(rotation));
+	vector<Point2f> pointsLeft = _cameras->project3dPoints(_cloud, true, { 0,0,0,1 }, Eigen::Quaternionf(Eigen::AngleAxisf(0, Eigen::Vector3f::UnitZ())));
+	vector<Point2f> pointsRight  = _cameras->project3dPoints(_cloud, false, { 0,0,0,1 }, Eigen::Quaternionf(Eigen::AngleAxisf(0, Eigen::Vector3f::UnitZ())));
 	
 	Mat display;
 	hconcat(_frame1, _frame2, display);
@@ -251,9 +243,10 @@ void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const 
 	Rect r1 = bound(pointsLeft);
 	Rect r2 = bound(pointsRight);
 	
+	Rect validRoi(0,0,_frame1.cols, _frame1.rows);
 
-	_viewLeft = _frame1(r1);
-	_viewRight = _frame2(r2);
+	_viewLeft = _frame1(r1&validRoi);
+	_viewRight = _frame2(r2&validRoi);
 
 	rectangle(display, r1, Scalar(0,0,255));
 	r2.x +=_frame1.cols;

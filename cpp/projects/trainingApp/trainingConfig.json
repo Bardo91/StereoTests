@@ -157,7 +157,7 @@
 			"histogramMatcher":
 			{
 				"vocabularySize":500,
-				"descriptor":"HOG",
+				"descriptor":"SIFT",
 				"HOG":
 				{
 					"blockSize":16,
