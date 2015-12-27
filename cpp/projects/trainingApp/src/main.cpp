@@ -200,8 +200,9 @@ void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Mat &
 	pair<int, int> disparityRange(_config["cameras"]["disparityRange"]["min"], _config["cameras"]["disparityRange"]["max"]);
 	int squareSize = _config["cameras"]["templateSquareSize"];
 	int maxReprojectionError = _config["cameras"]["maxReprojectionError"];
+	int maxTemplateScore = _config["cameras"]["maxTemplateScore"];
 	pcl::PointCloud<pcl::PointXYZ> cloud;
-	cloud = *_cameras->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);
+	cloud = *_cameras->pointCloud(_frame1, _frame2, disparityRange, squareSize,maxTemplateScore, maxReprojectionError);
 	cloud = filter(cloud, _config);
 	_cloud.clear();
 	for (pcl::PointXYZ point : cloud) {
@@ -228,8 +229,16 @@ Rect bound(vector<Point2f> _points2d) {
 
 //---------------------------------------------------------------------------------------------------------------------
 void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const Mat &_frame1, const Mat &_frame2, Mat &_viewLeft, Mat &_viewRight){
-	vector<Point2f> pointsLeft  = _cameras->project3dPointsWCS(_cloud, true);
-	vector<Point2f> pointsRight  = _cameras->project3dPointsWCS(_cloud, false);
+	vector<Point2f> pointsLeft = _cameras->project3dPoints(_cloud, true, { 0,0,0,1 }, {0,0,1,0});
+	Eigen::Matrix<float,4,1>					translation;
+	Eigen::Matrix<float,3,3, Eigen::RowMajor>	rotation;
+	
+	Mat R = _cameras->rotation(), T = _cameras->translation();
+	memcpy(rotation.data(),		R.data,	sizeof(float)*9);
+	memcpy(translation.data(),	T.data,	sizeof(float)*3);
+	translation(3,0) = 1;
+
+	vector<Point2f> pointsRight  = _cameras->project3dPoints(_cloud, false, translation, Eigen::Quaternionf(rotation));
 	
 	Mat display;
 	hconcat(_frame1, _frame2, display);
