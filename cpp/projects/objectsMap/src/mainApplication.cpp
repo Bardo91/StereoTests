@@ -467,8 +467,13 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 	// -----------------------
 	// BG substraction
 	Mat f1hsv, f2hsv;
-	cv::cvtColor(_frame1, f1hsv, CV_BGR2HSV);
-	cv::cvtColor(_frame2, f2hsv, CV_BGR2HSV);
+
+	Mat mask1, mask2;
+	blur(_frame1, mask1, Size(5, 5));
+	blur(_frame2, mask2, Size(5, 5));
+
+	cv::cvtColor(mask1, f1hsv, CV_BGR2HSV);
+	cv::cvtColor(mask2, f2hsv, CV_BGR2HSV);
 	std::vector<BOViL::ImageObject> objects1, objects2;
 	//BOViL::ColorClusterSpace *ccs = BOViL::CreateHSVCS_8c(255, 255, 255);
 	BOViL::ColorClusterSpace ccs = BOViL::createSingleClusteredSpace(0,180,0,20,50,110,180,255,255,36);
@@ -477,33 +482,14 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 	Mat f1, f2;
 	cv::cvtColor(f1hsv, f1, CV_HSV2BGR);
 	cv::cvtColor(f2hsv, f2, CV_HSV2BGR);
-	/*for (BOViL::ImageObject obj : objects1){
-		Rect bb(obj.centroid().x - obj.width() / 2,
-			obj.centroid().y - obj.height() / 2,
-			obj.centroid().x - obj.width() / 2,
-			obj.centroid().y - obj.height() / 2);
-		rectangle(f1, bb, Scalar(0, 0, 255, 2));
-	}
-	for (BOViL::ImageObject obj : objects2) {
-		Rect bb(obj.centroid().x - obj.width() / 2,
-			obj.centroid().y - obj.height() / 2,
-			obj.centroid().x - obj.width() / 2,
-			obj.centroid().y - obj.height() / 2);
-		rectangle(f2, bb, Scalar(0, 0, 255, 2));
-	}*/
 
-	//cvtColor(f1, f1, CV_BGR2GRAY);
-	//cvtColor(f2, f2, CV_BGR2GRAY);
 	cv::threshold(f1, f1, 50, 255, 1);
 	cv::threshold(f2, f2, 50, 255, 1);
 
-	Mat resseg;
-	hconcat(f1, f2, resseg);
-	imshow("segnmentated", resseg);
+	//Mat resseg;
+	//hconcat(f1, f2, resseg);
+	//imshow("segnmentated", resseg);
 	// -----------------------
-	bitwise_and(_frame1, f1, _frame1);
-	bitwise_and(_frame2, f2, _frame2);
-
 
 	if (_frame1.rows != 0) {
 		cvtColor(_frame1, gray1, CV_BGR2GRAY);
@@ -534,6 +520,9 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 		
 		return false;
 	} else {
+		bitwise_and(_frame1, f1, _frame1);
+		bitwise_and(_frame2, f2, _frame2);
+
 		_frame1 = mCameras->camera(0).undistort(_frame1);
 		_frame2 = mCameras->camera(1).undistort(_frame2);
 
