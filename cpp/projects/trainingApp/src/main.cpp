@@ -201,7 +201,7 @@ void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Mat &
 	pair<int, int> disparityRange(_config["cameras"]["disparityRange"]["min"], _config["cameras"]["disparityRange"]["max"]);
 	int squareSize = _config["cameras"]["templateSquareSize"];
 	int maxReprojectionError = _config["cameras"]["maxReprojectionError"];
-	int maxTemplateScore = _config["cameras"]["maxTemplateScore"];
+	double maxTemplateScore = _config["cameras"]["maxTemplateScore"];
 	pcl::PointCloud<pcl::PointXYZ> cloud;
 	cloud = *_cameras->pointCloud(_frame1, _frame2, disparityRange, squareSize,maxTemplateScore, maxReprojectionError);
 	cloud = filter(cloud, _config);
@@ -257,6 +257,9 @@ void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const 
 }
 
 pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inputCloud, Json &_config) {
+	if (_inputCloud.size() < int(_config["mapParams"]["outlierMeanK"])) {
+		return _inputCloud;
+	}
 	pcl::PointCloud<pcl::PointXYZ> filteredCloud;
 	pcl::StatisticalOutlierRemoval<pcl::PointXYZ>		outlierRemoval;
 	outlierRemoval.setMeanK(_config["mapParams"]["outlierMeanK"]);
@@ -274,9 +277,13 @@ void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &
 	int index = 0;
 	for (;;) {
 		vector<Point3f> cloud;
+		std::cout << "Image nº " << index << std::endl;
 		calculatePointCloud(_cameras, cloud, frame1, frame2, _config);
+
 		if (cloud.size() == 0)
 			break;
+		if(cloud.size() < int(_config["mapParams"]["outlierMeanK"]))
+			continue;
 
 		getSubImages(_cameras, cloud, frame1, frame2, vLeft, vRight);
 
