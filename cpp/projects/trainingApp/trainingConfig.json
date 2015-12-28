@@ -166,6 +166,11 @@
 				}
 				"matcher":"FlannBased"
 			},
+			"multiscale":
+			{
+				"scaleFactor":0.75,
+				"nScales":3
+			},
 			"svm":
 			{
 				"autoTrain":true,

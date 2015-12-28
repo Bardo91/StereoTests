@@ -84,8 +84,10 @@ int main(int _argc, char ** _argv) {
 		}
 
 		vector<double> groundTruth = loadGroundTruth(config["gtFile"]);
-		
-		bow.train(images, groundTruth);
+		vector<double> groundTruthStereo = groundTruth;
+		groundTruthStereo.insert(groundTruthStereo.end(), groundTruth.begin(), groundTruth.end());
+
+		bow.train(images, groundTruthStereo);
 		bow.save(config["recognitionSystem"]["bow"]["modelPath"]);
 	}
 	else {
@@ -147,7 +149,6 @@ vector<double> loadGroundTruth(string _path) {
 		int gtVal;
 		gtFile >> gtVal;
 		groundTruth.push_back(gtVal);
-		groundTruth.push_back(gtVal);	// load twice, pair of images.
 	}
 	return groundTruth;
 }
@@ -278,6 +279,12 @@ void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &
 			break;
 
 		getSubImages(_cameras, cloud, frame1, frame2, vLeft, vRight);
+
+		// Ensuring minimal size on training images.
+		int minSize = 30;
+		if(vLeft.rows < minSize && vLeft.cols < minSize && vRight.cols < minSize && vRight.rows < minSize)
+			continue;
+
 		_images.push_back(vLeft);
 		_images.push_back(vRight);
 
