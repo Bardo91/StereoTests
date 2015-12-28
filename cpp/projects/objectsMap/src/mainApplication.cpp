@@ -16,6 +16,8 @@
 
 #include <implementations/sensors/ImuSimulatorSensor.h>
 #include <implementations/sensors/MavrosSensor.h>
+#include <algorithms/segmentation/color_clustering/ColorClustering.h>
+#include <algorithms/segmentation/color_clustering/types/ccsCreation.h>
 
 using namespace cjson;
 using namespace cv;
@@ -461,13 +463,54 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 	bool isBlurry1, isBlurry2;
 	cout << "Blurriness: ";
 	_frame1 = mCameras->camera(0).frame();
+	_frame2 = mCameras->camera(1).frame();
+	// -----------------------
+	// BG substraction
+	Mat f1hsv, f2hsv;
+	cv::cvtColor(_frame1, f1hsv, CV_BGR2HSV);
+	cv::cvtColor(_frame2, f2hsv, CV_BGR2HSV);
+	std::vector<BOViL::ImageObject> objects1, objects2;
+	//BOViL::ColorClusterSpace *ccs = BOViL::CreateHSVCS_8c(255, 255, 255);
+	BOViL::ColorClusterSpace ccs = BOViL::createSingleClusteredSpace(0,180,0,20,50,110,180,255,255,36);
+	BOViL::algorithms::ColorClustering<unsigned char>(f1hsv.data, f1hsv.cols, f1hsv.rows, 10, objects1, ccs);
+	BOViL::algorithms::ColorClustering<unsigned char>(f2hsv.data, f2hsv.cols, f2hsv.rows, 10, objects2, ccs);
+	Mat f1, f2;
+	cv::cvtColor(f1hsv, f1, CV_HSV2BGR);
+	cv::cvtColor(f2hsv, f2, CV_HSV2BGR);
+	/*for (BOViL::ImageObject obj : objects1){
+		Rect bb(obj.centroid().x - obj.width() / 2,
+			obj.centroid().y - obj.height() / 2,
+			obj.centroid().x - obj.width() / 2,
+			obj.centroid().y - obj.height() / 2);
+		rectangle(f1, bb, Scalar(0, 0, 255, 2));
+	}
+	for (BOViL::ImageObject obj : objects2) {
+		Rect bb(obj.centroid().x - obj.width() / 2,
+			obj.centroid().y - obj.height() / 2,
+			obj.centroid().x - obj.width() / 2,
+			obj.centroid().y - obj.height() / 2);
+		rectangle(f2, bb, Scalar(0, 0, 255, 2));
+	}*/
+
+	//cvtColor(f1, f1, CV_BGR2GRAY);
+	//cvtColor(f2, f2, CV_BGR2GRAY);
+	cv::threshold(f1, f1, 50, 255, 1);
+	cv::threshold(f2, f2, 50, 255, 1);
+
+	Mat resseg;
+	hconcat(f1, f2, resseg);
+	imshow("segnmentated", resseg);
+	// -----------------------
+	bitwise_and(_frame1, f1, _frame1);
+	bitwise_and(_frame2, f2, _frame2);
+
+
 	if (_frame1.rows != 0) {
 		cvtColor(_frame1, gray1, CV_BGR2GRAY);
 		isBlurry1 = isBlurry(gray1, mConfig["cameras"]["blurThreshold"]);
 	}
 	else { return false; }
 
-	_frame2 = mCameras->camera(1).frame();
 	if (_frame2.rows != 0) {
 		cvtColor(_frame2, gray2, CV_BGR2GRAY);
 		isBlurry2 = isBlurry(gray2, mConfig["cameras"]["blurThreshold"]);
