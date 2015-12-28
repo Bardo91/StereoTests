@@ -489,6 +489,11 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 	//Mat resseg;
 	//hconcat(f1, f2, resseg);
 	//imshow("segnmentated", resseg);
+	Mat element = getStructuringElement(MORPH_ELLIPSE, Size(2 * 5 + 1, 2 * 5 + 1), Point(5, 5));
+	dilate(f1, f1, element);
+	dilate(f2, f2, element);
+	//hconcat(f1, f2, resseg);
+	//imshow("segnmentated2", resseg);
 	// -----------------------
 
 	if (_frame1.rows != 0) {
