@@ -18,6 +18,14 @@
 #include <implementations/sensors/ImuSimulatorSensor.h>
 #include <implementations/sensors/MavrosSensor.h>
 
+#include <pcl/ModelCoefficients.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+
+
 using namespace cjson;
 using namespace cv;
 using namespace pcl;
@@ -195,16 +203,36 @@ bool MainApplication::step() {
 	}
 
 
-	if (!stepGetCandidates()) {
-		errorBitList |= (1<<BIT_MAST_ERROR_GETCANDIDATES);
-		std::cout << "-> STEP: Error getting candidates" << std::endl;
-	}
+	//	Check if need to learn or relearn floor
+	if (mLearnFloor) {
+		Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+		Eigen::Translation3f sensorPos(forecastX.block<3, 1>(0, 0));
 
-	if (!stepCathegorizeCandidates(mCandidates, frame1, frame2)) {
-		errorBitList |= (1<<BIT_MAST_ERROR_CATEGORIZINGCANDIDATES);
-		std::cout << "-> STEP: Error cathegorizing candidates" << std::endl;
+		// Transform from north CS to camera's CS
+		Eigen::Transform<float, 3, Affine> pose = sensorPos*q;
+		pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
+		pcl::ModelCoefficients::Ptr planeCoeff(new pcl::ModelCoefficients);
+		if (learnFloor(Quaternionf(pose.rotation()), planeCoeff, double(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])*M_PI/180.0)) {
+			mLearnFloor = false;
+			mIsFirstIter = true;
+			std::cout << "-> STEP: Learned floor pattern" << std::endl;
+		}
+		else {
+			std::cout << "-> STEP: Failed to Learn floor pattern" << std::endl;
+		}
 	}
+	else {
 
+		if (!stepGetCandidates()) {
+			errorBitList |= (1 << BIT_MAST_ERROR_GETCANDIDATES);
+			std::cout << "-> STEP: Error getting candidates" << std::endl;
+		}
+
+		if (!stepCathegorizeCandidates(mCandidates, frame1, frame2)) {
+			errorBitList |= (1 << BIT_MAST_ERROR_CATEGORIZINGCANDIDATES);
+			std::cout << "-> STEP: Error cathegorizing candidates" << std::endl;
+		}
+	}
 
 	// <----------->
 	// Store and plot positions data 666 debug
@@ -460,6 +488,51 @@ bool MainApplication::initLoadGt() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::learnFloor(const Eigen::Quaternionf &_droneOri, pcl::ModelCoefficients::Ptr &_planeCoeff, const double &_maxAngle) {
+	auto cloud = mMap.cloud().makeShared();
+	// Try to fit plane
+	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+	// Create the segmentation object
+	pcl::SACSegmentation<pcl::PointXYZ> seg;
+	// Optional
+	seg.setOptimizeCoefficients(true);
+	// Mandatory
+	seg.setModelType(pcl::SACMODEL_PLANE);
+	seg.setMethodType(pcl::SAC_RANSAC);
+	seg.setDistanceThreshold(0.01);
+
+	seg.setInputCloud(cloud);
+	seg.segment(*inliers, *_planeCoeff);
+	
+	if (inliers->indices.size() == 0) {
+		PCL_ERROR("Could not estimate a planar model for the given dataset.");
+		return false;
+	}
+	
+	std::cerr << "Model coefficients: " << _planeCoeff->values[0] << " "
+		<< _planeCoeff->values[1] << " "
+		<< _planeCoeff->values[2] << " "
+		<< _planeCoeff->values[3] << std::endl;
+
+	std::cerr << "Model inliers: " << inliers->indices.size() << std::endl;
+	for (size_t i = 0; i < inliers->indices.size(); ++i)
+		std::cerr << inliers->indices[i] << "    " << cloud->points[inliers->indices[i]].x << " "
+		<< cloud->points[inliers->indices[i]].y << " "
+		<< cloud->points[inliers->indices[i]].z << std::endl;
+
+	mGui->drawPlane(*_planeCoeff);
+	Quaternionf planeOri = Quaternionf().setFromTwoVectors(Vector3f::UnitZ(), Vector3f(_planeCoeff->values[0], _planeCoeff->values[1], _planeCoeff->values[2]));
+
+	float angle = planeOri.dot(_droneOri);
+	if (angle < _maxAngle) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 	Mat gray1, gray2;
 	bool isBlurry1, isBlurry2;
@@ -495,9 +568,10 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 		
 		return false;
 	} else {
-		mFloorSubstractor->substract(_frame1, _frame1);
-		mFloorSubstractor->substract(_frame2, _frame2);
-		
+		if (mFloorSubstractor->isTrained()) {
+			mFloorSubstractor->substract(_frame1, _frame1);
+			mFloorSubstractor->substract(_frame2, _frame2);
+		}
 		cvtColor(_frame1, gray1, CV_BGR2GRAY);
 		cvtColor(_frame2, gray2, CV_BGR2GRAY);
 

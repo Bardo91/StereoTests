@@ -41,6 +41,8 @@ private:
 	Eigen::Vector3f calculateGravityOffset	();
 	bool initLoadGt							();	// 666 Debug.
 
+	bool learnFloor(const Eigen::Quaternionf &_droneOri, pcl::ModelCoefficients::Ptr &_planeCoeff, const double &_maxAngle);
+
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
 	bool stepGetImuData(ImuData &_imuData);
 	bool stepTriangulatePoints(const cv::Mat &_frame1, const cv::Mat &_frame2, pcl::PointCloud<pcl::PointXYZ>::Ptr &_points3d);
@@ -52,8 +54,10 @@ private:
 
 	bool stepCheckGroundTruth();	// 666 Debug.
 private:
-	StereoCameras		*mCameras;
 	FloorSubstractor	*mFloorSubstractor;
+	bool				mLearnFloor = true;
+
+	StereoCameras		*mCameras;
 	EnvironmentMap		mMap;
 	Gui					*mGui;
 	RecognitionSystem	*mRecognitionSystem;
