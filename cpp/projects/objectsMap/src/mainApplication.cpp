@@ -13,11 +13,10 @@
 #include <iostream>
 
 #include <StereoLib/ImageFilteringTools.h>
+#include <StereoLib/FloorSubstractorCCS.h>
 
 #include <implementations/sensors/ImuSimulatorSensor.h>
 #include <implementations/sensors/MavrosSensor.h>
-#include <algorithms/segmentation/color_clustering/ColorClustering.h>
-#include <algorithms/segmentation/color_clustering/types/ccsCreation.h>
 
 using namespace cjson;
 using namespace cv;
@@ -46,6 +45,9 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 	//result &= initLoadGt();
 	result &= initImuAndEkf();
 
+	/**/
+	mFloorSubstractor = new FloorSubstractorCCS();
+	/**/
 	mTimer = BOViL::STime::get();
 
 	if (result) {
@@ -464,46 +466,14 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 	cout << "Blurriness: ";
 	_frame1 = mCameras->camera(0).frame();
 	_frame2 = mCameras->camera(1).frame();
-	// -----------------------
-	// BG substraction
-	Mat f1hsv, f2hsv;
-
-	Mat mask1, mask2;
-	blur(_frame1, mask1, Size(5, 5));
-	blur(_frame2, mask2, Size(5, 5));
-
-	cv::cvtColor(mask1, f1hsv, CV_BGR2HSV);
-	cv::cvtColor(mask2, f2hsv, CV_BGR2HSV);
-	std::vector<BOViL::ImageObject> objects1, objects2;
-	//BOViL::ColorClusterSpace *ccs = BOViL::CreateHSVCS_8c(255, 255, 255);
-	BOViL::ColorClusterSpace ccs = BOViL::createSingleClusteredSpace(0,180,0,20,50,110,180,255,255,36);
-	BOViL::algorithms::ColorClustering<unsigned char>(f1hsv.data, f1hsv.cols, f1hsv.rows, 10, objects1, ccs);
-	BOViL::algorithms::ColorClustering<unsigned char>(f2hsv.data, f2hsv.cols, f2hsv.rows, 10, objects2, ccs);
-	Mat f1, f2;
-	cv::cvtColor(f1hsv, f1, CV_HSV2BGR);
-	cv::cvtColor(f2hsv, f2, CV_HSV2BGR);
-
-	cv::threshold(f1, f1, 50, 255, 1);
-	cv::threshold(f2, f2, 50, 255, 1);
-
-	//Mat resseg;
-	//hconcat(f1, f2, resseg);
-	//imshow("segnmentated", resseg);
-	Mat element = getStructuringElement(MORPH_ELLIPSE, Size(2 * 5 + 1, 2 * 5 + 1), Point(5, 5));
-	dilate(f1, f1, element);
-	dilate(f2, f2, element);
-	//hconcat(f1, f2, resseg);
-	//imshow("segnmentated2", resseg);
-	// -----------------------
+	
 
 	if (_frame1.rows != 0) {
-		cvtColor(_frame1, gray1, CV_BGR2GRAY);
 		isBlurry1 = isBlurry(gray1, mConfig["cameras"]["blurThreshold"]);
 	}
 	else { return false; }
 
 	if (_frame2.rows != 0) {
-		cvtColor(_frame2, gray2, CV_BGR2GRAY);
 		isBlurry2 = isBlurry(gray2, mConfig["cameras"]["blurThreshold"]);
 	}
 	else { return false; }
@@ -525,8 +495,11 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 		
 		return false;
 	} else {
-		bitwise_and(_frame1, f1, _frame1);
-		bitwise_and(_frame2, f2, _frame2);
+		mFloorSubstractor->substract(_frame1, _frame1);
+		mFloorSubstractor->substract(_frame2, _frame2);
+		
+		cvtColor(_frame1, gray1, CV_BGR2GRAY);
+		cvtColor(_frame2, gray2, CV_BGR2GRAY);
 
 		_frame1 = mCameras->camera(0).undistort(_frame1);
 		_frame2 = mCameras->camera(1).undistort(_frame2);

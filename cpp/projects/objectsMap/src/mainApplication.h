@@ -16,6 +16,7 @@
 #include <StereoLib/ml/RecognitionSystem.h>
 #include <StereoLib/StereoCameras.h>
 #include <StereoLib/EkfImuIcp.h>
+#include <StereoLib/FloorSubstractor.h>
 
 #include <implementations/sensors/ImuSensor.h>
 
@@ -23,6 +24,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <opencv2/opencv.hpp>
+
 
 class MainApplication {
 public:
@@ -51,6 +53,7 @@ private:
 	bool stepCheckGroundTruth();	// 666 Debug.
 private:
 	StereoCameras		*mCameras;
+	FloorSubstractor	*mFloorSubstractor;
 	EnvironmentMap		mMap;
 	Gui					*mGui;
 	RecognitionSystem	*mRecognitionSystem;
