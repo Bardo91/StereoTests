@@ -206,13 +206,10 @@ bool MainApplication::step() {
 	//	Check if need to learn or relearn floor
 	if (mLearnFloor) {
 		Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
-		Eigen::Translation3f sensorPos(forecastX.block<3, 1>(0, 0));
+		q = Quaternionf((mCam2Imu.inverse()*q).rotation());
 
-		// Transform from north CS to camera's CS
-		Eigen::Transform<float, 3, Affine> pose = sensorPos*q;
-		pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
 		pcl::ModelCoefficients::Ptr planeCoeff(new pcl::ModelCoefficients);
-		if (learnFloor(Quaternionf(pose.rotation()), planeCoeff, double(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])*M_PI/180.0)) {
+		if (learnFloor(q, planeCoeff, double(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])*M_PI/180.0)) {
 			mLearnFloor = false;
 			mIsFirstIter = true;
 			std::cout << "-> STEP: Learned floor pattern" << std::endl;
@@ -509,7 +506,7 @@ bool MainApplication::learnFloor(const Eigen::Quaternionf &_droneOri, pcl::Model
 		return false;
 	}
 	
-	std::cerr << "Model coefficients: " << _planeCoeff->values[0] << " "
+	/*std::cerr << "Model coefficients: " << _planeCoeff->values[0] << " "
 		<< _planeCoeff->values[1] << " "
 		<< _planeCoeff->values[2] << " "
 		<< _planeCoeff->values[3] << std::endl;
@@ -519,9 +516,14 @@ bool MainApplication::learnFloor(const Eigen::Quaternionf &_droneOri, pcl::Model
 		std::cerr << inliers->indices[i] << "    " << cloud->points[inliers->indices[i]].x << " "
 		<< cloud->points[inliers->indices[i]].y << " "
 		<< cloud->points[inliers->indices[i]].z << std::endl;
-
+		*/
 	mGui->drawPlane(*_planeCoeff);
 	Quaternionf planeOri = Quaternionf().setFromTwoVectors(Vector3f::UnitZ(), Vector3f(_planeCoeff->values[0], _planeCoeff->values[1], _planeCoeff->values[2]));
+
+	/*DEBUG VECTOR*/
+	std::cout << (_droneOri*Vector3f::UnitZ()).transpose() << std::endl;
+	std::cout << (Vector3f(_planeCoeff->values[0], _planeCoeff->values[1], _planeCoeff->values[2])).transpose() << std::endl;
+	/**/
 
 	float angle = planeOri.dot(_droneOri);
 	if (angle < _maxAngle) {
