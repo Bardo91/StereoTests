@@ -202,6 +202,16 @@ bool MainApplication::step() {
 		std::cout << "-> STEP: Cannot perform EKF" << std::endl;
 	}
 
+	if (!stepGetCandidates()) {
+		errorBitList |= (1 << BIT_MAST_ERROR_GETCANDIDATES);
+		std::cout << "-> STEP: Error getting candidates" << std::endl;
+	}
+
+	if (!stepCathegorizeCandidates(mCandidates, frame1, frame2)) {
+		errorBitList |= (1 << BIT_MAST_ERROR_CATEGORIZINGCANDIDATES);
+		std::cout << "-> STEP: Error cathegorizing candidates" << std::endl;
+	}
+
 
 	//	Check if need to learn or relearn floor
 	if (mLearnFloor) {
@@ -210,25 +220,15 @@ bool MainApplication::step() {
 		Vector4f verticalCCS = (mCam2Imu*mInitialRot.inverse()*q.inverse()*Vector4f::UnitZ());
 
 		pcl::ModelCoefficients::Ptr planeCoeff(new pcl::ModelCoefficients);
-		if (learnFloor(verticalCCS.block<3,1>(0,0), planeCoeff, double(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])*M_PI/180.0)) {
+		if (learnFloor(verticalCCS.block<3, 1>(0, 0), planeCoeff, double(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])*M_PI / 180.0)) {
 			mLearnFloor = false;
 			mIsFirstIter = true;
+			mMap.clear();
+			mCandidates.clear();
 			std::cout << "-> STEP: Learned floor pattern" << std::endl;
 		}
 		else {
 			std::cout << "-> STEP: Failed to Learn floor pattern" << std::endl;
-		}
-	}
-	else {
-
-		if (!stepGetCandidates()) {
-			errorBitList |= (1 << BIT_MAST_ERROR_GETCANDIDATES);
-			std::cout << "-> STEP: Error getting candidates" << std::endl;
-		}
-
-		if (!stepCathegorizeCandidates(mCandidates, frame1, frame2)) {
-			errorBitList |= (1 << BIT_MAST_ERROR_CATEGORIZINGCANDIDATES);
-			std::cout << "-> STEP: Error cathegorizing candidates" << std::endl;
 		}
 	}
 
@@ -512,14 +512,16 @@ bool MainApplication::learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::Model
 
 	float angle = acos(_verticalCCS.dot(planeNormal) / (_verticalCCS.norm()*planeNormal.norm()));
 
-	cout << "............." << endl;
-	cout << _verticalCCS.transpose() << endl;
-	cout << planeNormal.transpose() << endl;
-	cout << angle*180/M_PI << endl;
-	cout << "............." << endl;
+	//cout << "............." << endl;
+	//cout << _verticalCCS.transpose() << endl;
+	//cout << planeNormal.transpose() << endl;
+	//cout << angle*180/M_PI << endl;
+	//cout << "............." << endl;
 	
+	// Extract patches
+
 	if (angle < _maxAngle) {
-		return true;
+		return mFloorSubstractor->train(std::vector<Mat>());
 	}
 	else {
 		return false;
