@@ -206,10 +206,11 @@ bool MainApplication::step() {
 	//	Check if need to learn or relearn floor
 	if (mLearnFloor) {
 		Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
-		q = Quaternionf((mCam2Imu.inverse()*q).rotation());
+
+		Vector4f verticalCCS = (mCam2Imu*mInitialRot.inverse()*q.inverse()*Vector4f::UnitZ());
 
 		pcl::ModelCoefficients::Ptr planeCoeff(new pcl::ModelCoefficients);
-		if (learnFloor(q, planeCoeff, double(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])*M_PI/180.0)) {
+		if (learnFloor(verticalCCS.block<3,1>(0,0), planeCoeff, double(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])*M_PI/180.0)) {
 			mLearnFloor = false;
 			mIsFirstIter = true;
 			std::cout << "-> STEP: Learned floor pattern" << std::endl;
@@ -485,7 +486,7 @@ bool MainApplication::initLoadGt() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::learnFloor(const Eigen::Quaternionf &_droneOri, pcl::ModelCoefficients::Ptr &_planeCoeff, const double &_maxAngle) {
+bool MainApplication::learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::ModelCoefficients::Ptr &_planeCoeff, const double &_maxAngle) {
 	auto cloud = mMap.cloud().makeShared();
 	// Try to fit plane
 	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
@@ -506,26 +507,17 @@ bool MainApplication::learnFloor(const Eigen::Quaternionf &_droneOri, pcl::Model
 		return false;
 	}
 	
-	/*std::cerr << "Model coefficients: " << _planeCoeff->values[0] << " "
-		<< _planeCoeff->values[1] << " "
-		<< _planeCoeff->values[2] << " "
-		<< _planeCoeff->values[3] << std::endl;
-
-	std::cerr << "Model inliers: " << inliers->indices.size() << std::endl;
-	for (size_t i = 0; i < inliers->indices.size(); ++i)
-		std::cerr << inliers->indices[i] << "    " << cloud->points[inliers->indices[i]].x << " "
-		<< cloud->points[inliers->indices[i]].y << " "
-		<< cloud->points[inliers->indices[i]].z << std::endl;
-		*/
 	mGui->drawPlane(*_planeCoeff);
-	Quaternionf planeOri = Quaternionf().setFromTwoVectors(Vector3f::UnitZ(), Vector3f(_planeCoeff->values[0], _planeCoeff->values[1], _planeCoeff->values[2]));
+	Vector3f planeNormal = Vector3f(-_planeCoeff->values[0], -_planeCoeff->values[1], -_planeCoeff->values[2]);
 
-	/*DEBUG VECTOR*/
-	std::cout << (_droneOri*Vector3f::UnitZ()).transpose() << std::endl;
-	std::cout << (Vector3f(_planeCoeff->values[0], _planeCoeff->values[1], _planeCoeff->values[2])).transpose() << std::endl;
-	/**/
+	float angle = acos(_verticalCCS.dot(planeNormal) / (_verticalCCS.norm()*planeNormal.norm()));
 
-	float angle = planeOri.dot(_droneOri);
+	cout << "............." << endl;
+	cout << _verticalCCS.transpose() << endl;
+	cout << planeNormal.transpose() << endl;
+	cout << angle*180/M_PI << endl;
+	cout << "............." << endl;
+	
 	if (angle < _maxAngle) {
 		return true;
 	}
