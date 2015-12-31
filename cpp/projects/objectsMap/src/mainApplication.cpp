@@ -81,11 +81,15 @@ bool MainApplication::step() {
 	}
 
 	// --> Get images and check if they are blurry or not.
-	Mat frame1, frame2;
+	Mat frame1, frame2, frame1Gray, frame2Gray;
 	if (!stepGetImages(frame1, frame2)) {
 		errorBitList |= (1 << BIT_MAST_ERROR_IMAGES);
 		std::cout << "-> STEP: Error getting images data or images are blurry" << std::endl;
 	}
+
+	cvtColor(frame1, frame1Gray, CV_BGR2GRAY);
+	cvtColor(frame2, frame2Gray, CV_BGR2GRAY);
+
 
 	// --> If system is not set-up yet.
 	if (mIsFirstIter) {
@@ -147,7 +151,7 @@ bool MainApplication::step() {
 			pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
 
 			// Calculate new cloud from input images
-			if (stepTriangulatePoints(frame1, frame2, cloud)) {
+			if (stepTriangulatePoints(frame1Gray, frame2Gray, cloud)) {
 				// Update pose
 				Vector4f position;
 				position << pose.translation().block<3, 1>(0, 0), 1;
@@ -521,7 +525,12 @@ bool MainApplication::learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::Model
 	// Extract patches
 
 	if (angle < _maxAngle) {
-		return mFloorSubstractor->train(std::vector<Mat>());
+		std::vector<Mat> patches;
+		for(ObjectCandidate candidate : mCandidates) {
+			auto views = candidate.views();
+			patches.insert(patches.end(), views.begin(), views.end());
+		}
+		return mFloorSubstractor->train(patches);
 	}
 	else {
 		return false;
@@ -579,11 +588,6 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 		Rect rightRoi = mCameras->roi(false);
 		mGui->drawBox(leftRoi, true, 0,255,0);
 		mGui->drawBox(rightRoi, false, 0,255,0);
-
-// 		_frame1 = gray1; //not correct because they are distorted images
-// 		_frame2 = gray2;
-		cvtColor(_frame1, _frame1, CV_BGR2GRAY);
-		cvtColor(_frame2, _frame2, CV_BGR2GRAY);
 		
 		return true;
 	}
@@ -725,13 +729,17 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 		Rect validFrame(0,0,_frame1.cols, _frame1.rows);
 		Mat view = _frame1(boundBox(reprojection1)&validFrame);
 		if (view.rows > 20 && view.cols > 20) {
-			std::vector<double> probs1 = mRecognitionSystem->categorize(view);
+			Mat grayView;
+			cvtColor(view, grayView, CV_BGR2GRAY);
+			std::vector<double> probs1 = mRecognitionSystem->categorize(grayView);
 			candidate.addView(view, probs1);
 		}
 
 		Mat view2 = _frame2(boundBox(reprojection2)&validFrame);
 		if (view2.rows > 20 && view2.cols > 20) {
-			std::vector<double> probs2 = mRecognitionSystem->categorize(view2);
+			Mat grayView;
+			cvtColor(view2, grayView, CV_BGR2GRAY);
+			std::vector<double> probs2 = mRecognitionSystem->categorize(grayView);
 			candidate.addView(view2, probs2);
 		}
 
