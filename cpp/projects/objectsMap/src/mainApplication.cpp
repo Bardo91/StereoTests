@@ -526,11 +526,21 @@ bool MainApplication::learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::Model
 
 	if (angle < _maxAngle) {
 		std::vector<Mat> patches;
+		bool ensuredBigPatch = false;	// Need to ensure that have at least one big patch that can be representative of floor.
 		for(ObjectCandidate candidate : mCandidates) {
 			auto views = candidate.views();
+			for (Mat view : views) {
+				if (view.rows > 100 && view.cols > 100)
+					ensuredBigPatch = true;
+			}
 			patches.insert(patches.end(), views.begin(), views.end());
 		}
-		return mFloorSubstractor->train(patches);
+		if (ensuredBigPatch) {
+			return mFloorSubstractor->train(patches);
+		}
+		else {
+			return false;
+		}
 	}
 	else {
 		return false;
