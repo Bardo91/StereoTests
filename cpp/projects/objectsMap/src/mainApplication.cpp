@@ -156,7 +156,7 @@ bool MainApplication::step() {
 				Vector4f position;
 				position << pose.translation().block<3, 1>(0, 0), 1;
 
-				if (!stepUpdateMap(cloud, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_)) {
+				if (!stepUpdateMap(cloud, position, Quaternionf(pose.rotation()))) {
 					errorBitList |= (1 << BIT_MAST_ERROR_MAP);
 					std::cout << "-> STEP: Error while updating map" << std::endl;
 				}
@@ -221,7 +221,7 @@ bool MainApplication::step() {
 	if (mLearnFloor) {
 		Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
 
-		Vector4f verticalCCS = (mCam2Imu*mInitialRot.inverse()*q.inverse()*Vector4f::UnitZ());
+		Vector4f verticalCCS = (mCam2Imu*mInitialRot.inverse()*Vector4f::UnitZ());
 
 		pcl::ModelCoefficients::Ptr planeCoeff(new pcl::ModelCoefficients);
 		if (learnFloor(verticalCCS.block<3, 1>(0, 0), planeCoeff, double(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])*M_PI / 180.0)) {
@@ -336,6 +336,8 @@ bool MainApplication::init3dMap(){
 	params.maxClusterSize						= mConfig["mapParams"]["maxClusterSize"];				//200;
 	params.floorDistanceThreshold				= mConfig["mapParams"]["floorDistanceThreshold"];		//0.01;
 	params.floorMaxIters						= (int) mConfig["mapParams"]["floorMaxIters"];			//M_PI/180 * 30;
+	params.icpMaxAngleChangeCompared2ProvidedGuess = mConfig["mapParams"]["icpMaxAngleChangeCompared2ProvidedGuess"]; //
+	params.icpMaxTranslationChangeCompared2ProvidedGuess = mConfig["mapParams"]["icpMaxTranslationChangeCompared2ProvidedGuess"];
 
 	mMap.params(params);
 
