@@ -156,7 +156,7 @@ bool MainApplication::step() {
 				Vector4f position;
 				position << pose.translation().block<3, 1>(0, 0), 1;
 
-				if (!stepUpdateMap(cloud, position, Quaternionf(pose.rotation()))) {
+				if (!stepUpdateMap(cloud, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_)) {
 					errorBitList |= (1 << BIT_MAST_ERROR_MAP);
 					std::cout << "-> STEP: Error while updating map" << std::endl;
 				}
