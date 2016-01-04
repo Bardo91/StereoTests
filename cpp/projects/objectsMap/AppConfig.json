@@ -48,10 +48,10 @@
 		"outlierMeanK":10,
 		"outlierStdDev":0.05,
 		"outlierSetNegative":false,
-		"icpMaxTransformationEpsilon":0.00000000000000000001,
-		"icpEuclideanEpsilon":0.00000000000000000001,
+		"icpMaxTransformationEpsilon":0.000001,
+		"icpEuclideanEpsilon":0.00001,
 		"icpMaxIcpIterations":1000,
-		"icpMaxCorrespondenceDistance":0.05,
+		"icpMaxCorrespondenceDistance":0.5,
 		"historySize":2,
 		"clusterAffiliationMaxDistance":0.035,
 		"minClusterSize":15,
@@ -60,7 +60,7 @@
 		"floorMaxIters": 1000,
 		"consecutiveClusterCentroidMatchingThreshold": 0.05,
 		"maxFittingScore":0.001,
-		"floorMaxAllowedRotationToDrone":5
+		"floorMaxAllowedRotationToDrone":5.0
 	},
 	"recognitionSystem":
 	{
