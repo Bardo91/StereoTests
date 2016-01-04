@@ -84,14 +84,12 @@ int main(int _argc, char ** _argv) {
 		}
 
 		vector<double> groundTruth = loadGroundTruth(config["gtFile"]);
-		vector<double> groundTruthStereo = groundTruth;
-		groundTruthStereo.insert(groundTruthStereo.end(), groundTruth.begin(), groundTruth.end());
 
-		bow.train(images, groundTruthStereo);
+		bow.train(images, groundTruth);
 		bow.save(config["recognitionSystem"]["bow"]["modelPath"]);
 	}
 	else {
-		bow.load(config["recognitionSystem"]["bow"]["modelPath"]);
+  		bow.load(config["recognitionSystem"]["bow"]["modelPath"]);
 
 		vector<Mat> cvImages;
 		string path = string(config["cameras"]["left1"]);
@@ -148,6 +146,7 @@ vector<double> loadGroundTruth(string _path) {
 	for (unsigned i = 0; !gtFile.eof();i++) {
 		int gtVal;
 		gtFile >> gtVal;
+		groundTruth.push_back(gtVal);
 		groundTruth.push_back(gtVal);
 	}
 	return groundTruth;

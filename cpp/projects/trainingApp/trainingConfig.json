@@ -3,14 +3,16 @@
 	{
 		"name":"Stereo Detector"
 	},
-	"gtFile":"C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/Stereo Objects - Training/all_together/gt.txt",
+	"gtFile":"C:/Users/Pablo RS/Desktop/2objsgood/gt.txt",
 	"train":true,
 	"generateTrainSet":true,
 	"cameras":
 	{
-		"left":"C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/Stereo Objects - Training/all_together/cam1 (%d).jpg",
-		"right":"C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/Stereo Objects - Training/all_together/cam2 (%d).jpg",
-		"paramFile":"C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/Stereo Objects - Training/stereo_D",
+		"left":"C:/Users/Pablo RS/Desktop/2objsgood/cam1 (%d).jpg",
+		"right":"C:/Users/Pablo RS/Desktop/2objsgood/cam2 (%d).jpg",
+		"left1":"C:/programming/StereoTests/cpp/build/projects/trainingApp/CroppedSet/cam1 (%d).jpg",
+		"right1":"C:/programming/StereoTests/cpp/build/projects/trainingApp/CroppedSet/cam2 (%d).jpg",
+		"paramFile":"C:/Users/Pablo RS/Desktop/2objsgood/calib_2015-12-15_2",
 		"leftRoi":
 		{
 			"x":30,
@@ -62,98 +64,7 @@
 	{		
 		"bow":
 		{
-			"modelPath":"allNoNeg",
-			"histogramMatcher":
-			{
-				"vocabularySize":500,
-				"descriptor":"HOG",
-				"HOG":
-				{
-					"blockSize":16,
-					"cellSize": 4,
-					"blockStride":8
-				}
-				"matcher":"FlannBased"
-			},
-			"svm":
-			{
-				"autoTrain":false,
-				"c":0.1,
-				"gamma":1.0,
-				"type":"c_svc",
-				"kernel":"RBF",
-				"trainGrids":
-				{
-				"c":{"min":1.0,"max":200.0, "step":1.5},
-				"gamma":{"min":0.001,"max":1.0, "step":2.0}
-				}
-			}
-		}
-	}
-}{
-	"gui":
-	{
-		"name":"Stereo Detector"
-	},
-	"gtFile":"C:/programming/datasets/train3d/gt.txt",
-	"train":true,
-	"generateTrainSet":true,
-	"cameras":
-	{
-		"left":"C:/programming/datasets/train3d/cam2 (%d).jpg",
-		"right":"C:/programming/datasets/train3d/cam1 (%d).jpg",
-		"paramFile":"C:/programming/StereoTests/cpp/build/projects/calibrationTest/stereo_D",
-		"leftRoi":
-		{
-			"x":30,
-			"y":0,
-			"width":610,
-			"height":480
-		},
-		"rightRoi":
-		{
-			"x":0,
-			"y":0,
-			"width":610,
-			"height":480
-		},
-		"blurThreshold":5.0,
-		"disparityRange":
-		{
-			"min":60,
-			"max":400
-		}, 
-		"templateSquareSize":7,
-		"maxReprojectionError":3,
-		"pointRanges":
-		{
-			"x":{"min":-3, "max":3},
-			"y":{"min":-3, "max":3},
-			"z":{"min":0.4, "max":0.6}
-		}
-	},
-	"mapParams":
-	{
-		"voxelSize":0.02,
-		"outlierMeanK":10,
-		"outlierStdDev":0.05,
-		"outlierSetNegative":false,
-		"icpMaxTransformationEpsilon":0.00000000000000000001,
-		"icpEuclideanEpsilon":0.00000000000000000001,
-		"icpMaxIcpIterations":1000,
-		"icpMaxCorrespondenceDistance":0.1,
-		"historySize":2,
-		"clusterAffiliationMaxDistance":0.035,
-		"minClusterSize":15,
-		"maxClusterSize":200,
-		"floorDistanceThreshold":0.01,
-		"floorMaxIters":1000
-	},
-	"recognitionSystem":
-	{		
-		"bow":
-		{
-			"modelPath":"canjuiboxcrasen.svm",
+			"modelPath":"testModel",
 			"histogramMatcher":
 			{
 				"vocabularySize":500,
