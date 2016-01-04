@@ -3,15 +3,15 @@
 	{
 		"name":"Stereo Detector"
 	},
-	"gtFile":"C:/Users/Pablo RS/Desktop/2objsgood/gt.txt",
+	"gtFile":"C:/Users/Pablo RS/Desktop/all_together/gt.txt",
 	"train":true,
 	"generateTrainSet":true,
 	"cameras":
 	{
-		"left":"C:/Users/Pablo RS/Desktop/2objsgood/cam1 (%d).jpg",
-		"right":"C:/Users/Pablo RS/Desktop/2objsgood/cam2 (%d).jpg",
-		"left1":"C:/programming/StereoTests/cpp/build/projects/trainingApp/CroppedSet/cam1 (%d).jpg",
-		"right1":"C:/programming/StereoTests/cpp/build/projects/trainingApp/CroppedSet/cam2 (%d).jpg",
+		"left":"C:/Users/Pablo RS/Desktop/all_together/cam1 (%d).jpg",
+		"right":"C:/Users/Pablo RS/Desktop/all_together/cam2 (%d).jpg",
+		"left1":"C:/programming/StereoTests/cpp/build/projects/trainingApp/CroppedSet/img_left_%d.jpg",
+		"right1":"C:/programming/StereoTests/cpp/build/projects/trainingApp/CroppedSet/img_right_%d.jpg",
 		"paramFile":"C:/Users/Pablo RS/Desktop/2objsgood/calib_2015-12-15_2",
 		"leftRoi":
 		{
@@ -39,7 +39,7 @@
 		{
 			"x":{"min":-3, "max":3},
 			"y":{"min":-3, "max":3},
-			"z":{"min":0.4, "max":0.6}
+			"z":{"min":0.0, "max":1.0}
 		},
 		"maxTemplateScore":0.005
 	},
@@ -85,14 +85,14 @@
 			"svm":
 			{
 				"autoTrain":true,
-				"c":0.1,
-				"gamma":1.0,
+				"c":1.0,
+				"gamma":0.001,
 				"type":"c_svc",
 				"kernel":"RBF",
 				"trainGrids":
 				{
-				"c":{"min":1.0,"max":200.0, "step":1.5},
-				"gamma":{"min":0.001,"max":1.0, "step":2.0}
+				"c":{"min":1.0,"max":50.0, "step":1.5},
+				"gamma":{"min":0.001,"max":0.5, "step":3.0}
 				}
 			}
 		}
