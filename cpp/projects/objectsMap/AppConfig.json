@@ -59,7 +59,8 @@
 		"floorDistanceThreshold":0.01,
 		"floorMaxIters": 1000,
 		"consecutiveClusterCentroidMatchingThreshold": 0.05,
-		"maxFittingScore":0.001
+		"maxFittingScore":0.001,
+		"floorMaxAllowedRotationToDrone":5
 	},
 	"recognitionSystem":
 	{
