@@ -9,9 +9,9 @@
 	},
 	"cameras":
 	{
-		"left":"C:/Users/GRVC/Desktop/2015-12-18/translation_rotation/cam2 (%d).jpg",
-		"right":"C:/Users/GRVC/Desktop/2015-12-18/translation_rotation/cam1 (%d).jpg",
-		"paramFile":"C:/Cprograms/grvc/Code git repo/StereoTests/calibrations/calibRotationTranslation",
+		"left":"C:/Users/Pablo RS/Desktop/set4 - outside handheld grey floor/cam2 (%d).jpg",
+		"right":"C:/Users/Pablo RS/Desktop/set4 - outside handheld grey floor/cam1 (%d).jpg",
+		"paramFile":"C:/Users/Pablo RS/Desktop/set4 - outside handheld grey floor/calib_2015-12-15_2",
 		"leftRoi":
 		{
 			"x":30,
@@ -32,15 +32,15 @@
 			"min":60,
 			"max":400
 		}, 
-		"templateSquareSize":21,
-		"maxReprojectionError":4,
+		"templateSquareSize":11,
+		"maxReprojectionError":6,
 		"pointRanges":
 		{
 			"x":{"min":-3, "max":3},
 			"y":{"min":-3, "max":3},
 			"z":{"min":0.4, "max":1.5}
 		}, 
-		"maxTemplateScore":0.005
+		"maxTemplateScore":0.01
 	},
 	"mapParams":
 	{
@@ -48,10 +48,10 @@
 		"outlierMeanK":10,
 		"outlierStdDev":0.05,
 		"outlierSetNegative":false,
-		"icpMaxTransformationEpsilon":0.000001,
-		"icpEuclideanEpsilon":0.00001,
-		"icpMaxIcpIterations":1000,
-		"icpMaxCorrespondenceDistance":0.5,
+		"icpMaxTransformationEpsilon":0.00000001,
+		"icpEuclideanEpsilon":0.000000001,
+		"icpMaxIcpIterations":30,
+		"icpMaxCorrespondenceDistance":0.05,
 		"historySize":2,
 		"clusterAffiliationMaxDistance":0.035,
 		"minClusterSize":15,
@@ -59,7 +59,7 @@
 		"floorDistanceThreshold":0.01,
 		"floorMaxIters": 1000,
 		"consecutiveClusterCentroidMatchingThreshold": 0.05,
-		"maxFittingScore":0.001,
+		"maxFittingScore":0.02,
 		"floorMaxAllowedRotationToDrone":5.0
 	},
 	"recognitionSystem":
@@ -96,7 +96,7 @@
 	"ekf":
 	{
 		"source":"file",
-		"path":"C:/Users/GRVC/Desktop/2015-12-18/translation_rotation/imuData_Cropped.txt",
+		"path":"C:/Users/Pablo RS/Desktop/set4 - outside handheld grey floor/imuData_Cropped.txt",
 		"bias":
 		{
 			"ScaleFactor":[0.0,0.0,0.0],
@@ -130,6 +130,6 @@
 			}
 			
 		},
-		"nSamplesForOffSet":320
+		"nSamplesForOffSet":200
 	}
 }
