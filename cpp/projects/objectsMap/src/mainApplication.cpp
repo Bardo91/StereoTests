@@ -554,13 +554,14 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 	cout << "Blurriness: ";
 	_frame1 = mCameras->camera(0).frame();
 	_frame2 = mCameras->camera(1).frame();
-	
 
+	cvtColor(_frame1, gray1, CV_BGR2GRAY);
 	if (_frame1.rows != 0) {
 		isBlurry1 = isBlurry(gray1, mConfig["cameras"]["blurThreshold"]);
 	}
 	else { return false; }
 
+	cvtColor(_frame2, gray2, CV_BGR2GRAY);
 	if (_frame2.rows != 0) {
 		isBlurry2 = isBlurry(gray2, mConfig["cameras"]["blurThreshold"]);
 	}
@@ -587,8 +588,6 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 			mFloorSubstractor->substract(_frame1, _frame1);
 			mFloorSubstractor->substract(_frame2, _frame2);
 		}
-		cvtColor(_frame1, gray1, CV_BGR2GRAY);
-		cvtColor(_frame2, gray2, CV_BGR2GRAY);
 
 		_frame1 = mCameras->camera(0).undistort(_frame1);
 		_frame2 = mCameras->camera(1).undistort(_frame2);
