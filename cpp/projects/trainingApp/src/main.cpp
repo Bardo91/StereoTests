@@ -84,12 +84,12 @@ int main(int _argc, char ** _argv) {
 		}
 
 		vector<double> groundTruth = loadGroundTruth(config["gtFile"]);
-		
+
 		bow.train(images, groundTruth);
 		bow.save(config["recognitionSystem"]["bow"]["modelPath"]);
 	}
 	else {
-		bow.load(config["recognitionSystem"]["bow"]["modelPath"]);
+  		bow.load(config["recognitionSystem"]["bow"]["modelPath"]);
 
 		vector<Mat> cvImages;
 		string path = string(config["cameras"]["left1"]);
@@ -147,7 +147,7 @@ vector<double> loadGroundTruth(string _path) {
 		int gtVal;
 		gtFile >> gtVal;
 		groundTruth.push_back(gtVal);
-		groundTruth.push_back(gtVal);	// load twice, pair of images.
+		groundTruth.push_back(gtVal);
 	}
 	return groundTruth;
 }
@@ -200,8 +200,9 @@ void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Mat &
 	pair<int, int> disparityRange(_config["cameras"]["disparityRange"]["min"], _config["cameras"]["disparityRange"]["max"]);
 	int squareSize = _config["cameras"]["templateSquareSize"];
 	int maxReprojectionError = _config["cameras"]["maxReprojectionError"];
+	double maxTemplateScore = _config["cameras"]["maxTemplateScore"];
 	pcl::PointCloud<pcl::PointXYZ> cloud;
-	cloud = *_cameras->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);
+	cloud = *_cameras->pointCloud(_frame1, _frame2, disparityRange, squareSize,maxTemplateScore, maxReprojectionError);
 	cloud = filter(cloud, _config);
 	_cloud.clear();
 	for (pcl::PointXYZ point : cloud) {
@@ -228,8 +229,8 @@ Rect bound(vector<Point2f> _points2d) {
 
 //---------------------------------------------------------------------------------------------------------------------
 void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const Mat &_frame1, const Mat &_frame2, Mat &_viewLeft, Mat &_viewRight){
-	vector<Point2f> pointsLeft  = _cameras->project3dPointsWCS(_cloud, true);
-	vector<Point2f> pointsRight  = _cameras->project3dPointsWCS(_cloud, false);
+	vector<Point2f> pointsLeft = _cameras->project3dPoints(_cloud, true, { 0,0,0,1 }, Eigen::Quaternionf(Eigen::AngleAxisf(0, Eigen::Vector3f::UnitZ())));
+	vector<Point2f> pointsRight  = _cameras->project3dPoints(_cloud, false, { 0,0,0,1 }, Eigen::Quaternionf(Eigen::AngleAxisf(0, Eigen::Vector3f::UnitZ())));
 	
 	Mat display;
 	hconcat(_frame1, _frame2, display);
@@ -242,9 +243,10 @@ void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const 
 	Rect r1 = bound(pointsLeft);
 	Rect r2 = bound(pointsRight);
 	
+	Rect validRoi(0,0,_frame1.cols, _frame1.rows);
 
-	_viewLeft = _frame1(r1);
-	_viewRight = _frame2(r2);
+	_viewLeft = _frame1(r1&validRoi);
+	_viewRight = _frame2(r2&validRoi);
 
 	rectangle(display, r1, Scalar(0,0,255));
 	r2.x +=_frame1.cols;
@@ -254,6 +256,9 @@ void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const 
 }
 
 pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inputCloud, Json &_config) {
+	if (_inputCloud.size() < int(_config["mapParams"]["outlierMeanK"])) {
+		return _inputCloud;
+	}
 	pcl::PointCloud<pcl::PointXYZ> filteredCloud;
 	pcl::StatisticalOutlierRemoval<pcl::PointXYZ>		outlierRemoval;
 	outlierRemoval.setMeanK(_config["mapParams"]["outlierMeanK"]);
@@ -271,11 +276,21 @@ void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &
 	int index = 0;
 	for (;;) {
 		vector<Point3f> cloud;
+		std::cout << "Image nº " << index << std::endl;
 		calculatePointCloud(_cameras, cloud, frame1, frame2, _config);
+
 		if (cloud.size() == 0)
 			break;
+		if(cloud.size() < int(_config["mapParams"]["outlierMeanK"]))
+			continue;
 
 		getSubImages(_cameras, cloud, frame1, frame2, vLeft, vRight);
+
+		// Ensuring minimal size on training images.
+		int minSize = 30;
+		if(vLeft.rows < minSize && vLeft.cols < minSize && vRight.cols < minSize && vRight.rows < minSize)
+			continue;
+
 		_images.push_back(vLeft);
 		_images.push_back(vRight);
 

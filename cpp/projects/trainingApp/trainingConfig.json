@@ -3,14 +3,16 @@
 	{
 		"name":"Stereo Detector"
 	},
-	"gtFile":"C:/programming/datasets/train3d/gt.txt",
+	"gtFile":"C:/Users/Pablo RS/Desktop/2objsgood/gt.txt",
 	"train":true,
 	"generateTrainSet":true,
 	"cameras":
 	{
-		"left":"C:/programming/datasets/train3d/cam2 (%d).jpg",
-		"right":"C:/programming/datasets/train3d/cam1 (%d).jpg",
-		"paramFile":"C:/programming/StereoTests/cpp/build/projects/calibrationTest/stereo_D",
+		"left":"C:/Users/Pablo RS/Desktop/2objsgood/cam1 (%d).jpg",
+		"right":"C:/Users/Pablo RS/Desktop/2objsgood/cam2 (%d).jpg",
+		"left1":"C:/programming/StereoTests/cpp/build/projects/trainingApp/CroppedSet/cam1 (%d).jpg",
+		"right1":"C:/programming/StereoTests/cpp/build/projects/trainingApp/CroppedSet/cam2 (%d).jpg",
+		"paramFile":"C:/Users/Pablo RS/Desktop/2objsgood/calib_2015-12-15_2",
 		"leftRoi":
 		{
 			"x":30,
@@ -38,7 +40,8 @@
 			"x":{"min":-3, "max":3},
 			"y":{"min":-3, "max":3},
 			"z":{"min":0.4, "max":0.6}
-		}
+		},
+		"maxTemplateScore":0.005
 	},
 	"mapParams":
 	{
@@ -61,11 +64,11 @@
 	{		
 		"bow":
 		{
-			"modelPath":"canjuiboxcrasen.svm",
+			"modelPath":"testModel",
 			"histogramMatcher":
 			{
 				"vocabularySize":500,
-				"descriptor":"HOG",
+				"descriptor":"SIFT",
 				"HOG":
 				{
 					"blockSize":16,
@@ -73,6 +76,11 @@
 					"blockStride":8
 				}
 				"matcher":"FlannBased"
+			},
+			"multiscale":
+			{
+				"scaleFactor":0.75,
+				"nScales":3
 			},
 			"svm":
 			{
