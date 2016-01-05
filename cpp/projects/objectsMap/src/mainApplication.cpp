@@ -156,7 +156,7 @@ bool MainApplication::step() {
 				Vector4f position;
 				position << pose.translation().block<3, 1>(0, 0), 1;
 
-				if (!stepUpdateMap(cloud, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_)) {
+				if (!stepUpdateMap(cloud, position, Quaternionf(pose.rotation()))) {
 					errorBitList |= (1 << BIT_MAST_ERROR_MAP);
 					std::cout << "-> STEP: Error while updating map" << std::endl;
 				}
@@ -517,7 +517,7 @@ bool MainApplication::learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::Model
 	Vector3f planeNormal = Vector3f(-_planeCoeff->values[0], -_planeCoeff->values[1], -_planeCoeff->values[2]);
 
 	float angle = acos(_verticalCCS.dot(planeNormal) / (_verticalCCS.norm()*planeNormal.norm()));
-
+	cout << angle*180/M_PI << "deg Angle" << endl;
 	//cout << "............." << endl;
 	//cout << _verticalCCS.transpose() << endl;
 	//cout << planeNormal.transpose() << endl;
