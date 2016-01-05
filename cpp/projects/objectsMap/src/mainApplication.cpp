@@ -120,17 +120,6 @@ bool MainApplication::step() {
 										(Matrix3f::Identity()*(incT*incT / 2))*prevX.block<3, 1>(6, 0);
 		std::cout << "-> STEP: Forecast from previous state is" << std::endl;
 		std::cout << forecastX<<std::endl;
-
-		/**/
-		Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
-		Eigen::Translation3f sensorPos(forecastX.block<3,1>(0,0));
-
-		Eigen::Transform<float,3, Affine> pose = sensorPos*q;
-		pose =  mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
-		mGui->drawCamera(pose.rotation(),pose.matrix().block<4,1>(0,3), 0,0,255);
-		mGui->spinOnce();
-		/**/
-
 	}
 	else {
 		errorBitList |= (1<<BIT_MAST_ERROR_FORECAST);
@@ -160,6 +149,9 @@ bool MainApplication::step() {
 					errorBitList |= (1 << BIT_MAST_ERROR_MAP);
 					std::cout << "-> STEP: Error while updating map" << std::endl;
 				}
+				else {
+					mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_,0,255,0);
+				}
 			}
 			else {
 				errorBitList |= (1 << BIT_MAST_ERROR_TRIANGULATE);
@@ -187,9 +179,13 @@ bool MainApplication::step() {
 			//mMap.updateSensorPose(pose.matrix().block<4, 1>(0, 3), mMap.cloud().sensor_orientation_);
 		}
 	}
+	Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+	Eigen::Translation3f sensorPos(forecastX.block<3, 1>(0, 0));
 
+	Eigen::Transform<float, 3, Affine> pose = sensorPos*q;
+	pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
+	mGui->drawCamera(pose.rotation(), pose.matrix().block<4, 1>(0, 3), 0, 0, 255);
 	// Draw camera pose for display purpose.
-	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
 	mGui->spinOnce();
 
 	// Iterate EKF
@@ -657,15 +653,17 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 	mGui->clearMap();
 	mGui->clearPcViewer();
 
-	PointCloud<PointXYZ>::Ptr rotatedCloud;
-	bool hasConverged = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), rotatedCloud);
+	PointCloud<PointXYZ>::Ptr addedCloudCameraCS;
+	bool hasConverged = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
 
-	if(rotatedCloud->size() != 0)
-		Gui::get()->addPointToPcViewer(rotatedCloud, 3, 255, 10, 10);
+	if(addedCloudCameraCS->size() != 0)
+		Gui::get()->addPointToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
 
 	mGui->drawMap(mMap.cloud().makeShared());
 	mGui->addPointToPcViewer(_cloud);
-	mGui->spinOnce();
+	if(!hasConverged)
+	mGui->drawCamera(mMap.ICPres().block<3, 3>(0, 0), mMap.ICPres().col(3), 255, 0, 0);
+	//mGui->spinOnce();
 	return hasConverged;
 }
 

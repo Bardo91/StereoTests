@@ -55,7 +55,7 @@ private:
 	bool stepCheckGroundTruth();	// 666 Debug.
 private:
 	FloorSubstractor	*mFloorSubstractor;
-	bool				mLearnFloor = true;
+	bool				mLearnFloor = false;
 
 	StereoCameras		*mCameras;
 	EnvironmentMap		mMap;
