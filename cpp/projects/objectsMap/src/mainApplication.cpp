@@ -764,6 +764,7 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 	return true;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepCheckGroundTruth()
 {
 	if (mCandidates.size() != 0 && mCandidateGroundTruth.size() != 0) {
@@ -794,4 +795,14 @@ bool MainApplication::stepCheckGroundTruth()
 	else {
 		return false;
 	}
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::initLog() {
+	return false;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::save2Log() {
+	return false;
 }
