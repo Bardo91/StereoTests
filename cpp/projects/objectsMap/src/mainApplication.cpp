@@ -837,7 +837,14 @@ bool MainApplication::save2Log() {
 	for (unsigned i = 0; i < mCandidates.size(); i++) {
 		auto candidate = mCandidates[i];
 		auto cloud = *candidate.cloud();
-		mCandidateLogs[i] << candidate.centroid().transpose().block<3, 1>(0, 0) << "\t" << cloud.size() << std::endl;
+		auto cathegories = candidate.cathegoryHistory();
+		candidate.cathegory();
+		mCandidateLogs[i] << candidate.centroid().transpose().block<3, 1>(0, 0) << "\t" << cloud.size() << "\t";
+		for (unsigned j = 0; j < cathegories.size(); j++) {
+			mCandidateLogs[i] << *cathegories[j].end() << "\t";
+		}
+		mCandidateLogs[i] << std::endl;
+
 		for (unsigned j = 0; j < cloud.size(); j++) {
 			mCandidateCloudsLogs[i] << cloud[j].x << "\t" << cloud[j].y << "\t" << cloud[j].z << "\t";
 		}
