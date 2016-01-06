@@ -89,8 +89,9 @@ private:
 
 	std::vector<ObjectCandidate> mCandidateGroundTruth;	// 666 Debug.
 
-	unsigned mIndexLog;
-	std::vector<ofstream> mCandidateLog;
+	std::string mExeFolder;
+	std::vector<ofstream> mCandidateLogs;
+	std::vector<ofstream> mCandidateCloudsLogs;
 	ofstream mCameraLog, mMapLog, mFloorLog;
 };
 

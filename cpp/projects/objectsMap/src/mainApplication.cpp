@@ -278,6 +278,8 @@ bool MainApplication::step() {
 		return false;
 	else 
 		return true;
+
+	save2Log();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -799,10 +801,47 @@ bool MainApplication::stepCheckGroundTruth()
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::initLog() {
-	return false;
+	mExeFolder = "execution_" + to_string(time(NULL))+"/";
+	CreateDirectory(mExeFolder.c_str(), NULL);
+
+	mCameraLog.open(mExeFolder + "cameraLog.txt");
+	mMapLog.open(mExeFolder + "mapLog.txt");
+	mFloorLog.open(mExeFolder + "floorLog.txt");
+
+	return true;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::save2Log() {
-	return false;
+	auto map = mMap.cloud();
+	Quaternionf camOri = map.sensor_orientation_;
+	Vector4f camPos = map.sensor_origin_;
+	// Store camera info. position and orientation in quaternions
+	mCameraLog << camPos.x << "\t" << camPos.y << "\t" << camPos.z << "\t";
+	mCameraLog << camOri.x << "\t" << camOri.y << "\t" << camOri.z << "\t" << camOri.w << std::endl;
+
+	// Store Map info.
+	mMapLog << map.size() << std::endl;
+
+	// Store Floor information;
+	mFloorLog << mFloorSubstractor->isTrained() << std::endl;
+
+	// Store Candidate Information.
+	if (mCandidateLogs.size() < mCandidates.size()) {
+		int sizeToExtend = mCandidates.size() - mCandidateLogs.size();
+		for (unsigned i = 0; i < sizeToExtend; i++) {
+			mCandidateLogs.push_back(ofstream("candidate_" + to_string(mCandidateLogs.size())));
+			mCandidateCloudsLogs.push_back(ofstream("candidateClouds_" + to_string(mCandidateLogs.size())));
+		}
+	}
+	for (unsigned i = 0; i < mCandidates.size(); i++) {
+		auto candidate = mCandidates[i];
+		auto cloud = *candidate.cloud();
+		mCandidateLogs[i] << candidate.centroid().transpose().block<3, 1>(0, 0) << "\t" << cloud.size() << std::endl;
+		for (unsigned j = 0; j < cloud.size(); j++) {
+			mCandidateCloudsLogs[i] << cloud[j].x << "\t" << cloud[j].y << "\t" << cloud[j].z << "\t";
+		}
+		mCandidateCloudsLogs[i] << std::endl;
+	}
+	return true;
 }
