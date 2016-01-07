@@ -32,11 +32,10 @@ StereoCameras * initCameras(Json &_config);
 // To do in a loop
 void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Mat &_frame1, Mat &_frame2, Json &_config);
 void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const Mat &_frame1, const Mat &_frame2, Mat &_viewLeft, Mat &_viewRight);
-vector<double> loadGroundTruth(string _path);
 pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inputCloud, Json &_config);
 
 
-void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &_images);
+void createTrainingSet(StereoCameras * _cameras, Json &_config, vector<Mat> &_images, const string & _path, vector<double> &_gt);
 void showMatch(const Mat &groundTruth, const Mat &results, vector<Mat> &images);
 
 
@@ -51,27 +50,31 @@ int main(int _argc, char ** _argv) {
 
 	cameras = initCameras(config["cameras"]);
 	bow.params(config["recognitionSystem"]["bow"]);
-
+	vector<double> groundTruth;
 	if (config["train"]) {
 		vector<Mat> images;
 		if (config["generateTrainSet"]) {
-			createTrainingImages(cameras, config, images);
+			createTrainingSet(cameras, config, images, config["gtFile"], groundTruth);
 		}
 		else {
 			int index = 0;
+			string leftPattern = string(config["cameras"]["left1"]);
+			string rightPattern = string(config["cameras"]["right1"]);
+			ifstream gtFile(leftPattern.substr(0,leftPattern.find_last_of("/"))+"/gt.txt");
 			for (;;) {
-				string left = string(config["cameras"]["left1"]);
-				string right = string(config["cameras"]["right1"]);
-				left = left.substr(0,left.find("%d")) +to_string(index)+ left.substr(left.find("%d")+2);
-				right = right.substr(0,right.find("%d")) +to_string(index)+ right.substr(right.find("%d")+2);
+				string left = leftPattern.substr(0,leftPattern.find("%d")) +to_string(index)+ leftPattern.substr(leftPattern.find("%d")+2);
+				string right = rightPattern.substr(0,rightPattern.find("%d")) +to_string(index)+ rightPattern.substr(rightPattern.find("%d")+2);
 				index++;
 				Mat frame1 = imread(left);	//cameras->camera(0).frame();
 				Mat frame2 = imread(right);	//cameras->camera(1).frame();
+				int gtVal;
+				gtFile >> gtVal;
 				if (frame1.rows != 0 && frame2.rows != 0) {
 					//resize(frame1, frame1, Size(150,150));
 					//resize(frame2, frame2, Size(150,150));
 					images.push_back(frame1);
 					images.push_back(frame2);
+					groundTruth.push_back(gtVal);
 					Mat display;
 					imshow("display1", frame1);
 					imshow("display2", frame2);
@@ -83,13 +86,11 @@ int main(int _argc, char ** _argv) {
 			}
 		}
 
-		vector<double> groundTruth = loadGroundTruth(config["gtFile"]);
-		
 		bow.train(images, groundTruth);
 		bow.save(config["recognitionSystem"]["bow"]["modelPath"]);
 	}
 	else {
-		bow.load(config["recognitionSystem"]["bow"]["modelPath"]);
+  		bow.load(config["recognitionSystem"]["bow"]["modelPath"]);
 
 		vector<Mat> cvImages;
 		string path = string(config["cameras"]["left1"]);
@@ -136,20 +137,6 @@ StereoCameras * initCameras(Json &_config) {
 	cameras->load(_config["paramFile"]);
 	cameras->rangeZ(_config["pointRanges"]["z"]["min"], _config["pointRanges"]["z"]["max"]);
 	return cameras;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-vector<double> loadGroundTruth(string _path) {
-	vector<double> groundTruth;
-	ifstream gtFile(_path);
-	assert(gtFile.is_open());
-	for (unsigned i = 0; !gtFile.eof();i++) {
-		int gtVal;
-		gtFile >> gtVal;
-		groundTruth.push_back(gtVal);
-		groundTruth.push_back(gtVal);	// load twice, pair of images.
-	}
-	return groundTruth;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -200,8 +187,9 @@ void calculatePointCloud(StereoCameras *_cameras, vector<Point3f> &_cloud, Mat &
 	pair<int, int> disparityRange(_config["cameras"]["disparityRange"]["min"], _config["cameras"]["disparityRange"]["max"]);
 	int squareSize = _config["cameras"]["templateSquareSize"];
 	int maxReprojectionError = _config["cameras"]["maxReprojectionError"];
+	double maxTemplateScore = _config["cameras"]["maxTemplateScore"];
 	pcl::PointCloud<pcl::PointXYZ> cloud;
-	cloud = *_cameras->pointCloud(_frame1, _frame2, disparityRange, squareSize, maxReprojectionError);
+	cloud = *_cameras->pointCloud(_frame1, _frame2, disparityRange, squareSize,maxTemplateScore, maxReprojectionError);
 	cloud = filter(cloud, _config);
 	_cloud.clear();
 	for (pcl::PointXYZ point : cloud) {
@@ -228,8 +216,8 @@ Rect bound(vector<Point2f> _points2d) {
 
 //---------------------------------------------------------------------------------------------------------------------
 void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const Mat &_frame1, const Mat &_frame2, Mat &_viewLeft, Mat &_viewRight){
-	vector<Point2f> pointsLeft  = _cameras->project3dPointsWCS(_cloud, true);
-	vector<Point2f> pointsRight  = _cameras->project3dPointsWCS(_cloud, false);
+	vector<Point2f> pointsLeft = _cameras->project3dPoints(_cloud, true, { 0,0,0,1 }, Eigen::Quaternionf(Eigen::AngleAxisf(0, Eigen::Vector3f::UnitZ())));
+	vector<Point2f> pointsRight  = _cameras->project3dPoints(_cloud, false, { 0,0,0,1 }, Eigen::Quaternionf(Eigen::AngleAxisf(0, Eigen::Vector3f::UnitZ())));
 	
 	Mat display;
 	hconcat(_frame1, _frame2, display);
@@ -242,9 +230,10 @@ void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const 
 	Rect r1 = bound(pointsLeft);
 	Rect r2 = bound(pointsRight);
 	
+	Rect validRoi(0,0,_frame1.cols, _frame1.rows);
 
-	_viewLeft = _frame1(r1);
-	_viewRight = _frame2(r2);
+	_viewLeft = _frame1(r1&validRoi);
+	_viewRight = _frame2(r2&validRoi);
 
 	rectangle(display, r1, Scalar(0,0,255));
 	r2.x +=_frame1.cols;
@@ -254,6 +243,9 @@ void getSubImages(StereoCameras *_cameras, const vector<Point3f> &_cloud, const 
 }
 
 pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inputCloud, Json &_config) {
+	if (_inputCloud.size() < int(_config["mapParams"]["outlierMeanK"])) {
+		return _inputCloud;
+	}
 	pcl::PointCloud<pcl::PointXYZ> filteredCloud;
 	pcl::StatisticalOutlierRemoval<pcl::PointXYZ>		outlierRemoval;
 	outlierRemoval.setMeanK(_config["mapParams"]["outlierMeanK"]);
@@ -265,19 +257,41 @@ pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inp
 
 }
 
-void createTrainingImages(StereoCameras * _cameras, Json &_config, vector<Mat> &_images){
+void createTrainingSet(StereoCameras * _cameras, Json &_config, vector<Mat> &_images, const string & _path, vector<double> &_gt){
 	Mat frame1, frame2, vLeft, vRight;
 	CreateDirectory("CroppedSet", NULL);
 	int index = 0;
+	vector<double> groundTruth;
+	ifstream gtFile(_path);
+	ofstream gtOut("CroppedSet/gt.txt");
+	
 	for (;;) {
 		vector<Point3f> cloud;
+		std::cout << "Image nº " << index << std::endl;
 		calculatePointCloud(_cameras, cloud, frame1, frame2, _config);
-		if (cloud.size() == 0)
+		int gtVal;
+		gtFile >> gtVal;
+
+		if(frame1.cols == 0 || frame2.cols == 0)
 			break;
 
+		if(cloud.size() < int(_config["mapParams"]["outlierMeanK"]))
+			continue;
+
 		getSubImages(_cameras, cloud, frame1, frame2, vLeft, vRight);
+
+		// Ensuring minimal size on training images.
+		int minSize = 30;
+		if(vLeft.rows < minSize && vLeft.cols < minSize && vRight.cols < minSize && vRight.rows < minSize)
+			continue;
+
 		_images.push_back(vLeft);
 		_images.push_back(vRight);
+		
+		_gt.push_back(gtVal);
+		_gt.push_back(gtVal);
+		gtOut << gtVal <<endl;
+		gtOut << gtVal <<endl;
 
 		cvtColor(vLeft, vLeft, CV_GRAY2BGR);
 		cvtColor(vRight, vRight, CV_GRAY2BGR);

@@ -52,6 +52,8 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 	result &= initRecognitionSystem();
 	//result &= initLoadGt();
 	result &= initImuAndEkf();
+	
+	initLog();
 
 	/**/
 	mFloorSubstractor = new FloorSubstractorCCS();
@@ -263,12 +265,15 @@ bool MainApplication::step() {
 	mVelocityPlot.draw(velYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	mVelocityPlot.draw(velZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
 	// <----------->
-
+	if (!mLearnFloor) {
+		save2Log();
+	}
 	// If any error occurs return false. And if not return true;
 	if (errorBitList) 
 		return false;
 	else 
 		return true;
+
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -761,6 +766,7 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 	return true;
 }
 
+//---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepCheckGroundTruth()
 {
 	if (mCandidates.size() != 0 && mCandidateGroundTruth.size() != 0) {
@@ -791,4 +797,63 @@ bool MainApplication::stepCheckGroundTruth()
 	else {
 		return false;
 	}
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::initLog() {
+	mExeFolder = "execution_" + to_string(time(NULL))+"/";
+	CreateDirectory(mExeFolder.c_str(), NULL);
+
+	mCameraLog.open(mExeFolder + "cameraLog.txt");
+	mMapLog.open(mExeFolder + "mapLog.txt");
+	mFloorLog.open(mExeFolder + "floorLog.txt");
+
+	return true;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+bool MainApplication::save2Log() {
+	auto map = mMap.cloud();
+	Quaternionf camOri = map.sensor_orientation_;
+	Vector4f camPos = map.sensor_origin_;
+	// Store camera info. position and orientation in quaternions
+	mCameraLog << camPos.block<3,1>(0,0).transpose() << "\t";
+	mCameraLog << camOri.x() << "\t" << camOri.y() << "\t" << camOri.z() << "\t" << camOri.w() << std::endl;
+	mCameraLog.flush();
+
+	// Store Map info.
+	mMapLog << map.size() << std::endl;
+	mMapLog.flush();
+
+	// Store Floor information;
+	mFloorLog << mFloorSubstractor->isTrained() << std::endl;
+	mFloorLog.flush();
+
+	// Store Candidate Information.
+	if (mCandidateLogs.size() < mCandidates.size()) {
+		int sizeToExtend = mCandidates.size() - mCandidateLogs.size();
+		for (unsigned i = 0; i < sizeToExtend; i++) {
+			mCandidateLogs.push_back(ofstream(mExeFolder+"candidate_" + to_string(mCandidateLogs.size())+".txt"));
+			mCandidateCloudsLogs.push_back(ofstream(mExeFolder+"candidateClouds_" + to_string(mCandidateCloudsLogs.size()) + ".txt"));
+		}
+	}
+	for (unsigned i = 0; i < mCandidates.size(); i++) {
+		auto candidate = mCandidates[i];
+		auto cloud = *candidate.cloud();
+		auto cathegories = candidate.cathegoryHistory();
+		candidate.cathegory();
+		mCandidateLogs[i] << candidate.centroid().block<3, 1>(0, 0).transpose() << "\t" << cloud.size() << "\t";
+		for (unsigned j = 0; j < cathegories.size(); j++) {
+			mCandidateLogs[i] << *cathegories[j].rbegin() << "\t";
+		}
+		mCandidateLogs[i] << std::endl;
+		mCandidateLogs[i].flush();
+
+		for (unsigned j = 0; j < cloud.size(); j++) {
+			mCandidateCloudsLogs[i] << cloud[j].x << "\t" << cloud[j].y << "\t" << cloud[j].z << "\t";
+		}
+		mCandidateCloudsLogs[i] << std::endl;
+		mCandidateCloudsLogs[i].flush();
+	}
+	return true;
 }
