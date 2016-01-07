@@ -661,9 +661,11 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 
 	mGui->drawMap(mMap.cloud().makeShared());
 	mGui->addPointToPcViewer(_cloud);
+	mGui->addCluster(mMap.GuessCloud(), 2, 0, 0, 255);
+	mGui->addCluster(mMap.AlignedCloud(), 3,255,255,255);
+
 	if (!hasConverged) {
 		mGui->drawCamera(mMap.ICPres().block<3, 3>(0, 0), mMap.ICPres().col(3), 255, 0, 0);
-		mGui->addCluster(mMap.AlignedBadCloud(), 3,255,255,255);
 	}
 	//mGui->spinOnce();
 	return hasConverged;
