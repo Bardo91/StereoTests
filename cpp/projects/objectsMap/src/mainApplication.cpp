@@ -170,11 +170,6 @@ bool MainApplication::step() {
 			pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
 
 			// Update pose
-			if (mMap.useICPresult()) {
-				mMap.useICPresult(false);
-				mMap.updateSensorPose(mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_);
-			}
-			else
 			mMap.updateSensorPose(pose.matrix().block<4,1>(0,3), Quaternionf(pose.rotation()));
 			//mMap.updateSensorPose(pose.matrix().block<4, 1>(0, 3), mMap.cloud().sensor_orientation_);
 		}
@@ -661,8 +656,10 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 
 	mGui->drawMap(mMap.cloud().makeShared());
 	mGui->addPointToPcViewer(_cloud);
-	if(!hasConverged)
-	mGui->drawCamera(mMap.ICPres().block<3, 3>(0, 0), mMap.ICPres().col(3), 255, 0, 0);
+	if (!hasConverged) {
+		mGui->drawCamera(mMap.ICPres().block<3, 3>(0, 0), mMap.ICPres().col(3), 255, 0, 0);
+		mGui->addCluster(mMap.AlignedBadCloud(), 3,255,255,255);
+	}
 	//mGui->spinOnce();
 	return hasConverged;
 }
