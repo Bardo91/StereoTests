@@ -816,7 +816,11 @@ bool MainApplication::save2Log() {
 	(*logManager)["CameraLog.txt"].flush();
 
 	// Store Map info.
-	(*logManager)["MapLog.txt"] << map.size() << std::endl;
+	(*logManager)["MapLog.txt"] << map.size();
+	for (unsigned j = 0; j < map.size(); j++) {
+		(*logManager)["MapLog.txt"] << map[j].x << "\t" << map[j].y << "\t" << map[j].z << "\t";
+	}
+	(*logManager)["MapLog.txt"] << std::endl;
 	(*logManager)["MapLog.txt"].flush();
 
 	// Store Floor information;
