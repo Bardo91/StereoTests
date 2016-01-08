@@ -64,6 +64,10 @@
 		"icpMaxTranslationChangeCompared2ProvidedGuess": 0.02,
 		"icpMaxAngleChangeCompared2ProvidedGuess": 3.0
 	},
+	"floorSubstractor":
+	{
+		"learn":true,
+	},
 	"recognitionSystem":
 	{
 		"bow":

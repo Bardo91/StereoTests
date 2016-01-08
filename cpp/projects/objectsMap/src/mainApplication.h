@@ -59,7 +59,7 @@ private:
 
 private:
 	FloorSubstractor	*mFloorSubstractor;
-	bool				mLearnFloor = false;
+	bool				mLearnFloor;
 
 	StereoCameras		*mCameras;
 	EnvironmentMap		mMap;

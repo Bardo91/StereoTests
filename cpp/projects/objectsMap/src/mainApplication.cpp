@@ -56,6 +56,7 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 	initLog();
 
 	/**/
+	mLearnFloor = bool(mConfig["floorSubstractor"]["learn"]);
 	mFloorSubstractor = new FloorSubstractorCCS();
 	/**/
 	mTimer = BOViL::STime::get();
