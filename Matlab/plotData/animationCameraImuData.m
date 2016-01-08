@@ -1,7 +1,7 @@
 %% Display an animation of the camera movement
 %% To use this function is necessary to have set up peter corke
 
-function animationCamera(fileName, fps)
+function animationCameraImuData(fileName, fps)
 
 data = load(fileName);
 
@@ -15,13 +15,15 @@ i2c(1:3,4) = [0.092, 0.124, -0.145]';
 i2c2 = i2c;
 i2c2(2,4)= -0.124; % Second camera
 
+q = data(:, 6);
+q(:,2:4) = data(:,3:5);
 
 %% Draw loop
 origin = eye(4);
 T = eye(4)
 for i =1:n
-    pos = data(i,1:3);
-    quat = data(i,4:7);
+    pos = [0,0,0];
+    quat =  q(i,:);
     
     cla(1);
     trplot(origin, 'color','k');
