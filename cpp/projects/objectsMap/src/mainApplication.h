@@ -54,7 +54,6 @@ private:
 	bool stepCathegorizeCandidates(std::vector<ObjectCandidate> &_candidates, const cv::Mat &_frame1,const  cv::Mat &_frame2);
 
 	bool stepCheckGroundTruth();	// 666 Debug.
-	bool initLog();
 	bool save2Log();
 
 private:
@@ -88,11 +87,6 @@ private:
 	cjson::Json mConfig;
 
 	std::vector<ObjectCandidate> mCandidateGroundTruth;	// 666 Debug.
-
-	std::string mExeFolder;
-	std::vector<ofstream> mCandidateLogs;
-	std::vector<ofstream> mCandidateCloudsLogs;
-	ofstream mCameraLog, mMapLog, mFloorLog;
 };
 
 #endif	//	MAINAPPLICATION_H_
