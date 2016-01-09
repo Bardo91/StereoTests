@@ -19,7 +19,7 @@ function [] = animateClouds( clouds, fps )
            display('Unknown format of cloud');
         end
         
-        plot3(cloud(1,:), cloud(2,:), cloud(3,:), '*')
+        plot3(cloud(1,:), cloud(2,:), -cloud(3,:), '*')
         
         %Delaying animation
         pause(1/fps);
