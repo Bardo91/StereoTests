@@ -5,6 +5,7 @@ function [] = animateClouds( clouds, fps )
     end
 
     figure();
+    hold on;
     for i =1:length(clouds)
         cla(1)
         
@@ -19,7 +20,7 @@ function [] = animateClouds( clouds, fps )
         end
         
         plot3(cloud(1,:), cloud(2,:), cloud(3,:), '*')
-        axis([-0.5,0.5,-0.5,0.5,0,1.5]);
+        
         %Delaying animation
         pause(1/fps);
     end
