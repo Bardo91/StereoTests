@@ -1,4 +1,9 @@
-function [ vectorizedClouds ] = loadHistoryCloud( fileName )
+function [ vectorizedClouds ] = loadHistoryCloud( fileName, offset)
+
+if nargin < 2
+    offset = 0;
+end
+  
 rawData = importdata(fileName);
 
 [n,m] = size(rawData);
@@ -11,6 +16,10 @@ auxRow = [];
 auxRowIndex = 1;
 for i=1:n
     for j =1:m
+        if i == 1 & j == 1
+            j = 1+offset;
+        end
+        
         if(~isnan(rawData(i,j)))
             nanStatus=false;
             auxRow(auxRowIndex) = rawData(i,j);
