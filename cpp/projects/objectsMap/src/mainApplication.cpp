@@ -25,6 +25,7 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 
+#include <StereoLib/utils/LogManager.h>
 
 using namespace cjson;
 using namespace cv;
@@ -53,9 +54,10 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 	//result &= initLoadGt();
 	result &= initImuAndEkf();
 	
-	initLog();
+	LogManager::init();
 
 	/**/
+	mLearnFloor = bool(mConfig["floorSubstractor"]["learn"]);
 	mFloorSubstractor = new FloorSubstractorCCS();
 	/**/
 	mTimer = BOViL::STime::get();
@@ -114,7 +116,12 @@ bool MainApplication::step() {
 	Eigen::Vector4f forecastX = Eigen::Vector4f::Ones();
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_IMU))) {
 		auto prevX = mEkf.getStateVector().cast<float>();
+		auto q = Eigen::Quaternion<float>(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+		(*LogManager::get())["Imu.txt"] << prevX.block<9, 1>(0, 0).transpose() << "\t";
+		(*LogManager::get())["Imu.txt"] << q.w() << "\t" << q.w() << "\t" << q.y() << "\t" << q.z() << "\t";
+
 		double incT = imuData.mTimeSpan - mPreviousTime;
+		(*LogManager::get())["Imu.txt"] << incT << "\t";
 
 		// x(k) = x(k-1) + v(k-1)*incT + a(k-1)*incT*incT/2;
 		forecastX.block<3, 1>(0, 0) =	prevX.block<3, 1>(0, 0) +			
@@ -122,6 +129,8 @@ bool MainApplication::step() {
 										(Matrix3f::Identity()*(incT*incT / 2))*prevX.block<3, 1>(6, 0);
 		std::cout << "-> STEP: Forecast from previous state is" << std::endl;
 		std::cout << forecastX<<std::endl;
+		(*LogManager::get())["Imu.txt"] << forecastX.transpose() << std::endl;
+
 	}
 	else {
 		errorBitList |= (1<<BIT_MAST_ERROR_FORECAST);
@@ -802,60 +811,29 @@ bool MainApplication::stepCheckGroundTruth()
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::initLog() {
-	mExeFolder = "execution_" + to_string(time(NULL))+"/";
-	CreateDirectory(mExeFolder.c_str(), NULL);
-
-	mCameraLog.open(mExeFolder + "cameraLog.txt");
-	mMapLog.open(mExeFolder + "mapLog.txt");
-	mFloorLog.open(mExeFolder + "floorLog.txt");
-
-	return true;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::save2Log() {
-	auto map = mMap.cloud();
-	Quaternionf camOri = map.sensor_orientation_;
-	Vector4f camPos = map.sensor_origin_;
-	// Store camera info. position and orientation in quaternions
-	mCameraLog << camPos.block<3,1>(0,0).transpose() << "\t";
-	mCameraLog << camOri.x() << "\t" << camOri.y() << "\t" << camOri.z() << "\t" << camOri.w() << std::endl;
-	mCameraLog.flush();
+	LogManager *logManager = LogManager::get();
 
-	// Store Map info.
-	mMapLog << map.size() << std::endl;
-	mMapLog.flush();
-
-	// Store Floor information;
-	mFloorLog << mFloorSubstractor->isTrained() << std::endl;
-	mFloorLog.flush();
-
-	// Store Candidate Information.
-	if (mCandidateLogs.size() < mCandidates.size()) {
-		int sizeToExtend = mCandidates.size() - mCandidateLogs.size();
-		for (unsigned i = 0; i < sizeToExtend; i++) {
-			mCandidateLogs.push_back(ofstream(mExeFolder+"candidate_" + to_string(mCandidateLogs.size())+".txt"));
-			mCandidateCloudsLogs.push_back(ofstream(mExeFolder+"candidateClouds_" + to_string(mCandidateCloudsLogs.size()) + ".txt"));
-		}
-	}
 	for (unsigned i = 0; i < mCandidates.size(); i++) {
 		auto candidate = mCandidates[i];
 		auto cloud = *candidate.cloud();
 		auto cathegories = candidate.cathegoryHistory();
 		candidate.cathegory();
-		mCandidateLogs[i] << candidate.centroid().block<3, 1>(0, 0).transpose() << "\t" << cloud.size() << "\t";
+		string candidateFileName = "candidate_" + to_string(i) + ".txt";
+		(*logManager)[candidateFileName] << candidate.centroid().block<3, 1>(0, 0).transpose() << "\t" << cloud.size() << "\t";
 		for (unsigned j = 0; j < cathegories.size(); j++) {
-			mCandidateLogs[i] << *cathegories[j].rbegin() << "\t";
+			(*logManager)[candidateFileName] << *cathegories[j].rbegin() << "\t";
 		}
-		mCandidateLogs[i] << std::endl;
-		mCandidateLogs[i].flush();
+		(*logManager)[candidateFileName] << std::endl;
+		(*logManager)[candidateFileName].flush();
 
+
+		string candidateCloudFileName = "candidateCloud_" + to_string(i) + ".txt";
 		for (unsigned j = 0; j < cloud.size(); j++) {
-			mCandidateCloudsLogs[i] << cloud[j].x << "\t" << cloud[j].y << "\t" << cloud[j].z << "\t";
+			(*logManager)[candidateCloudFileName] << cloud[j].x << "\t" << cloud[j].y << "\t" << cloud[j].z << "\t";
 		}
-		mCandidateCloudsLogs[i] << std::endl;
-		mCandidateCloudsLogs[i].flush();
+		(*logManager)[candidateCloudFileName] << std::endl;
+		(*logManager)[candidateCloudFileName].flush();
 	}
 	return true;
 }
