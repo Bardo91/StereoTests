@@ -813,27 +813,6 @@ bool MainApplication::stepCheckGroundTruth()
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::save2Log() {
 	LogManager *logManager = LogManager::get();
-	
-	auto map = mMap.cloud();
-	Quaternionf camOri = map.sensor_orientation_;
-	Vector4f camPos = map.sensor_origin_;
-	// Store camera info. position and orientation in quaternions
-	(*logManager)["CameraLog.txt"] << camPos.block<3,1>(0,0).transpose() << "\t";
-	(*logManager)["CameraLog.txt"] << camOri.x() << "\t" << camOri.y() << "\t" << camOri.z() << "\t" << camOri.w() << std::endl;
-	(*logManager)["CameraLog.txt"].flush();
-
-	// Store Map info.
-	(*logManager)["MapLog.txt"] << map.size();
-	for (unsigned j = 0; j < map.size(); j++) {
-		(*logManager)["MapLog.txt"] << map[j].x << "\t" << map[j].y << "\t" << map[j].z << "\t";
-	}
-	(*logManager)["MapLog.txt"] << std::endl;
-	(*logManager)["MapLog.txt"].flush();
-
-	// Store Floor information;
-	(*logManager)["FloorLog.txt"] << mFloorSubstractor->isTrained() << std::endl;
-	(*logManager)["FloorLog.txt"].flush();
-
 
 	for (unsigned i = 0; i < mCandidates.size(); i++) {
 		auto candidate = mCandidates[i];
@@ -849,7 +828,7 @@ bool MainApplication::save2Log() {
 		(*logManager)[candidateFileName].flush();
 
 
-		string candidateCloudFileName = "candidate_" + to_string(i) + ".txt";
+		string candidateCloudFileName = "candidateCloud_" + to_string(i) + ".txt";
 		for (unsigned j = 0; j < cloud.size(); j++) {
 			(*logManager)[candidateCloudFileName] << cloud[j].x << "\t" << cloud[j].y << "\t" << cloud[j].z << "\t";
 		}
