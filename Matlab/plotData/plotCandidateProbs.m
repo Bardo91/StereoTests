@@ -1,6 +1,6 @@
 %% Ploting candidate labels over time
 
-function plotCandidateFile(fileName)
+function plotCandidateProbs(fileName)
     allData = load(fileName);
     
     [n,m] = size(allData);
