@@ -6,7 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <sstream>
-#include <Windows.h>
+
 #include <opencv2/opencv.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
@@ -20,6 +20,21 @@
 #include <StereoLib/ml/BoW.h>
 #include <StereoLib/StereoCameras.h>
 #include <StereoLib/ImageFilteringTools.h>
+
+//---------------------------------------------------------------------------------------------------------------------
+#ifdef _WIN32
+	#include <Windows.h>
+	inline void do_mkdir(std::string _filename) {
+		CreateDirectory(_filename.c_str(), NULL);
+	}
+#elif __linux__
+	#include <sys/stat.h>
+	#include <sys/types.h>
+	inline void do_mkdir(std::string _filename) {
+		mkdir(_filename.c_str(), 0700);
+	}
+#endif
+
 
 //using namespace algorithm;
 using namespace std;
@@ -129,7 +144,14 @@ void initConfig(string _path, Json & _data) {
 
 //---------------------------------------------------------------------------------------------------------------
 StereoCameras * initCameras(Json &_config) {
-	StereoCameras *  cameras = new StereoCameras(_config["left"], _config["right"]);
+	StereoCameras *  cameras;
+
+	if(_config["cameras"]["left"].isString())
+		cameras = new StereoCameras(string(_config["cameras"]["left"]), string(_config["cameras"]["right"]));
+	else
+		cameras = new StereoCameras(int(_config["cameras"]["left"]), int(_config["cameras"]["right"]));
+
+
 	Json leftRoi = _config["leftRoi"];
 	Json rightRoi = _config["rightRoi"];
 	cameras->roi(	Rect(leftRoi["x"],leftRoi["y"],leftRoi["width"],leftRoi["height"]), 
@@ -259,7 +281,7 @@ pcl::PointCloud<pcl::PointXYZ> filter(const pcl::PointCloud<pcl::PointXYZ> &_inp
 
 void createTrainingSet(StereoCameras * _cameras, Json &_config, vector<Mat> &_images, const string & _path, vector<double> &_gt){
 	Mat frame1, frame2, vLeft, vRight;
-	CreateDirectory("CroppedSet", NULL);
+	do_mkdir("CroppedSet");
 	int index = 0;
 	vector<double> groundTruth;
 	ifstream gtFile(_path);
@@ -267,7 +289,7 @@ void createTrainingSet(StereoCameras * _cameras, Json &_config, vector<Mat> &_im
 	
 	for (;;) {
 		vector<Point3f> cloud;
-		std::cout << "Image nº " << index << std::endl;
+		std::cout << "Image nr " << index << std::endl;
 		calculatePointCloud(_cameras, cloud, frame1, frame2, _config);
 		int gtVal;
 		gtFile >> gtVal;

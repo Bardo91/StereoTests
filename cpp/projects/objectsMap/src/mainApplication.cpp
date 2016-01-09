@@ -307,7 +307,11 @@ bool MainApplication::loadArguments(int _argc, char ** _argv) {
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::initCameras(){
-	mCameras = new StereoCameras(mConfig["cameras"]["left"], mConfig["cameras"]["right"]);
+	if(mConfig["cameras"]["left"].isString())
+		mCameras = new StereoCameras(string(mConfig["cameras"]["left"]), string(mConfig["cameras"]["right"]));
+	else
+		mCameras = new StereoCameras(int(mConfig["cameras"]["left"]), int(mConfig["cameras"]["right"]));
+
 	Json leftRoi = mConfig["cameras"]["leftRoi"];
 	Json rightRoi = mConfig["cameras"]["rightRoi"];
 	mCameras->roi(	Rect(leftRoi["x"],leftRoi["y"],leftRoi["width"],leftRoi["height"]), 
@@ -592,8 +596,9 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 		return false;
 	} else {
 		if (mFloorSubstractor->isTrained()) {
-			mFloorSubstractor->substract(_frame1, _frame1);
-			mFloorSubstractor->substract(_frame2, _frame2);
+			Mat mask;
+			mFloorSubstractor->substract(_frame1, _frame1, mask);
+			mFloorSubstractor->substract(_frame2, _frame2, mask);
 		}
 
 		_frame1 = mCameras->camera(0).undistort(_frame1);
