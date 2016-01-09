@@ -116,7 +116,12 @@ bool MainApplication::step() {
 	Eigen::Vector4f forecastX = Eigen::Vector4f::Ones();
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_IMU))) {
 		auto prevX = mEkf.getStateVector().cast<float>();
+		auto q = Eigen::Quaternion<float>(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+		(*LogManager::get())["Imu.txt"] << prevX.block<9, 1>(0, 0).transpose() << "\t";
+		(*LogManager::get())["Imu.txt"] << q.w() << "\t" << q.w() << "\t" << q.y() << "\t" << q.z() << "\t";
+
 		double incT = imuData.mTimeSpan - mPreviousTime;
+		(*LogManager::get())["Imu.txt"] << incT << "\t";
 
 		// x(k) = x(k-1) + v(k-1)*incT + a(k-1)*incT*incT/2;
 		forecastX.block<3, 1>(0, 0) =	prevX.block<3, 1>(0, 0) +			
@@ -124,6 +129,8 @@ bool MainApplication::step() {
 										(Matrix3f::Identity()*(incT*incT / 2))*prevX.block<3, 1>(6, 0);
 		std::cout << "-> STEP: Forecast from previous state is" << std::endl;
 		std::cout << forecastX<<std::endl;
+		(*LogManager::get())["Imu.txt"] << forecastX.transpose() << std::endl;
+
 	}
 	else {
 		errorBitList |= (1<<BIT_MAST_ERROR_FORECAST);

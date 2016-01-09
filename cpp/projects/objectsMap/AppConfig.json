@@ -51,7 +51,7 @@
 		"icpMaxTransformationEpsilon":0.00000001,
 		"icpEuclideanEpsilon":0.000000001,
 		"icpMaxIcpIterations":30,
-		"icpMaxCorrespondenceDistance":0.05,
+		"icpMaxCorrespondenceDistance":0.20,
 		"historySize":2,
 		"clusterAffiliationMaxDistance":0.035,
 		"minClusterSize":15,
