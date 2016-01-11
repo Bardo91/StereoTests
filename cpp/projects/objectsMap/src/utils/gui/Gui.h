@@ -117,6 +117,7 @@ public:		// Public interface
 private:	// Private methods
 	Gui(std::string _name, StereoCameras& _stereoCameras);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr colorizePointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, int _r, int _g, int _b);
+	void keyboardEventOccurred(const pcl::visualization::KeyboardEvent &_event, void* _viewer_void);
 
 private:	// Members
 	static Gui	*mInstance;
@@ -131,6 +132,9 @@ private:	// Members
 	unsigned mPcCounter = 0;	// This variable is used to generate different names between pointcloud inside the vizualizer.
 								// 666 TODO: check it.
 	StereoCameras& mStereoCameras;
+	bool mShowGuess = true;
+	bool mShowIcpResult = true;
+	bool mShowCandidates = true;
 };	//	class Gui
 
 #endif	//	GUI_H_
