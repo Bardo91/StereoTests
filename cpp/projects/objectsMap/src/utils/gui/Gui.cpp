@@ -334,21 +334,23 @@ void Gui::spinOnce() {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Gui::Gui(string _name, StereoCameras& _stereoCameras): mName(_name), m3dViewer(new PCLVisualizer (mName)), mStereoCameras(_stereoCameras) {
-	m3dViewer->initCameraParameters ();
-	m3dViewer->addCoordinateSystem (0.25);
+Gui::Gui(string _name, StereoCameras& _stereoCameras) : mName(_name), m3dViewer(new PCLVisualizer(mName)), mStereoCameras(_stereoCameras) {
+	m3dViewer->initCameraParameters();
 	// Set up mapViewer
-	m3dViewer->createViewPort (0.0, 0.0, 0.5, 1.0, mViewPortMapViewer);
-	m3dViewer->setBackgroundColor (0, 0, 0, mViewPortMapViewer);
-	m3dViewer->addCoordinateSystem (0.25,"XYZ_map", mViewPortMapViewer);
+	m3dViewer->createViewPort(0.0, 0.0, 0.5, 1.0, mViewPortMapViewer);
+	m3dViewer->setBackgroundColor(0, 0, 0, mViewPortMapViewer);
+	m3dViewer->addCoordinateSystem(0.25, "XYZ_map", mViewPortMapViewer);
+	m3dViewer->setCameraPosition(0.0, -0.2, -0.75, 0.0, -1.0, 0.1, mViewPortMapViewer);
 	PointCloud<PointXYZ>::Ptr emptyCloud(new PointCloud<PointXYZ>);
-	m3dViewer->addPointCloud(emptyCloud, "map",mViewPortMapViewer);
-	m3dViewer->addText ("Map Viewer", 10, 10, "MapViewer text", mViewPortMapViewer);
+	m3dViewer->addPointCloud(emptyCloud, "map", mViewPortMapViewer);
+	m3dViewer->addText("Map Viewer", 10, 10, "MapViewer text", mViewPortMapViewer);
 	// Set up pc viewer
-	m3dViewer->createViewPort (0.5, 0.0, 1.0, 1.0, mViewportPcViewer);
-	m3dViewer->setBackgroundColor (0.1, 0.1, 0.1, mViewportPcViewer);
-	m3dViewer->addCoordinateSystem (0.25,"XYZ_pc",mViewportPcViewer);
-	m3dViewer->addText ("Cloud Viewer", 10, 10, "PcViewer text", mViewportPcViewer);
+	m3dViewer->createViewPort(0.5, 0.0, 1.0, 1.0, mViewportPcViewer);
+	m3dViewer->setBackgroundColor(0.1, 0.1, 0.1, mViewportPcViewer);
+	m3dViewer->addCoordinateSystem(0.25, "XYZ_pc", mViewportPcViewer);
+	m3dViewer->addText("Cloud Viewer", 10, 10, "PcViewer text", mViewportPcViewer);
+	//connect keyboard event
+	m3dViewer->registerKeyboardCallback<Gui>(&Gui::keyboardEventOccurred, *this, (void*)&m3dViewer);
 
 	// Set up stereo viewer
 	namedWindow(mName + "_StereoViewer", CV_WINDOW_AUTOSIZE);
@@ -370,3 +372,21 @@ PointCloud<PointXYZRGB>::Ptr Gui::colorizePointCloud(const PointCloud<PointXYZ>:
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+void Gui::keyboardEventOccurred(const pcl::visualization::KeyboardEvent &_event, void* _viewer_void){
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = *static_cast<boost::shared_ptr<pcl::visualization::PCLVisualizer> *> (_viewer_void);
+	if (_event.getKeySym() == "g" && _event.keyDown())
+	{
+		std::cout << "g was pressed => guess visualization toggled" << std::endl;
+		mShowGuess = !mShowGuess;
+	}
+	if (_event.getKeySym() == "i" && _event.keyDown())
+	{
+		std::cout << "i was pressed => icp result visualization toggled" << std::endl;
+		mShowIcpResult = !mShowIcpResult;
+	}
+	if (_event.getKeySym() == "s" && _event.keyDown())
+	{
+		std::cout << "s was pressed => candidate visualization toggled" << std::endl;
+		mShowCandidates = !mShowCandidates;
+	}
+}
