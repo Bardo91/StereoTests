@@ -235,6 +235,16 @@ bool MainApplication::step() {
 		}
 	}
 
+	// Drawing candidates if necessary
+	if (!(errorBitList & (1 << BIT_MAST_ERROR_MAP)) && !(errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
+		for(ObjectCandidate candidate:mCandidates)
+			mGui->drawCandidate(candidate, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_);
+	}
+
+	// Adding text messages over all the things
+	if(errorBitList & (1 << BIT_MAST_ERROR_MAP))
+		mGui->addText("Bad result in cloud alignment");
+
 	// <----------->
 	// Store and plot positions data 666 debug
 	auto xEkf = mEkf.getStateVector();
@@ -775,8 +785,6 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 		imshow("view", view);
 		imshow("view2", view2);
 		waitKey();*/
-
-		mGui->drawCandidate(candidate, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_);	
 	}
 
 	return true;

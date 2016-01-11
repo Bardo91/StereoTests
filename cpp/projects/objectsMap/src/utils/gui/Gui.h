@@ -69,6 +69,10 @@ public:		// Public interface
 	/// \param _left: true to mark left image, false to right
 	void putBlurry(bool _left);
 
+	/// Add Text to pair of images
+	/// \param _text: text to be added
+	void addText(std::string _text);
+
 	/// Draw points over the stereo pair of images
 	/// \param _points: Points to be drawn relative to single image coordinates
 	/// \param _isLeft: True if points belong to left image, false if belong to right image.
@@ -130,6 +134,7 @@ private:	// Members
 	int mViewPortMapViewer = 0, mViewportPcViewer = 1;
 
 	cv::Mat mLeftImage, mRightImage, mPairStereo;
+	unsigned mLinesOfText = 0;
 
 	unsigned mPcCounter = 0;	// This variable is used to generate different names between pointcloud inside the vizualizer.
 								// 666 TODO: check it.

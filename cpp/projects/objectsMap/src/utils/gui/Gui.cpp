@@ -181,10 +181,10 @@ void Gui::clearPcViewer() {
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::updateStereoImages(const Mat & _left, const Mat & _right) {
+	mLinesOfText = 0;
 	mLeftImage = _left; 
 	mRightImage = _right;
 	hconcat(mLeftImage, mRightImage, mPairStereo);
-
 	imshow(mName + "_StereoViewer", mPairStereo);
 }
 
@@ -192,11 +192,18 @@ void Gui::updateStereoImages(const Mat & _left, const Mat & _right) {
 void Gui::putBlurry(bool _left) {
 	Point2i startPoint;
 	if(_left)
-		startPoint = Point2i(20, 30);
+		startPoint = Point2i(mLeftImage.cols/2-50, mLeftImage.rows/2);
 	else
-		startPoint = Point2i(20 + mLeftImage.cols, 30);
+		startPoint = Point2i(mLeftImage.cols/2 + mLeftImage.cols-50, mLeftImage.rows/2);
 
 	putText(mPairStereo, "Blurry Image", startPoint, FONT_HERSHEY_SIMPLEX, 1.0, Scalar(0, 0, 255),4);
+	imshow(mName + "_StereoViewer", mPairStereo);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::addText(string _text) {
+	Point2i startPoint(20+mLinesOfText*20,30);
+	putText(mPairStereo, _text, startPoint, FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0, 0, 255),2);
 	imshow(mName + "_StereoViewer", mPairStereo);
 }
 
