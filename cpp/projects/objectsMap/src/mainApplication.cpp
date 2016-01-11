@@ -160,9 +160,6 @@ bool MainApplication::step() {
 					errorBitList |= (1 << BIT_MAST_ERROR_MAP);
 					std::cout << "-> STEP: Error while updating map" << std::endl;
 				}
-				else {
-					mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_,0,255,0);
-				}
 			}
 			else {
 				errorBitList |= (1 << BIT_MAST_ERROR_TRIANGULATE);
@@ -671,15 +668,18 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 	bool hasConverged = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
 
 	if(addedCloudCameraCS->size() != 0)
-		Gui::get()->addPointToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
+		Gui::get()->addCloudToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
 
 	mGui->drawMap(mMap.cloud().makeShared());
-	mGui->addPointToPcViewer(_cloud);
-	mGui->addCluster(mMap.GuessCloud(), 2, 0, 0, 255);
-	mGui->addCluster(mMap.AlignedCloud(), 3,255,255,255);
+	mGui->addCloudToPcViewer(_cloud);
+	mGui->addCloudToMapViewer(mMap.GuessCloud(), 2, 0, 0, 255, "guess");
+	mGui->addCloudToMapViewer(mMap.AlignedCloud(), 3,255,255,255, "icpResult");
 
 	if (!hasConverged) {
 		mGui->drawCamera(mMap.ICPres().block<3, 3>(0, 0), mMap.ICPres().col(3), 255, 0, 0);
+	}
+	else {
+		mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_,0,255,0);
 	}
 	//mGui->spinOnce();
 	return hasConverged;

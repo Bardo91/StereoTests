@@ -141,7 +141,7 @@ void Gui::clearMap() {
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::drawCandidate(const ObjectCandidate & _candidate, const Eigen::Vector4f &_position, const Eigen::Quaternionf &_orientation) {
-	addCloudToMapViewer(_candidate.cloud(), 4, _candidate.R(), _candidate.G(), _candidate.B());
+	addCloudToMapViewer(_candidate.cloud(), 4, _candidate.R(), _candidate.G(), _candidate.B(), "candidate_"+to_string(mPcCounter++));
 	reprojectCloud(_candidate.cloud(),_position, _orientation, _candidate.R(), _candidate.G(), _candidate.B());
 	drawCathegory(_candidate,_position, _orientation);
 }
@@ -394,20 +394,20 @@ PointCloud<PointXYZRGB>::Ptr Gui::colorizePointCloud(const PointCloud<PointXYZ>:
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::keyboardEventOccurred(const pcl::visualization::KeyboardEvent &_event, void* _viewer_void){
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = *static_cast<boost::shared_ptr<pcl::visualization::PCLVisualizer> *> (_viewer_void);
-	if (_event.getKeySym() == "g" && _event.keyDown())
-	{
-		std::cout << "g was pressed => guess visualization toggled" << std::endl;
+	std::cout << _event.getKeySym() << " was pressed";
+	if ((_event.getKeySym() == "1") && _event.keyUp()) {
+		std::cout << " => guess visualization toggled" << std::endl;
 		mShowGuess = !mShowGuess;
 	}
-	if (_event.getKeySym() == "i" && _event.keyDown())
-	{
-		std::cout << "i was pressed => icp result visualization toggled" << std::endl;
+	if ((_event.getKeySym() == "2") && _event.keyUp()) {
+		std::cout << " => icp result visualization toggled" << std::endl;
 		mShowIcpResult = !mShowIcpResult;
 	}
-	if (_event.getKeySym() == "s" && _event.keyDown())
-	{
-		std::cout << "s was pressed => candidate visualization toggled" << std::endl;
+	if ((_event.getKeySym() == "3") && _event.keyUp()) {
+		std::cout << " => candidate visualization toggled" << std::endl;
 		mShowCandidates = !mShowCandidates;
+	} else {
+		std::cout << std::endl;
 	}
 }
 
