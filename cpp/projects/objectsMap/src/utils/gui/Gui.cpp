@@ -321,11 +321,11 @@ void Gui::spinOnce() {
 //---------------------------------------------------------------------------------------------------------------------
 Gui::Gui(string _name, StereoCameras& _stereoCameras): mName(_name), m3dViewer(new PCLVisualizer (mName)), mStereoCameras(_stereoCameras) {
 	m3dViewer->initCameraParameters ();
-	m3dViewer->addCoordinateSystem (0.25);
 	// Set up mapViewer
 	m3dViewer->createViewPort (0.0, 0.0, 0.5, 1.0, mViewPortMapViewer);
 	m3dViewer->setBackgroundColor (0, 0, 0, mViewPortMapViewer);
 	m3dViewer->addCoordinateSystem (0.25,"XYZ_map", mViewPortMapViewer);
+	m3dViewer->setCameraPosition(0.0, -0.2, -0.75, 0.0, -1.0, 0.1, mViewPortMapViewer);
 	PointCloud<PointXYZ>::Ptr emptyCloud(new PointCloud<PointXYZ>);
 	m3dViewer->addPointCloud(emptyCloud, "map",mViewPortMapViewer);
 	m3dViewer->addText ("Map Viewer", 10, 10, "MapViewer text", mViewPortMapViewer);
