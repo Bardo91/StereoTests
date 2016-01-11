@@ -29,16 +29,16 @@ public:		// Public interface
 	void drawMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_map);
 
 	/// Draw a plane into de map.
-	void drawPlane(const pcl::ModelCoefficients &_plane);
-	void drawPlane(const pcl::ModelCoefficients &_plane, double _x, double _y, double _z);
+	void drawPlane(const pcl::ModelCoefficients &_plane, std::string _tag = "");
+	void drawPlane(const pcl::ModelCoefficients &_plane, double _x, double _y, double _z, std::string _tag = "");
 
 	/// Draw a plane into de map.
-	void drawLine(const pcl::PointXYZ &_p1, const pcl::PointXYZ &_p2, unsigned _r = 255, unsigned _g =255, unsigned _b = 255);
+	void drawLine(const pcl::PointXYZ &_p1, const pcl::PointXYZ &_p2, unsigned _r = 255, unsigned _g =255, unsigned _b = 255, std::string _tag = "");
 
 	/// Draw a camera shape on the map.
 	/// \param _pos: Camera position.
 	///	\param _ori: Camera orientation.
-	void drawCamera(const Eigen::Matrix3f &_orientation, const Eigen::Vector4f &_position, unsigned _r = 255, unsigned _g =255, unsigned _b = 255);
+	void drawCamera(const Eigen::Matrix3f &_orientation, const Eigen::Vector4f &_position, unsigned _r = 255, unsigned _g =255, unsigned _b = 255, std::string _tag = "");
 
 	/// Clear map viewer.
 	void clearMap();
@@ -47,7 +47,7 @@ public:		// Public interface
 	void drawCandidate(const ObjectCandidate & _candidate, const Eigen::Vector4f &_position, const Eigen::Quaternionf &_orientation);
 
 	/// Add cluster of single object in the point cloud;
-	void addCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cluster,  unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b);
+	void addCloudToMapViewer(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cluster,  unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b, std::string _tag = "");
 
 	/// This viewer is a general purpose viewer for displaying point cloud.
 	/// \param _cloud: Point cloud to be displayed
@@ -55,7 +55,7 @@ public:		// Public interface
 	/// \param _r: Red (0-255) channel of the final desired color for the _cloud
 	/// \param _g: green (0-255) channel of the final desired color for the _cloud
 	/// \param _b: blue (0-255) channel of the final desired color for the _cloud
-	void addPointToPcViewer(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, unsigned _pointSize = 1, unsigned _r=255, unsigned _g=255, unsigned _b=255);
+	void addCloudToPcViewer(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, unsigned _pointSize = 1, unsigned _r=255, unsigned _g=255, unsigned _b=255, std::string _tag = "");
 	
 	/// Clear pc viewer
 	void clearPcViewer();

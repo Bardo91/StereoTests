@@ -44,22 +44,31 @@ void Gui::drawMap(const PointCloud<PointXYZ>::Ptr & _map) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawPlane(const pcl::ModelCoefficients &_plane) {
-	m3dViewer->addPlane(_plane, "Plane_"+to_string(mPcCounter++),mViewPortMapViewer);
+void Gui::drawPlane(const pcl::ModelCoefficients &_plane, std::string _tag) {
+	if (_tag == "") {
+		_tag =  "Plane_"+to_string(mPcCounter++);
+	}
+	m3dViewer->addPlane(_plane,_tag,mViewPortMapViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawPlane(const pcl::ModelCoefficients & _plane, double _x, double _y, double _z) {
-	m3dViewer->addPlane(_plane,_x, _y, _z, "Plane_"+to_string(mPcCounter++),mViewPortMapViewer);
+void Gui::drawPlane(const pcl::ModelCoefficients & _plane, double _x, double _y, double _z, std::string _tag) {
+	if (_tag == "") {
+		_tag =  "Plane_"+to_string(mPcCounter++);
+	}
+	m3dViewer->addPlane(_plane,_x, _y, _z,_tag ,mViewPortMapViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawLine(const pcl::PointXYZ & _p1, const pcl::PointXYZ & _p2, unsigned _r, unsigned _g, unsigned _b) {
-	m3dViewer->addLine<PointXYZ, PointXYZ>(_p1, _p2, _r, _g, _b,"Line"+to_string(mPcCounter++),mViewPortMapViewer);
+void Gui::drawLine(const pcl::PointXYZ & _p1, const pcl::PointXYZ & _p2, unsigned _r, unsigned _g, unsigned _b, std::string _tag) {
+	if (_tag == "") {
+		_tag =  "Line" + to_string(mPcCounter++);
+	}
+	m3dViewer->addLine<PointXYZ, PointXYZ>(_p1, _p2, _r, _g, _b,_tag,mViewPortMapViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f & _position, unsigned _r , unsigned _g , unsigned _b) {
+void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f & _position, unsigned _r , unsigned _g , unsigned _b, std::string _tag) {
 	// Create a pointcloud vertically oriented in the origin
 	pcl::PointCloud<pcl::PointXYZ> camera;
 	camera.push_back(PointXYZ(0.07, 0.05, 0));
@@ -120,23 +129,29 @@ void Gui::clearMap() {
 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::drawCandidate(const ObjectCandidate & _candidate, const Eigen::Vector4f &_position, const Eigen::Quaternionf &_orientation) {
-	addCluster(_candidate.cloud(), 4, _candidate.R(), _candidate.G(), _candidate.B());
+	addCloudToMapViewer(_candidate.cloud(), 4, _candidate.R(), _candidate.G(), _candidate.B());
 	reprojectCloud(_candidate.cloud(),_position, _orientation, _candidate.R(), _candidate.G(), _candidate.B());
 	drawCathegory(_candidate,_position, _orientation);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::addCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cluster, unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b) {
-	mPcCounter++;
-	m3dViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cluster, _r, _g, _b),"Cluster_"+to_string(mPcCounter),mViewPortMapViewer);
-	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, _pointSize, "Cluster_"+to_string(mPcCounter),mViewPortMapViewer);
+void Gui::addCloudToMapViewer(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _cluster, unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b, std::string _tag) {
+	if (_tag == "") {
+		mPcCounter++;
+		_tag = "Cluster_"+to_string(mPcCounter);
+	}
+	m3dViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cluster, _r, _g, _b),_tag,mViewPortMapViewer);
+	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, _pointSize, _tag,mViewPortMapViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::addPointToPcViewer(const PointCloud<PointXYZ>::Ptr & _cloud, unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b) {
-	mPcCounter++;
-	m3dViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cloud, _r, _g, _b),"Cloud"+to_string(mPcCounter),mViewportPcViewer);
-	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, _pointSize, "Cloud"+to_string(mPcCounter),mViewportPcViewer);
+void Gui::addCloudToPcViewer(const PointCloud<PointXYZ>::Ptr & _cloud, unsigned _pointSize, unsigned _r, unsigned _g, unsigned _b, std::string _tag) {
+	if (_tag == "") {
+		mPcCounter++;
+		_tag = "Cloud_"+to_string(mPcCounter);
+	}
+	m3dViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cloud, _r, _g, _b),_tag, mViewportPcViewer);
+	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, _pointSize, _tag, mViewportPcViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
