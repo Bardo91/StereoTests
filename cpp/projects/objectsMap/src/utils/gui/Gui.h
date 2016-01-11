@@ -119,6 +119,8 @@ private:	// Private methods
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr colorizePointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, int _r, int _g, int _b);
 	void keyboardEventOccurred(const pcl::visualization::KeyboardEvent &_event, void* _viewer_void);
 
+	bool isTagAllowed(const std::string &_tag);
+
 private:	// Members
 	static Gui	*mInstance;
 	

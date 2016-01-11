@@ -47,6 +47,10 @@ void Gui::drawMap(const PointCloud<PointXYZ>::Ptr & _map) {
 void Gui::drawPlane(const pcl::ModelCoefficients &_plane, std::string _tag) {
 	if (_tag == "") {
 		_tag =  "Plane_"+to_string(mPcCounter++);
+	}else {
+		if (!isTagAllowed(_tag)) {
+			return;
+		}
 	}
 	m3dViewer->addPlane(_plane,_tag,mViewPortMapViewer);
 }
@@ -55,6 +59,10 @@ void Gui::drawPlane(const pcl::ModelCoefficients &_plane, std::string _tag) {
 void Gui::drawPlane(const pcl::ModelCoefficients & _plane, double _x, double _y, double _z, std::string _tag) {
 	if (_tag == "") {
 		_tag =  "Plane_"+to_string(mPcCounter++);
+	}else {
+		if (!isTagAllowed(_tag)) {
+			return;
+		}
 	}
 	m3dViewer->addPlane(_plane,_x, _y, _z,_tag ,mViewPortMapViewer);
 }
@@ -63,6 +71,10 @@ void Gui::drawPlane(const pcl::ModelCoefficients & _plane, double _x, double _y,
 void Gui::drawLine(const pcl::PointXYZ & _p1, const pcl::PointXYZ & _p2, unsigned _r, unsigned _g, unsigned _b, std::string _tag) {
 	if (_tag == "") {
 		_tag =  "Line" + to_string(mPcCounter++);
+	}else {
+		if (!isTagAllowed(_tag)) {
+			return;
+		}
 	}
 	m3dViewer->addLine<PointXYZ, PointXYZ>(_p1, _p2, _r, _g, _b,_tag,mViewPortMapViewer);
 }
@@ -139,6 +151,10 @@ void Gui::addCloudToMapViewer(const pcl::PointCloud<pcl::PointXYZ>::Ptr & _clust
 	if (_tag == "") {
 		mPcCounter++;
 		_tag = "Cluster_"+to_string(mPcCounter);
+	}else {
+		if (!isTagAllowed(_tag)) {
+			return;
+		}
 	}
 	m3dViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cluster, _r, _g, _b),_tag,mViewPortMapViewer);
 	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, _pointSize, _tag,mViewPortMapViewer);
@@ -149,6 +165,10 @@ void Gui::addCloudToPcViewer(const PointCloud<PointXYZ>::Ptr & _cloud, unsigned 
 	if (_tag == "") {
 		mPcCounter++;
 		_tag = "Cloud_"+to_string(mPcCounter);
+	} else {
+		if (!isTagAllowed(_tag)) {
+			return;
+		}
 	}
 	m3dViewer->addPointCloud<PointXYZRGB>(colorizePointCloud(_cloud, _r, _g, _b),_tag, mViewportPcViewer);
 	m3dViewer->setPointCloudRenderingProperties (PCL_VISUALIZER_POINT_SIZE, _pointSize, _tag, mViewportPcViewer);
@@ -389,4 +409,20 @@ void Gui::keyboardEventOccurred(const pcl::visualization::KeyboardEvent &_event,
 		std::cout << "s was pressed => candidate visualization toggled" << std::endl;
 		mShowCandidates = !mShowCandidates;
 	}
+}
+
+bool Gui::isTagAllowed(const std::string & _tag) {
+	if (_tag == "guess") {
+		return mShowGuess;
+	}
+	else if (_tag == "icpResult"){
+		return mShowIcpResult;
+	}
+	else if (_tag.find("candidate") != string::npos) {
+		return mShowCandidates;
+	}
+	else {
+		return false;
+	}
+	
 }
