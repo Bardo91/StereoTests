@@ -53,8 +53,8 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 	result &= initRecognitionSystem();
 	//result &= initLoadGt();
 	result &= initImuAndEkf();
-	
-	LogManager::init();
+
+	LogManager::init(_argc, _argv);
 
 	/**/
 	mLearnFloor = bool(mConfig["floorSubstractor"]["learn"]);
