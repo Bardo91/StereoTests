@@ -657,6 +657,9 @@ bool MainApplication::stepEkf(const ImuData & _imuData) {
 	
 	auto sensorPoseNorthCS = mInitialRot*mCam2Imu.inverse()*Transform<float,3, Affine>(icpRes)*mCam2Imu;
 
+	if (sensorPoseNorthCS.matrix().hasNaN())
+		cout << "Nan in sensorPose" << endl;
+
 	// Create observable state variable vetor.
 	Eigen::MatrixXf zk(6, 1);
 	zk << sensorPoseNorthCS.translation(), linAcc;
@@ -665,6 +668,11 @@ bool MainApplication::stepEkf(const ImuData & _imuData) {
 	std::cout << "-> STEP: Increment of time in EKF: " << _imuData.mTimeSpan - mPreviousTime << std::endl;
 	mEkf.stepEKF(zk.cast<double>(), _imuData.mTimeSpan - mPreviousTime);
 	mPreviousTime = _imuData.mTimeSpan;
+	if (mEkf.getStateVector().hasNaN()) {
+		cout << "PROBLEM, state vector has NaN" << endl;
+		cout << "zk " << endl << zk << endl;
+		cout << "linacc " << endl << linAcc << endl;
+	}
 	
 	return true;
 }
