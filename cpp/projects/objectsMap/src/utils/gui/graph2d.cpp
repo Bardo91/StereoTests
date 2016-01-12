@@ -11,9 +11,17 @@ using namespace std;
 
 namespace BOViL {
 	namespace plot {
+		unsigned Graph2d::sGraphCounter = 0;
 		//---------------------------------------------------------------------------------------------------------------------
 		Graph2d::Graph2d(std::string _name) {
 			mWindowName = _name;
+			namedWindow(mWindowName, CV_WINDOW_FREERATIO);
+			clean();
+		}
+
+		//---------------------------------------------------------------------------------------------------------------------
+		Graph2d::Graph2d() {
+			mWindowName = "UntitledGraph_"+std::to_string(sGraphCounter++);
 			namedWindow(mWindowName, CV_WINDOW_FREERATIO);
 			clean();
 		}
@@ -115,7 +123,7 @@ namespace BOViL {
 				drawCircles(_graph);
 				break;
 			default:
-				std::cout << "Graph type not defined" << std::endl;
+				cout << "Graph type not defined" << std::endl;
 				break;
 			}
 

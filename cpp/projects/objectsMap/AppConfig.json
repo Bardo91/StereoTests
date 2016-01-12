@@ -1,6 +1,7 @@
 {
 	"gui":
 	{
+		"use":false,
 		"name":"Stereo Detector"
 	},
 	"groundTruth":

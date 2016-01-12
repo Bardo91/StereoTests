@@ -8,6 +8,7 @@
 #include <cassert>
 #include <pcl/common/transforms.h>
 
+#include <utils/LogManager.h>
 
 using namespace cv;
 using namespace std;
@@ -97,7 +98,7 @@ void Gui::drawCamera(const Eigen::Matrix3f & _orientation, const Eigen::Vector4f
 	transformation << _orientation;
 	transformation.col(3) << _position(0), _position(1), _position(2), 1;
 
-	//std::cout << transformation << std::endl;
+	//(*LogManager::get())["ConsoleOutput.txt"] << transformation << std::endl;
 
 	pcl::PointCloud<pcl::PointXYZ> cameraRotated;
 	transformPointCloud(camera, cameraRotated, transformation);
@@ -213,7 +214,7 @@ void Gui::drawPoints(const vector<Point2f>& _points, bool _isLeft, unsigned _r, 
 	Point2i offset(_isLeft?0:mLeftImage.cols, 0);
 	
 	Rect validRegion(_isLeft? 0:mLeftImage.cols, 0, mLeftImage.cols, mLeftImage.rows);
-	//cout << validRegion.x << ", " << validRegion.y << ", " << validRegion.width << ", " << validRegion.height << std::endl;
+	//(*LogManager::get())["ConsoleOutput.txt"] << validRegion.x << ", " << validRegion.y << ", " << validRegion.width << ", " << validRegion.height << std::endl;
 	for (Point2i point : _points) {
 		if(!validRegion.contains(point+offset))
 			continue;
@@ -406,20 +407,20 @@ PointCloud<PointXYZRGB>::Ptr Gui::colorizePointCloud(const PointCloud<PointXYZ>:
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::keyboardEventOccurred(const pcl::visualization::KeyboardEvent &_event, void* _viewer_void){
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = *static_cast<boost::shared_ptr<pcl::visualization::PCLVisualizer> *> (_viewer_void);
-	std::cout << _event.getKeySym() << " was pressed";
+	(*LogManager::get())["ConsoleOutput.txt"] << _event.getKeySym() << " was pressed";
 	if ((_event.getKeySym() == "1") && _event.keyUp()) {
-		std::cout << " => guess visualization toggled" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << " => guess visualization toggled" << std::endl;
 		mShowGuess = !mShowGuess;
 	}
 	if ((_event.getKeySym() == "2") && _event.keyUp()) {
-		std::cout << " => icp result visualization toggled" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << " => icp result visualization toggled" << std::endl;
 		mShowIcpResult = !mShowIcpResult;
 	}
 	if ((_event.getKeySym() == "3") && _event.keyUp()) {
-		std::cout << " => candidate visualization toggled" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << " => candidate visualization toggled" << std::endl;
 		mShowCandidates = !mShowCandidates;
 	} else {
-		std::cout << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << std::endl;
 	}
 }
 

@@ -44,7 +44,7 @@ const int BIT_MAST_ERROR_GETCANDIDATES = 6;
 const int BIT_MAST_ERROR_CATEGORIZINGCANDIDATES = 7;
 
 //---------------------------------------------------------------------------------------------------------------------
-MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time"), mPositionPlot("Drone position"), mVelocityPlot("Drone Velocity"), mThresholdPlot("ICP error") {
+MainApplication::MainApplication(int _argc, char ** _argv){
 	bool result = true;
 	result &= loadArguments(_argc, _argv);
 	result &= initCameras();
@@ -63,7 +63,7 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 	mTimer = BOViL::STime::get();
 
 	if (result) {
-		std::cout << "Main application configured and initiallized" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "Main application configured and initiallized" << std::endl;
 	}
 	else {
 		std::cerr << "Main application could not be neither configured and initialized" <<std::endl;
@@ -72,8 +72,10 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::step() {
-	mGui->clearMap();
-	mGui->clearPcViewer();
+	if (mGui != nullptr) {
+		mGui->clearMap();
+		mGui->clearPcViewer();
+	}
 
 	long errorBitList = 0;	// This variable store in each bit if each step was fine or not.
 
@@ -81,14 +83,14 @@ bool MainApplication::step() {
 	ImuData imuData;
 	if (!stepGetImuData(imuData)) {
 		errorBitList |= (1 << BIT_MAST_ERROR_IMU);
-		std::cout << "-> STEP: Error getting imu data" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error getting imu data" << std::endl;
 	}
 
 	// --> Get images and check if they are blurry or not.
 	Mat frame1, frame2, frame1Gray, frame2Gray;
 	if (!stepGetImages(frame1, frame2)) {
 		errorBitList |= (1 << BIT_MAST_ERROR_IMAGES);
-		std::cout << "-> STEP: Error getting images data or images are blurry" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error getting images data or images are blurry" << std::endl;
 	}
 
 	cvtColor(frame1, frame1Gray, CV_BGR2GRAY);
@@ -99,14 +101,14 @@ bool MainApplication::step() {
 	if (mIsFirstIter) {
 		// If current images are not good.
 		if ((errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
-			std::cout << "-> STEP: Waiting for a good image to set up system references" << std::endl;
+			(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Waiting for a good image to set up system references" << std::endl;
 			return false; // Do not iterate until there is a good image to work with.
 		}
 		// If have good images. Initiallize references and keep going.
 		else {
 			mInitialRot = Eigen::Quaternion<float>(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
 			mIsFirstIter = false;
-			std::cout << "-> STEP: Set current orientation as initial orientation" << std::endl;
+			(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Set current orientation as initial orientation" << std::endl;
 		}
 	}
 
@@ -127,14 +129,14 @@ bool MainApplication::step() {
 		forecastX.block<3, 1>(0, 0) =	prevX.block<3, 1>(0, 0) +			
 										(Matrix3f::Identity()*incT)*prevX.block<3, 1>(3, 0) +
 										(Matrix3f::Identity()*(incT*incT / 2))*prevX.block<3, 1>(6, 0);
-		std::cout << "-> STEP: Forecast from previous state is" << std::endl;
-		std::cout << forecastX<<std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Forecast from previous state is" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << forecastX<<std::endl;
 		(*LogManager::get())["Imu.txt"] << forecastX.transpose() << std::endl;
 
 	}
 	else {
 		errorBitList |= (1<<BIT_MAST_ERROR_FORECAST);
-		std::cout << "-> STEP: Error predicting new position" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error predicting new position" << std::endl;
 	}
 	
 
@@ -158,12 +160,12 @@ bool MainApplication::step() {
 
 				if (!stepUpdateMap(cloud, position, Quaternionf(pose.rotation()))) {
 					errorBitList |= (1 << BIT_MAST_ERROR_MAP);
-					std::cout << "-> STEP: Error while updating map" << std::endl;
+					(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error while updating map" << std::endl;
 				}
 			}
 			else {
 				errorBitList |= (1 << BIT_MAST_ERROR_TRIANGULATE);
-				std::cout << "-> STEP: Error generating new point cloud" << std::endl;
+				(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error generating new point cloud" << std::endl;
 			}
 		}
 
@@ -187,32 +189,34 @@ bool MainApplication::step() {
 
 	Eigen::Transform<float, 3, Affine> pose = sensorPos*q;
 	pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
-	mGui->drawCamera(pose.rotation(), pose.matrix().block<4, 1>(0, 3), 0, 0, 255);
 	// Draw camera pose for display purpose.
-	mGui->spinOnce();
+	if (mGui != nullptr) {
+		mGui->drawCamera(pose.rotation(), pose.matrix().block<4, 1>(0, 3), 0, 0, 255);
+		mGui->spinOnce();
+	}
 
 	// Iterate EKF
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {
 		if (!stepEkf(imuData)) {
 			errorBitList |= (1<<BIT_MAST_ERROR_EKF);
-			std::cout << "-> STEP: Error during EKF" << std::endl;
+			(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error during EKF" << std::endl;
 		}
-		std::cout << "-> STEP: EKF state after iteration with current data" << std::endl;
-		std::cout << mEkf.getStateVector().transpose() << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: EKF state after iteration with current data" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << mEkf.getStateVector().transpose() << std::endl;
 	}
 	else {
 		errorBitList |= (1<<BIT_MAST_ERROR_EKF);
-		std::cout << "-> STEP: Cannot perform EKF" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Cannot perform EKF" << std::endl;
 	}
 
 	if (!stepGetCandidates()) {
 		errorBitList |= (1 << BIT_MAST_ERROR_GETCANDIDATES);
-		std::cout << "-> STEP: Error getting candidates" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error getting candidates" << std::endl;
 	}
 
 	if (!stepCathegorizeCandidates(mCandidates, frame1, frame2)) {
 		errorBitList |= (1 << BIT_MAST_ERROR_CATEGORIZINGCANDIDATES);
-		std::cout << "-> STEP: Error cathegorizing candidates" << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error cathegorizing candidates" << std::endl;
 	}
 
 
@@ -228,58 +232,63 @@ bool MainApplication::step() {
 			mIsFirstIter = true;
 			mMap.clear();
 			mCandidates.clear();
-			std::cout << "-> STEP: Learned floor pattern" << std::endl;
+			(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Learned floor pattern" << std::endl;
 		}
 		else {
-			std::cout << "-> STEP: Failed to Learn floor pattern" << std::endl;
+			(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Failed to Learn floor pattern" << std::endl;
 		}
 	}
 
 	// Drawing candidates if necessary
-	if (!(errorBitList & (1 << BIT_MAST_ERROR_MAP)) && !(errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
-		for(ObjectCandidate candidate:mCandidates)
-			mGui->drawCandidate(candidate, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_);
-	}
+	if (mGui != nullptr) {
+		if (!(errorBitList & (1 << BIT_MAST_ERROR_MAP)) && !(errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
+			for (ObjectCandidate candidate : mCandidates)
+				mGui->drawCandidate(candidate, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_);
+		}
 
-	// Adding text messages over all the things
-	if(errorBitList & (1 << BIT_MAST_ERROR_MAP))
-		mGui->addText("Bad result in cloud alignment");
+		// Adding text messages over all the things
+		if (errorBitList & (1 << BIT_MAST_ERROR_MAP))
+			mGui->addText("Bad result in cloud alignment");
+	}
 
 	// <----------->
 	// Store and plot positions data 666 debug
-	auto xEkf = mEkf.getStateVector();
-	auto xIcp = (mInitialRot*mCam2Imu.inverse()*
-				(Translation3f(mMap.cloud().sensor_origin_.block<3,1>(0,0))*mMap.cloud().sensor_orientation_)
-				*mCam2Imu).translation();
+	if (mGui != nullptr) {
+		auto xEkf = mEkf.getStateVector();
+		auto xIcp = (mInitialRot*mCam2Imu.inverse()*
+			(Translation3f(mMap.cloud().sensor_origin_.block<3, 1>(0, 0))*mMap.cloud().sensor_orientation_)
+			*mCam2Imu).translation();
 
 
-	posXekf.push_back(xEkf(0,0));
-	posYekf.push_back(xEkf(1,0));
-	posZekf.push_back(xEkf(2,0));
-	velXekf.push_back(xEkf(3,0));
-	velYekf.push_back(xEkf(4,0));
-	velZekf.push_back(xEkf(5,0));
-	posXicp.push_back(xIcp(0,0));
-	posYicp.push_back(xIcp(1,0));
-	posZicp.push_back(xIcp(2,0));
-	posXfore.push_back(forecastX(0,0));
-	posYfore.push_back(forecastX(1,0));
-	posZfore.push_back(forecastX(2,0));
-	threshold.push_back(mMap.fittingScore());
-	mThresholdPlot.draw(threshold, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mPositionPlot.draw(posXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mPositionPlot.draw(posYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mPositionPlot.draw(posZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
-	mPositionPlot.draw(posXicp, 255,0,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
-	mPositionPlot.draw(posYicp, 0,255,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
-	mPositionPlot.draw(posZicp, 0,0,255, BOViL::plot::Graph2d::eDrawType::FilledCircles);
-	mPositionPlot.draw(posXfore, 255,0,0, BOViL::plot::Graph2d::eDrawType::Circles);
-	mPositionPlot.draw(posYfore, 0,255,0, BOViL::plot::Graph2d::eDrawType::Circles);
-	mPositionPlot.draw(posZfore, 0,0,255, BOViL::plot::Graph2d::eDrawType::Circles);
-	
-	mVelocityPlot.draw(velXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mVelocityPlot.draw(velYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mVelocityPlot.draw(velZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
+		posXekf.push_back(xEkf(0, 0));
+		posYekf.push_back(xEkf(1, 0));
+		posZekf.push_back(xEkf(2, 0));
+		velXekf.push_back(xEkf(3, 0));
+		velYekf.push_back(xEkf(4, 0));
+		velZekf.push_back(xEkf(5, 0));
+		posXicp.push_back(xIcp(0, 0));
+		posYicp.push_back(xIcp(1, 0));
+		posZicp.push_back(xIcp(2, 0));
+		posXfore.push_back(forecastX(0, 0));
+		posYfore.push_back(forecastX(1, 0));
+		posZfore.push_back(forecastX(2, 0));
+		threshold.push_back(mMap.fittingScore());
+		
+		mThresholdPlot->draw(threshold, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Lines);
+		mPositionPlot->draw(posXekf, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Lines);
+		mPositionPlot->draw(posYekf, 0, 255, 0, BOViL::plot::Graph2d::eDrawType::Lines);
+		mPositionPlot->draw(posZekf, 0, 0, 255, BOViL::plot::Graph2d::eDrawType::Lines);
+		mPositionPlot->draw(posXicp, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+		mPositionPlot->draw(posYicp, 0, 255, 0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+		mPositionPlot->draw(posZicp, 0, 0, 255, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+		mPositionPlot->draw(posXfore, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Circles);
+		mPositionPlot->draw(posYfore, 0, 255, 0, BOViL::plot::Graph2d::eDrawType::Circles);
+		mPositionPlot->draw(posZfore, 0, 0, 255, BOViL::plot::Graph2d::eDrawType::Circles);
+
+		mVelocityPlot->draw(velXekf, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Lines);
+		mVelocityPlot->draw(velYekf, 0, 255, 0, BOViL::plot::Graph2d::eDrawType::Lines);
+		mVelocityPlot->draw(velZekf, 0, 0, 255, BOViL::plot::Graph2d::eDrawType::Lines);
+	}
 	// <----------->
 	if (!mLearnFloor) {
 		save2Log();
@@ -306,7 +315,7 @@ bool MainApplication::loadArguments(int _argc, char ** _argv) {
 		if (file.is_open())
 			return mConfig.parse(file);
 		else {
-			std::cout << "Can't open main configuration file" << std::endl;
+			(*LogManager::get())["ConsoleOutput.txt"] << "Can't open main configuration file" << std::endl;
 			return false;
 		}
 	}
@@ -330,9 +339,27 @@ bool MainApplication::initCameras(){
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::initGui() {
-	Gui::init(mConfig["gui"]["name"], *mCameras);
-	mGui = Gui::get();
-	return mGui != nullptr ? true: false;
+	if (!bool(mConfig.contains("gui"))) {
+		return false;
+	}
+	else {
+		if(bool(mConfig["gui"]["use"])){
+			Gui::init(mConfig["gui"]["name"], *mCameras);
+			mGui = Gui::get();
+			
+			/* Debug 666*/
+			mTimePlot		= new BOViL::plot::Graph2d("Global Time");
+			mPositionPlot	= new BOViL::plot::Graph2d("Drone position");
+			mVelocityPlot	= new BOViL::plot::Graph2d("Drone Velocity");
+			mThresholdPlot	= new BOViL::plot::Graph2d("ICP error");
+			/**/
+		}
+		else {
+			mGui = nullptr;
+		}
+
+		return true;
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -529,16 +556,19 @@ bool MainApplication::learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::Model
 		return false;
 	}
 	
-	mGui->drawPlane(*_planeCoeff);
+	if(mGui != nullptr)
+		mGui->drawPlane(*_planeCoeff);
+
+
 	Vector3f planeNormal = Vector3f(-_planeCoeff->values[0], -_planeCoeff->values[1], -_planeCoeff->values[2]);
 
 	float angle = acos(_verticalCCS.dot(planeNormal) / (_verticalCCS.norm()*planeNormal.norm()));
-	cout << angle*180/M_PI << "deg Angle" << endl;
-	//cout << "............." << endl;
-	//cout << _verticalCCS.transpose() << endl;
-	//cout << planeNormal.transpose() << endl;
-	//cout << angle*180/M_PI << endl;
-	//cout << "............." << endl;
+	(*LogManager::get())["ConsoleOutput.txt"] << angle*180/M_PI << "deg Angle" << endl;
+	//(*LogManager::get())["ConsoleOutput.txt"] << "............." << endl;
+	//(*LogManager::get())["ConsoleOutput.txt"] << _verticalCCS.transpose() << endl;
+	//(*LogManager::get())["ConsoleOutput.txt"] << planeNormal.transpose() << endl;
+	//(*LogManager::get())["ConsoleOutput.txt"] << angle*180/M_PI << endl;
+	//(*LogManager::get())["ConsoleOutput.txt"] << "............." << endl;
 	
 	// Extract patches
 
@@ -569,7 +599,7 @@ bool MainApplication::learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::Model
 bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 	Mat gray1, gray2;
 	bool isBlurry1, isBlurry2;
-	cout << "Blurriness: ";
+	(*LogManager::get())["ConsoleOutput.txt"] << "Blurriness: ";
 	_frame1 = mCameras->camera(0).frame();
 	_frame2 = mCameras->camera(1).frame();
 
@@ -584,21 +614,22 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 		isBlurry2 = isBlurry(gray2, mConfig["cameras"]["blurThreshold"]);
 	}
 	else { return false; }
-	cout << endl;
+	(*LogManager::get())["ConsoleOutput.txt"] << endl;
 
 	if (isBlurry1 || isBlurry2) {
-		mGui->updateStereoImages(_frame1, _frame2);
+		if(mGui != nullptr){
+			mGui->updateStereoImages(_frame1, _frame2);
 
-		if(isBlurry1)
-			mGui->putBlurry(true);
-		if(isBlurry2) 
-			mGui->putBlurry(false);
+			if(isBlurry1)
+				mGui->putBlurry(true);
+			if(isBlurry2) 
+				mGui->putBlurry(false);
 
-		Rect leftRoi = mCameras->roi(true);
-		Rect rightRoi = mCameras->roi(false);
-		mGui->drawBox(leftRoi, true, 0,255,0);
-		mGui->drawBox(rightRoi, false, 0,255,0);
-
+			Rect leftRoi = mCameras->roi(true);
+			Rect rightRoi = mCameras->roi(false);
+			mGui->drawBox(leftRoi, true, 0,255,0);
+			mGui->drawBox(rightRoi, false, 0,255,0);
+		}
 		
 		return false;
 	} else {
@@ -611,12 +642,13 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 		_frame1 = mCameras->camera(0).undistort(_frame1);
 		_frame2 = mCameras->camera(1).undistort(_frame2);
 
-		mGui->updateStereoImages(_frame1, _frame2);
-		Rect leftRoi = mCameras->roi(true);
-		Rect rightRoi = mCameras->roi(false);
-		mGui->drawBox(leftRoi, true, 0,255,0);
-		mGui->drawBox(rightRoi, false, 0,255,0);
-		
+		if (mGui != nullptr) {
+			mGui->updateStereoImages(_frame1, _frame2);
+			Rect leftRoi = mCameras->roi(true);
+			Rect rightRoi = mCameras->roi(false);
+			mGui->drawBox(leftRoi, true, 0, 255, 0);
+			mGui->drawBox(rightRoi, false, 0, 255, 0);
+		}
 		return true;
 	}
 }
@@ -662,7 +694,7 @@ bool MainApplication::stepEkf(const ImuData & _imuData) {
 	zk << sensorPoseNorthCS.translation(), linAcc;
 
 	// Update EKF.
-	std::cout << "-> STEP: Increment of time in EKF: " << _imuData.mTimeSpan - mPreviousTime << std::endl;
+	(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Increment of time in EKF: " << _imuData.mTimeSpan - mPreviousTime << std::endl;
 	mEkf.stepEKF(zk.cast<double>(), _imuData.mTimeSpan - mPreviousTime);
 	mPreviousTime = _imuData.mTimeSpan;
 	
@@ -671,33 +703,37 @@ bool MainApplication::stepEkf(const ImuData & _imuData) {
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, const Vector4f &_translationPrediction, const Quaternionf &_qRotationPrediction){
-	mGui->clearMap();
-	mGui->clearPcViewer();
+	
 
 	PointCloud<PointXYZ>::Ptr addedCloudCameraCS;
 	bool hasConverged = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
 
-	if(addedCloudCameraCS->size() != 0)
-		Gui::get()->addCloudToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
+	if (mGui != nullptr) {
+		mGui->clearMap();
+		mGui->clearPcViewer();
+		if (addedCloudCameraCS->size() != 0)
+			mGui->addCloudToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
 
-	mGui->drawMap(mMap.cloud().makeShared());
-	mGui->addCloudToPcViewer(_cloud);
-	mGui->addCloudToMapViewer(mMap.GuessCloud(), 2, 0, 0, 255, "guess");
-	mGui->addCloudToMapViewer(mMap.AlignedCloud(), 3,255,255,255, "icpResult");
+		mGui->drawMap(mMap.cloud().makeShared());
+		mGui->addCloudToPcViewer(_cloud);
+		mGui->addCloudToMapViewer(mMap.GuessCloud(), 2, 0, 0, 255, "guess");
+		mGui->addCloudToMapViewer(mMap.AlignedCloud(), 3, 255, 255, 255, "icpResult");
 
-	if (!hasConverged) {
-		mGui->drawCamera(mMap.ICPres().block<3, 3>(0, 0), mMap.ICPres().col(3), 255, 0, 0);
+		if (!hasConverged) {
+			mGui->drawCamera(mMap.ICPres().block<3, 3>(0, 0), mMap.ICPres().col(3), 255, 0, 0);
+		}
+		else {
+			mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_, 0, 255, 0);
+		}
+		//mGui->spinOnce();
 	}
-	else {
-		mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_,0,255,0);
-	}
-	//mGui->spinOnce();
 	return hasConverged;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepUpdateCameraPose() {
-	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
+	if(mGui != nullptr)
+		mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
 
 	return true;
 }
@@ -780,8 +816,8 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 			candidate.addView(view2, probs2);
 		}
 
-		/*std::cout << "Image left: " << cathegories[0].first << ": " << cathegories[0].second << std::endl;
-		std::cout << "Image left: " << cathegories2[0].first << ": " << cathegories2[0].second << std::endl;
+		/*(*LogManager::get())["ConsoleOutput.txt"] << "Image left: " << cathegories[0].first << ": " << cathegories[0].second << std::endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "Image left: " << cathegories2[0].first << ": " << cathegories2[0].second << std::endl;
 		imshow("view", view);
 		imshow("view2", view2);
 		waitKey();*/
@@ -794,24 +830,24 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 bool MainApplication::stepCheckGroundTruth()
 {
 	if (mCandidates.size() != 0 && mCandidateGroundTruth.size() != 0) {
-		cout << "---------------- Recognition results ----------------" << endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "---------------- Recognition results ----------------" << endl;
 		float threshold = mConfig["mapParams"]["consecutiveClusterCentroidMatchingThreshold"];
 		vector<pair<int, float>> matchIndexDist = ObjectCandidate::matchCandidates(mCandidates, mCandidateGroundTruth, threshold);
 		for (int i = 0; i < mCandidates.size(); i++) {
 			int match = matchIndexDist[i].first;
 			if (match == -1) {
-				cout << "No match found, distance to closest is: " << matchIndexDist[i].second << endl;
+				(*LogManager::get())["ConsoleOutput.txt"] << "No match found, distance to closest is: " << matchIndexDist[i].second << endl;
 			}
 			else {
 				int gtLabel = mCandidateGroundTruth[match].cathegory().first;
 				int querryCandidateLabel = mCandidates[i].cathegory().first;
 				if (gtLabel == querryCandidateLabel)
 				{
-					cout << i << ":label " << gtLabel << " with probability " << mCandidates[i].cathegory().second << endl;
+					(*LogManager::get())["ConsoleOutput.txt"] << i << ":label " << gtLabel << " with probability " << mCandidates[i].cathegory().second << endl;
 				}
 				else
 				{
-					cout << i << ":wrong match with " << querryCandidateLabel << " with probability " << mCandidates[i].cathegory().second << endl;
+					(*LogManager::get())["ConsoleOutput.txt"] << i << ":wrong match with " << querryCandidateLabel << " with probability " << mCandidates[i].cathegory().second << endl;
 				}
 
 			}

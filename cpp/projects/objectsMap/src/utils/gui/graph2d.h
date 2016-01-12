@@ -28,6 +28,9 @@ namespace BOViL {
 			/// \param _name: Name to be displayed on the figure.
 			Graph2d(std::string _name);
 
+			/// Create a new instance of graph
+			Graph2d();
+
 			/// Clean graph
 			void clean();
 
@@ -61,6 +64,9 @@ namespace BOViL {
 
 			double mMinX=999999999999, mMinY=9999999999999, mMaxX = -9999999999, mMaxY =  -9999999999;
 
+
+		private:
+			static unsigned sGraphCounter;
 		};	// class Graph2d.
 
 	}	//	namespace plot.

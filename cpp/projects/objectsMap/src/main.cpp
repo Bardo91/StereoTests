@@ -9,6 +9,7 @@
 #include "utils/TimeTools.h"
 #include "utils/gui/graph2d.h"
 
+#include <StereoLib/utils/LogManager.h>
 
 #include <opencv2/opencv.hpp>
 
@@ -34,7 +35,7 @@ int main(int _argc, char** _argv) {
 
 	unsigned stepNumber = 0;
 	while (true) {
-		cout << "<----------------------------- Step Number: " << stepNumber++ << " ----------------------------->" << endl;
+		(*LogManager::get())["ConsoleOutput.txt"] << "<----------------------------- Step Number: " << stepNumber++ << " ----------------------------->" << endl;
 		
 		app.step();
 		cv::waitKey(delay);
