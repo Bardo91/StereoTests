@@ -201,9 +201,9 @@ void Gui::putBlurry(bool _left) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::addText(string _text) {
-	Point2i startPoint(20+mLinesOfText*20,30);
-	putText(mPairStereo, _text, startPoint, FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0, 0, 255),2);
+void Gui::addText(string _text, unsigned char _r, unsigned char _g, unsigned char _b) {
+	Point2i startPoint(20,30+mLinesOfText++*30);
+	putText(mPairStereo, _text, startPoint, FONT_HERSHEY_SIMPLEX, 0.75, Scalar(_b, _g, _r),2);
 	imshow(mName + "_StereoViewer", mPairStereo);
 }
 

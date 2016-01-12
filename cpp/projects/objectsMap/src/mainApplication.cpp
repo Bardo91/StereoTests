@@ -85,14 +85,32 @@ bool MainApplication::step() {
 	}
 
 	// --> Get images and check if they are blurry or not.
-	Mat frame1, frame2, frame1Gray, frame2Gray;
+	Mat frame1, frame2, frame1Cropped, frame2Cropped;
 	if (!stepGetImages(frame1, frame2)) {
 		errorBitList |= (1 << BIT_MAST_ERROR_IMAGES);
 		std::cout << "-> STEP: Error getting images data or images are blurry" << std::endl;
 	}
+	else {
+		frame1.copyTo(frame1Cropped);
+		frame2.copyTo(frame2Cropped);
+		if (mFloorSubstractor->isTrained()) {
+			Mat mask;
+			mFloorSubstractor->substract(frame1, frame1Cropped, mask);
+			mFloorSubstractor->substract(frame2, frame2Cropped, mask);
+		}
 
-	cvtColor(frame1, frame1Gray, CV_BGR2GRAY);
-	cvtColor(frame2, frame2Gray, CV_BGR2GRAY);
+		frame1 = mCameras->camera(0).undistort(frame1);
+		frame2 = mCameras->camera(1).undistort(frame2);
+
+		mGui->updateStereoImages(frame1, frame2);
+		Rect leftRoi = mCameras->roi(true);
+		Rect rightRoi = mCameras->roi(false);
+		mGui->drawBox(leftRoi, true, 0,255,0);
+		mGui->drawBox(rightRoi, false, 0,255,0);
+	}
+
+	cvtColor(frame1Cropped, frame1Cropped, CV_BGR2GRAY);
+	cvtColor(frame2Cropped, frame2Cropped, CV_BGR2GRAY);
 
 
 	// --> If system is not set-up yet.
@@ -151,7 +169,7 @@ bool MainApplication::step() {
 			pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
 
 			// Calculate new cloud from input images
-			if (stepTriangulatePoints(frame1Gray, frame2Gray, cloud)) {
+			if (stepTriangulatePoints(frame1Cropped, frame2Cropped, cloud)) {
 				// Update pose
 				Vector4f position;
 				position << pose.translation().block<3, 1>(0, 0), 1;
@@ -242,8 +260,13 @@ bool MainApplication::step() {
 	}
 
 	// Adding text messages over all the things
+	if(mFloorSubstractor->isTrained())
+		mGui->addText("Floor is learned", 0, 255, 0);
+	else
+		mGui->addText("Floor is not learned", 255, 0, 0);
+
 	if(errorBitList & (1 << BIT_MAST_ERROR_MAP))
-		mGui->addText("Bad result in cloud alignment");
+		mGui->addText("Bad result in cloud alignment", 255, 0, 0);
 
 	// <----------->
 	// Store and plot positions data 666 debug
@@ -601,22 +624,7 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 
 		
 		return false;
-	} else {
-		if (mFloorSubstractor->isTrained()) {
-			Mat mask;
-			mFloorSubstractor->substract(_frame1, _frame1, mask);
-			mFloorSubstractor->substract(_frame2, _frame2, mask);
-		}
-
-		_frame1 = mCameras->camera(0).undistort(_frame1);
-		_frame2 = mCameras->camera(1).undistort(_frame2);
-
-		mGui->updateStereoImages(_frame1, _frame2);
-		Rect leftRoi = mCameras->roi(true);
-		Rect rightRoi = mCameras->roi(false);
-		mGui->drawBox(leftRoi, true, 0,255,0);
-		mGui->drawBox(rightRoi, false, 0,255,0);
-		
+	} else {		
 		return true;
 	}
 }

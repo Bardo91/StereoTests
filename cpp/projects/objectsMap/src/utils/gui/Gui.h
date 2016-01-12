@@ -71,7 +71,7 @@ public:		// Public interface
 
 	/// Add Text to pair of images
 	/// \param _text: text to be added
-	void addText(std::string _text);
+	void addText(std::string _text, unsigned char _r=255, unsigned char _g=255, unsigned char _b=255);
 
 	/// Draw points over the stereo pair of images
 	/// \param _points: Points to be drawn relative to single image coordinates
