@@ -107,10 +107,11 @@ bool MainApplication::step() {
 		Rect rightRoi = mCameras->roi(false);
 		mGui->drawBox(leftRoi, true, 0,255,0);
 		mGui->drawBox(rightRoi, false, 0,255,0);
+		
+		cvtColor(frame1Cropped, frame1Cropped, CV_BGR2GRAY);
+		cvtColor(frame2Cropped, frame2Cropped, CV_BGR2GRAY);
 	}
 
-	cvtColor(frame1Cropped, frame1Cropped, CV_BGR2GRAY);
-	cvtColor(frame2Cropped, frame2Cropped, CV_BGR2GRAY);
 
 
 	// --> If system is not set-up yet.
