@@ -26,6 +26,7 @@
 #include <pcl/segmentation/sac_segmentation.h>
 
 #include <StereoLib/utils/LogManager.h>
+#include <chrono>
 
 using namespace cjson;
 using namespace cv;
@@ -78,13 +79,15 @@ bool MainApplication::step() {
 	}
 
 	long errorBitList = 0;	// This variable store in each bit if each step was fine or not.
-
+	chrono::time_point<chrono::steady_clock> t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10;
 	// --> Get Imu Data
+	t0 = std::chrono::high_resolution_clock::now();
 	ImuData imuData;
 	if (!stepGetImuData(imuData)) {
 		errorBitList |= (1 << BIT_MAST_ERROR_IMU);
 		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error getting imu data" << std::endl;
 	}
+	t1 = std::chrono::high_resolution_clock::now();
 
 	// --> Get images and check if they are blurry or not.
 	Mat frame1, frame2, frame1Gray, frame2Gray;
@@ -92,9 +95,9 @@ bool MainApplication::step() {
 		errorBitList |= (1 << BIT_MAST_ERROR_IMAGES);
 		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error getting images data or images are blurry" << std::endl;
 	}
-
 	cvtColor(frame1, frame1Gray, CV_BGR2GRAY);
 	cvtColor(frame2, frame2Gray, CV_BGR2GRAY);
+	t2 = std::chrono::high_resolution_clock::now();
 
 
 	// --> If system is not set-up yet.
@@ -113,12 +116,13 @@ bool MainApplication::step() {
 	}
 
 	
-
+	t3 = std::chrono::high_resolution_clock::now();
 	// --> Estimate position from previous step for either ICP or EKF depending on if the images are good or not.
 	Eigen::Vector4f forecastX = Eigen::Vector4f::Ones();
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_IMU))) {
 		auto prevX = mEkf.getStateVector().cast<float>();
 		auto q = Eigen::Quaternion<float>(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+		std::cout  << prevX.block<9, 1>(0, 0).transpose() << std::endl;
 		(*LogManager::get())["Imu.txt"] << prevX.block<9, 1>(0, 0).transpose() << "\t";
 		(*LogManager::get())["Imu.txt"] << q.w() << "\t" << q.w() << "\t" << q.y() << "\t" << q.z() << "\t";
 
@@ -138,7 +142,7 @@ bool MainApplication::step() {
 		errorBitList |= (1<<BIT_MAST_ERROR_FORECAST);
 		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error predicting new position" << std::endl;
 	}
-	
+	t4 = std::chrono::high_resolution_clock::now();
 
 	PointCloud<PointXYZ>::Ptr cloud;
 	// If forecast is fine.
@@ -157,11 +161,12 @@ bool MainApplication::step() {
 				// Update pose
 				Vector4f position;
 				position << pose.translation().block<3, 1>(0, 0), 1;
-
+				t5 = std::chrono::high_resolution_clock::now();
 				if (!stepUpdateMap(cloud, position, Quaternionf(pose.rotation()))) {
 					errorBitList |= (1 << BIT_MAST_ERROR_MAP);
 					(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error while updating map" << std::endl;
 				}
+				t6 = std::chrono::high_resolution_clock::now();
 			}
 			else {
 				errorBitList |= (1 << BIT_MAST_ERROR_TRIANGULATE);
@@ -194,7 +199,7 @@ bool MainApplication::step() {
 		mGui->drawCamera(pose.rotation(), pose.matrix().block<4, 1>(0, 3), 0, 0, 255);
 		mGui->spinOnce();
 	}
-
+	t7 = std::chrono::high_resolution_clock::now();
 	// Iterate EKF
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {
 		if (!stepEkf(imuData)) {
@@ -208,17 +213,17 @@ bool MainApplication::step() {
 		errorBitList |= (1<<BIT_MAST_ERROR_EKF);
 		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Cannot perform EKF" << std::endl;
 	}
-
+	t8 = std::chrono::high_resolution_clock::now();
 	if (!stepGetCandidates()) {
 		errorBitList |= (1 << BIT_MAST_ERROR_GETCANDIDATES);
 		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error getting candidates" << std::endl;
 	}
-
+	t9= std::chrono::high_resolution_clock::now();
 	if (!stepCathegorizeCandidates(mCandidates, frame1, frame2)) {
 		errorBitList |= (1 << BIT_MAST_ERROR_CATEGORIZINGCANDIDATES);
 		(*LogManager::get())["ConsoleOutput.txt"] << "-> STEP: Error cathegorizing candidates" << std::endl;
 	}
-
+	t10 = std::chrono::high_resolution_clock::now();
 
 	//	Check if need to learn or relearn floor
 	if (mLearnFloor) {
@@ -250,6 +255,19 @@ bool MainApplication::step() {
 		if (errorBitList & (1 << BIT_MAST_ERROR_MAP))
 			mGui->addText("Bad result in cloud alignment");
 	}
+
+
+	(*LogManager::get())["TimeLog.txt"] << std::chrono::duration<double, std::milli>(t10 - t0).count() << "\t"
+										<< std::chrono::duration<double, std::milli>(t1 - t0).count() << "\t"
+										<< std::chrono::duration<double, std::milli>(t2 - t1).count() << "\t"
+										<< std::chrono::duration<double, std::milli>(t3 - t2).count() << "\t"
+										<< std::chrono::duration<double, std::milli>(t4 - t3).count() << "\t"
+										<< std::chrono::duration<double, std::milli>(t5 - t4).count() << "\t"
+										<< std::chrono::duration<double, std::milli>(t6 - t5).count() << "\t"
+										<< std::chrono::duration<double, std::milli>(t7 - t6).count() << "\t"
+										<< std::chrono::duration<double, std::milli>(t8 - t7).count() << "\t"
+										<< std::chrono::duration<double, std::milli>(t9 - t8).count() << "\t"
+										<< std::chrono::duration<double, std::milli>(t10 - t9).count() << std::endl;
 
 	// <----------->
 	// Store and plot positions data 666 debug

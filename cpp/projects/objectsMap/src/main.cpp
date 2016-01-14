@@ -28,8 +28,8 @@ int main(int _argc, char** _argv) {
 	if (_argc < 2) {
 		std::cerr << "Not enough input arguments" << std::endl;
 	}
-	cv::namedWindow("Drone position", cv::WINDOW_FREERATIO);
-	cv::setMouseCallback("Drone position", pauseCallback);
+	//cv::namedWindow("Drone position", cv::WINDOW_FREERATIO);
+	//cv::setMouseCallback("Drone position", pauseCallback);
 	
 	MainApplication app(_argc, _argv);
 
@@ -38,7 +38,7 @@ int main(int _argc, char** _argv) {
 		(*LogManager::get())["ConsoleOutput.txt"] << "<----------------------------- Step Number: " << stepNumber++ << " ----------------------------->" << endl;
 		
 		app.step();
-		cv::waitKey(delay);
+		cv::waitKey(3);
 	}
 
 	system("PAUSE");
