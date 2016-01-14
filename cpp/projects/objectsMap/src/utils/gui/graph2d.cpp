@@ -26,6 +26,11 @@ namespace BOViL {
 
 		//---------------------------------------------------------------------------------------------------------------------
 		void Graph2d::show() {
+			cleanGraph();
+			drawAxis();
+			for (Graph graph2 : mGraphs) {
+				drawGraph(graph2);
+			}
 			imshow(mWindowName, mLastRender);
 		}
 
@@ -49,20 +54,7 @@ namespace BOViL {
 				mMaxX = maxX > mMaxX ? maxX:mMaxX;
 				mMinY = minY < mMinY ? minY:mMinY;
 				mMaxY = maxY > mMaxY ? maxY:mMaxY;
-
-				cleanGraph();
-				drawAxis();
-				// Redraw all graph
-				for (Graph graph2 : mGraphs) {
-					drawGraph(graph2);
-				}
-
 			}
-			else {
-				drawGraph(graph);
-			}
-
-			show();
 		}
 
 		//---------------------------------------------------------------------------------------------------------------------
