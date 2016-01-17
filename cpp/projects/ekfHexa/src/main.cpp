@@ -108,7 +108,7 @@ void onlyAccTest(ImuSensor * _imu) {
 	Eigen::Vector3d gravity = Eigen::Vector3d::Zero();
 	
 	// calculate offset.
-	for (int i = 0;i < 200; i++) {
+	for (int i = 0;i < 400; i++) {
 		imuData = _imu->get();
 
 		Eigen::Quaternion<double> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
@@ -118,7 +118,7 @@ void onlyAccTest(ImuSensor * _imu) {
 		gravity += q*linAcc;
 	}
 
-	gravity = gravity / 200;
+	gravity = gravity / 400;
 
 
 
@@ -139,7 +139,7 @@ void onlyAccTest(ImuSensor * _imu) {
 
 
 	// Start
-	for(int i = 0;i < 100; i++) {
+	for(int i = 0;i < 200; i++) {
 		#if defined(_HAS_ROS_LIBRARIES_)
 		ros::spinOnce();
 		#endif
@@ -180,17 +180,17 @@ void onlyAccTest(ImuSensor * _imu) {
 	posGraph.draw(vTime,pos[0], 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	posGraph.draw(vTime,pos[1], 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	posGraph.draw(vTime,pos[2], 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
-
+	posGraph.show();
 	speedGraph.clean();
 	speedGraph.draw(vTime,speed[0], 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	speedGraph.draw(vTime,speed[1], 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	speedGraph.draw(vTime,speed[2], 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
-
+	speedGraph.show();
 	accGraph.clean();
 	accGraph.draw(vTime,acc[0], 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	accGraph.draw(vTime,acc[1], 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	accGraph.draw(vTime,acc[2], 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
-
+	accGraph.show();
 	cv::waitKey();
 }
 
