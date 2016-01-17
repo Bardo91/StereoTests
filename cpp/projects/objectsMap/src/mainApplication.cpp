@@ -290,7 +290,11 @@ bool MainApplication::step() {
 	posYfore.push_back(forecastX(1,0));
 	posZfore.push_back(forecastX(2,0));
 	threshold.push_back(mMap.fittingScore());
+	mThresholdPlot.clean();
 	mThresholdPlot.draw(threshold, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Lines);
+	mThresholdPlot.show();
+
+	mPositionPlot.clean();
 	mPositionPlot.draw(posXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	mPositionPlot.draw(posYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	mPositionPlot.draw(posZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
@@ -300,10 +304,13 @@ bool MainApplication::step() {
 	mPositionPlot.draw(posXfore, 255,0,0, BOViL::plot::Graph2d::eDrawType::Circles);
 	mPositionPlot.draw(posYfore, 0,255,0, BOViL::plot::Graph2d::eDrawType::Circles);
 	mPositionPlot.draw(posZfore, 0,0,255, BOViL::plot::Graph2d::eDrawType::Circles);
-	
+	mPositionPlot.show();
+
+	mVelocityPlot.clean();
 	mVelocityPlot.draw(velXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	mVelocityPlot.draw(velYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
 	mVelocityPlot.draw(velZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
+	mVelocityPlot.show();
 	// <----------->
 	if (!mLearnFloor) {
 		save2Log();
