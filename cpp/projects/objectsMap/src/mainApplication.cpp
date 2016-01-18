@@ -156,7 +156,7 @@ bool MainApplication::step() {
 		std::cout << "-> STEP: Error predicting new position" << std::endl;
 	}
 	
-
+	Vector4f prevIcpPos = mMap.cloud().sensor_origin_;
 	PointCloud<PointXYZ>::Ptr cloud;
 	// If forecast is fine.
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {
@@ -212,7 +212,21 @@ bool MainApplication::step() {
 
 	// Iterate EKF
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {
-		if (!stepEkf(imuData)) {
+		Vector4f estimatedSpeed = Vector4f::Ones();
+		estimatedSpeed.block<3,1>(0,0) =  mEkf.getStateVector().block<3,1>(3,0).cast<float>();
+		if (!(errorBitList & (1 << BIT_MAST_ERROR_MAP)) ){
+			Vector4f currPos = mMap.cloud().sensor_origin_;
+			double incT = imuData.mTimeSpan - mPreviousTime;
+			estimatedSpeed = ((currPos - prevIcpPos)/incT);
+			estimatedSpeed[3] = 1;
+			cout << "----------------------------------------------" << endl;
+			std::cout << "-->--->--> current pos: " << currPos.transpose() << endl;
+			std::cout << "-->--->--> prev pos pos: " << prevIcpPos.transpose() << endl;
+			std::cout << "-->--->--> speed stimated pos: " << estimatedSpeed.transpose() << endl;
+			cout << "----------------------------------------------" << endl;
+		}
+
+		if (!stepEkf(imuData, estimatedSpeed)) {
 			errorBitList |= (1<<BIT_MAST_ERROR_EKF);
 			std::cout << "-> STEP: Error during EKF" << std::endl;
 		}
@@ -658,7 +672,7 @@ bool MainApplication::stepTriangulatePoints(const Mat &_frame1, const Mat &_fram
 	return _points3d->size() != 0? true:false;
 }
 
-bool MainApplication::stepEkf(const ImuData & _imuData) {
+bool MainApplication::stepEkf(const ImuData & _imuData, Vector4f &_estimatedSpeed) {
 	// Get and adapt imu data.
 	Eigen::Quaternion<float> q(_imuData.mQuaternion[3], _imuData.mQuaternion[0], _imuData.mQuaternion[1], _imuData.mQuaternion[2]);
 	Eigen::Matrix<float, 3, 1> linAcc;
@@ -677,8 +691,8 @@ bool MainApplication::stepEkf(const ImuData & _imuData) {
 		cout << "Nan in sensorPose" << endl;
 
 	// Create observable state variable vetor.
-	Eigen::MatrixXf zk(6, 1);
-	zk << sensorPoseNorthCS.translation(), linAcc;
+	Eigen::MatrixXf zk(9,1);
+	zk << sensorPoseNorthCS.translation(),_estimatedSpeed.block<3,1>(0,0), linAcc;
 
 	// Update EKF.
 	std::cout << "-> STEP: Increment of time in EKF: " << _imuData.mTimeSpan - mPreviousTime << std::endl;

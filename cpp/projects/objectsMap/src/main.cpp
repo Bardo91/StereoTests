@@ -13,7 +13,7 @@
 #include <opencv2/opencv.hpp>
 
 bool continous = false;
-double delay = 0;
+double delay = 1;
 void pauseCallback(int event, int x, int y, int, void*) {
 	if (event == cv::EVENT_LBUTTONDOWN) {
 		continous = !continous;
