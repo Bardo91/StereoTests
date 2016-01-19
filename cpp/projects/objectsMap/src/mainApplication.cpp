@@ -702,14 +702,27 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 	mGui->drawPlaneMap(plane);
 	mGui->drawPlanePcViewer(plane);
 
-	auto croppedCloud(*_cloud);
-	mMap.cropCloud(croppedCloud, plane, 0.1);
-	mGui->addCloudToPcViewer(_cloud);
-	mGui->addCloudToPcViewer(croppedCloud.makeShared(), 1, 0, 255, 0);
-	// Add point cloud to map
-	PointCloud<PointXYZ>::Ptr addedCloudCameraCS;
-	bool hasConverged = mMap.addPoints(croppedCloud.makeShared(), _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
+	// Calculate angle between estimated floor and real one using imu information.
+	Vector3f verticalCCS = (mCam2Imu*mInitialRot.inverse()*Vector4f::UnitZ()).block<3,1>(0,0);
+	Vector3f planeNormal = Vector3f(-plane.values[0], -plane.values[1], -plane.values[2]);
+	float angle = (acos(verticalCCS.dot(planeNormal) / (verticalCCS.norm()*planeNormal.norm())))*180.0/M_PI;
+	std::cout << "--> Main: Angle between detected floor (in cloud) and reference from imu data: " << angle << endl;
 
+	mGui->addCloudToPcViewer(_cloud);
+	PointCloud<PointXYZ>::Ptr addedCloudCameraCS;
+
+	bool hasConverged = false;
+	if (angle < float(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])) {
+		cout << "--> Main: Allowed detected floor, cropping cloud" << endl;
+		auto croppedCloud(*_cloud);
+		mMap.cropCloud(croppedCloud, plane, 0.1);
+		mGui->addCloudToPcViewer(croppedCloud.makeShared(), 2, 0, 255, 0);
+		hasConverged = mMap.addPoints(croppedCloud.makeShared(), _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
+	}
+	else {
+		// Add point cloud to map
+		hasConverged = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
+	}
 
 	// Update Gui
 	if(addedCloudCameraCS->size() != 0)
