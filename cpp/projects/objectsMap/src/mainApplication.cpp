@@ -702,11 +702,13 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 	mGui->drawPlaneMap(plane);
 	mGui->drawPlanePcViewer(plane);
 
-
-
+	auto croppedCloud(*_cloud);
+	mMap.cropCloud(croppedCloud, plane, 0.1);
+	mGui->addCloudToPcViewer(_cloud);
+	mGui->addCloudToPcViewer(croppedCloud.makeShared(), 1, 0, 255, 0);
 	// Add point cloud to map
 	PointCloud<PointXYZ>::Ptr addedCloudCameraCS;
-	bool hasConverged = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
+	bool hasConverged = mMap.addPoints(croppedCloud.makeShared(), _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
 
 
 	// Update Gui
@@ -714,7 +716,6 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 		Gui::get()->addCloudToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
 
 	mGui->drawMap(mMap.cloud().makeShared());
-	mGui->addCloudToPcViewer(_cloud);
 	mGui->addCloudToMapViewer(mMap.GuessCloud(), 2, 0, 0, 255, "guess");
 	mGui->addCloudToMapViewer(mMap.AlignedCloud(), 3,255,255,255, "icpResult");
 
