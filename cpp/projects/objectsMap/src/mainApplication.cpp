@@ -381,8 +381,6 @@ bool MainApplication::init3dMap(){
 	params.clusterTolerance						= mConfig["mapParams"]["clusterAffiliationMaxDistance"];				//0.035; //tolerance for searching neigbours in clustering. Points further apart will be in different clusters
 	params.minClusterSize						= mConfig["mapParams"]["minClusterSize"];				//15;
 	params.maxClusterSize						= mConfig["mapParams"]["maxClusterSize"];				//200;
-	params.floorDistanceThreshold				= mConfig["mapParams"]["floorDistanceThreshold"];		//0.01;
-	params.floorMaxIters						= (int) mConfig["mapParams"]["floorMaxIters"];			//M_PI/180 * 30;
 	params.icpMaxAngleChangeCompared2ProvidedGuess = mConfig["mapParams"]["icpMaxAngleChangeCompared2ProvidedGuess"]; //
 	params.icpMaxTranslationChangeCompared2ProvidedGuess = mConfig["mapParams"]["icpMaxTranslationChangeCompared2ProvidedGuess"];
 
@@ -560,7 +558,7 @@ bool MainApplication::learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::Model
 		return false;
 	}
 	
-	mGui->drawPlane(*_planeCoeff);
+	mGui->drawPlaneMap(*_planeCoeff);
 	Vector3f planeNormal = Vector3f(-_planeCoeff->values[0], -_planeCoeff->values[1], -_planeCoeff->values[2]);
 
 	float angle = acos(_verticalCCS.dot(planeNormal) / (_verticalCCS.norm()*planeNormal.norm()));
@@ -695,12 +693,23 @@ bool MainApplication::stepEkf(const ImuData & _imuData) {
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, const Vector4f &_translationPrediction, const Quaternionf &_qRotationPrediction){
+	// Clear Gui
 	mGui->clearMap();
 	mGui->clearPcViewer();
 
+	// Look for floor in new cloud
+	ModelCoefficients plane = mMap.extractFloor(_cloud);
+	mGui->drawPlaneMap(plane);
+	mGui->drawPlanePcViewer(plane);
+
+
+
+	// Add point cloud to map
 	PointCloud<PointXYZ>::Ptr addedCloudCameraCS;
 	bool hasConverged = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
 
+
+	// Update Gui
 	if(addedCloudCameraCS->size() != 0)
 		Gui::get()->addCloudToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
 
@@ -715,6 +724,7 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 	else {
 		mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_,0,255,0);
 	}
+
 	//mGui->spinOnce();
 	return hasConverged;
 }
@@ -731,8 +741,6 @@ bool MainApplication::stepGetCandidates(){
 	if (mMap.cloud().size() < 10) {
 		return false;
 	}
-
-	//ModelCoefficients plane = mMap.extractFloor(mMap.cloud().makeShared());
 	//if (plane.values.size() == 0)
 	//	return false;
 	//mGui->drawPlane(plane, 0,0,1.5);

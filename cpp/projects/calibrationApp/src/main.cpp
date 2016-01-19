@@ -9,9 +9,9 @@ int main(int _argc, char ** _argv) {
 
 	float squareSize = 0.0415;
 	cv::Size cornerCount(7,10); //7 11
-	string leftPath = "C:/Users/GRVC/Desktop/Training/calib/img_cam1_%d.jpg";
-	string rightPath = "C:/Users/GRVC/Desktop/Training/calib/img_cam2_%d.jpg";
-	string savePath = "calibG";
+	string leftPath = "C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/Stereo Objects - Cropped sets/set7 - Catec tablecloth gt/calibrationSet/cropped set/cam2 (%d).jpg";
+	string rightPath = "C:/Users/Pablo RS/ownCloud/Datasets/StereoTesting/Stereo Objects - Cropped sets/set7 - Catec tablecloth gt/calibrationSet/cropped set/cam1 (%d).jpg";
+	string savePath = "calibCatec1";
 	StereoCameras cameras(leftPath,rightPath );
 
 	vector<cv::Mat> framesLeft, framesRight;

@@ -28,9 +28,9 @@ public:		// Public interface
 	/// \param _map: pcl point cloud that is wanted to be drawn.
 	void drawMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_map);
 
-	/// Draw a plane into de map.
-	void drawPlane(const pcl::ModelCoefficients &_plane, std::string _tag = "");
-	void drawPlane(const pcl::ModelCoefficients &_plane, double _x, double _y, double _z, std::string _tag = "");
+	/// Draw a plane into de map or PcViewer.
+	void drawPlaneMap(const pcl::ModelCoefficients &_plane, std::string _tag = "");
+	void drawPlaneMap(const pcl::ModelCoefficients &_plane, double _x, double _y, double _z, std::string _tag = "");
 
 	/// Draw a plane into de map.
 	void drawLine(const pcl::PointXYZ &_p1, const pcl::PointXYZ &_p2, unsigned _r = 255, unsigned _g =255, unsigned _b = 255, std::string _tag = "");
@@ -56,7 +56,11 @@ public:		// Public interface
 	/// \param _g: green (0-255) channel of the final desired color for the _cloud
 	/// \param _b: blue (0-255) channel of the final desired color for the _cloud
 	void addCloudToPcViewer(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, unsigned _pointSize = 1, unsigned _r=255, unsigned _g=255, unsigned _b=255, std::string _tag = "");
-	
+
+
+	void drawPlanePcViewer(const pcl::ModelCoefficients &_plane, std::string _tag = "");
+	void drawPlanePcViewer(const pcl::ModelCoefficients &_plane, double _x, double _y, double _z, std::string _tag = "");
+
 	/// Clear pc viewer
 	void clearPcViewer();
 
@@ -131,6 +135,7 @@ private:	// Members
 	std::string	mName;	// Base name for all windows.
 	
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> m3dViewer;
+	
 	int mViewPortMapViewer = 0, mViewportPcViewer = 1;
 
 	cv::Mat mLeftImage, mRightImage, mPairStereo;

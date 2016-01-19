@@ -44,7 +44,7 @@ void Gui::drawMap(const PointCloud<PointXYZ>::Ptr & _map) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawPlane(const pcl::ModelCoefficients &_plane, std::string _tag) {
+void Gui::drawPlaneMap(const pcl::ModelCoefficients &_plane, std::string _tag) {
 	if (_tag == "") {
 		_tag =  "Plane_"+to_string(mPcCounter++);
 	}else {
@@ -56,7 +56,7 @@ void Gui::drawPlane(const pcl::ModelCoefficients &_plane, std::string _tag) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Gui::drawPlane(const pcl::ModelCoefficients & _plane, double _x, double _y, double _z, std::string _tag) {
+void Gui::drawPlaneMap(const pcl::ModelCoefficients & _plane, double _x, double _y, double _z, std::string _tag) {
 	if (_tag == "") {
 		_tag =  "Plane_"+to_string(mPcCounter++);
 	}else {
@@ -177,6 +177,31 @@ void Gui::addCloudToPcViewer(const PointCloud<PointXYZ>::Ptr & _cloud, unsigned 
 //---------------------------------------------------------------------------------------------------------------------
 void Gui::clearPcViewer() {
 	m3dViewer->removeAllPointClouds();
+	m3dViewer->removeAllShapes(mViewportPcViewer);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::drawPlanePcViewer(const pcl::ModelCoefficients &_plane, std::string _tag) {
+	if (_tag == "") {
+		_tag =  "Plane_"+to_string(mPcCounter++);
+	}else {
+		if (!isTagAllowed(_tag)) {
+			return;
+		}
+	}
+	m3dViewer->addPlane(_plane,_tag,mViewportPcViewer);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void Gui::drawPlanePcViewer(const pcl::ModelCoefficients & _plane, double _x, double _y, double _z, std::string _tag) {
+	if (_tag == "") {
+		_tag =  "Plane_"+to_string(mPcCounter++);
+	}else {
+		if (!isTagAllowed(_tag)) {
+			return;
+		}
+	}
+	m3dViewer->addPlane(_plane,_x, _y, _z,_tag ,mViewportPcViewer);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
