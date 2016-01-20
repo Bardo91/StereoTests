@@ -60,11 +60,11 @@ private:
 	FloorSubstractor	*mFloorSubstractor;
 	bool				mLearnFloor;
 
-	StereoCameras		*mCameras;
-	EnvironmentMap		mMap;
-	Gui					*mGui;
-	RecognitionSystem	*mRecognitionSystem;
-	std::vector<ObjectCandidate> mCandidates;
+	StereoCameras					*mCameras;
+	EnvironmentMap					mMap;
+	Gui								*mGui;
+	RecognitionSystem				*mRecognitionSystem;
+	std::vector<ObjectCandidate>	mCandidates;
 
 	ImuSensor							*mImu;
 	double								mPreviousTime = -1;
@@ -73,6 +73,8 @@ private:
 	bool								mIsFirstIter = true;
 	Eigen::Vector3f						mGravityOffImuSys;
 	EkfImuIcp							mEkf;
+	
+	pcl::ModelCoefficients				mLastGoodFloor;
 
 	BOViL::plot::Graph2d mTimePlot;
 	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates, tCathegorize;

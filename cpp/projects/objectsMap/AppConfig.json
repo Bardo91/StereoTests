@@ -44,25 +44,26 @@
 	},
 	"mapParams":
 	{
-		"voxelSize":0.005,
+		"voxelSize":0.02,
 		"outlierMeanK":10,
 		"outlierStdDev":0.05,
 		"outlierSetNegative":false,
 		"icpMaxTransformationEpsilon":0.00000001,
 		"icpEuclideanEpsilon":0.000000001,
 		"icpMaxIcpIterations":30,
-		"icpMaxCorrespondenceDistance":0.20,
+		"icpMaxCorrespondenceDistance":0.15,
 		"historySize":2,
 		"clusterAffiliationMaxDistance":0.035,
-		"minClusterSize":15,
-		"maxClusterSize":500,
-		"floorDistanceThreshold":0.01,
-		"floorMaxIters": 1000,
+		"minClusterSize":20,
+		"maxClusterSize":5000,
 		"consecutiveClusterCentroidMatchingThreshold": 0.05,
-		"maxFittingScore":0.02,
-		"floorMaxAllowedRotationToDrone": 5.0,
-		"icpMaxTranslationChangeCompared2ProvidedGuess": 0.02,
-		"icpMaxAngleChangeCompared2ProvidedGuess": 3.0
+		"maxFittingScore":0.05,
+		"floorMaxAllowedRotationToDrone":5.0,
+		"floorMaxDistanceToFloor":0.05,
+		"floorOffsetAllowedBeyondFloor": 0.05,
+		"floorOffsetToEraseFloor": -0.015,
+		"icpMaxTranslationChangeCompared2ProvidedGuess": 0.1,
+		"icpMaxAngleChangeCompared2ProvidedGuess": 10.0
 	},
 	"floorSubstractor":
 	{
