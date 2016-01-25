@@ -61,7 +61,7 @@ MainApplication::MainApplication(int _argc, char ** _argv){
 	mFloorSubstractor = new FloorSubstractorCCS();
 	/**/
 	mTimer = BOViL::STime::get();
-
+	mTiming.resize(8);
 	if (result) {
 		std::cout << "Main application configured and initiallized" << std::endl;
 	}
@@ -79,17 +79,20 @@ bool MainApplication::step() {
 	long errorBitList = 0;	// This variable store in each bit if each step was fine or not.
 
 	// --> Get Imu Data
+	auto t0 = std::chrono::system_clock::now();
 	ImuData imuData;
 	if (!stepGetImuData(imuData)) {
 		errorBitList |= (1 << BIT_MAST_ERROR_IMU);
 		std::cout << "-> STEP: Error getting imu data" << std::endl;
 	}
-
+	auto t1 = std::chrono::system_clock::now();
+	auto t2 = t1;
 	// --> Get images and check if they are blurry or not.
 	Mat frame1, frame2, frame1Cropped, frame2Cropped;
 	if (!stepGetImages(frame1, frame2)) {
 		errorBitList |= (1 << BIT_MAST_ERROR_IMAGES);
 		std::cout << "-> STEP: Error getting images data or images are blurry" << std::endl;
+		t2 = std::chrono::system_clock::now();
 	}
 	else {
 		frame1.copyTo(frame1Cropped);
@@ -102,6 +105,7 @@ bool MainApplication::step() {
 
 		frame1 = mCameras->camera(0).undistort(frame1);
 		frame2 = mCameras->camera(1).undistort(frame2);
+		t2 = std::chrono::system_clock::now();
 
 		if (mUseGui) {
 			mGui->updateStereoImages(frame1, frame2);
@@ -132,7 +136,7 @@ bool MainApplication::step() {
 	}
 
 	
-
+	auto t3 = std::chrono::system_clock::now();
 	// --> Estimate position from previous step for either ICP or EKF depending on if the images are good or not.
 	Eigen::Vector4f forecastX = Eigen::Vector4f::Ones();
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_IMU))) {
@@ -157,30 +161,33 @@ bool MainApplication::step() {
 		errorBitList |= (1<<BIT_MAST_ERROR_FORECAST);
 		std::cout << "-> STEP: Error predicting new position" << std::endl;
 	}
-	
-
+	auto t4 = std::chrono::system_clock::now();
+	auto t5 = t4, t6 = t4, t7 = t4;
 	PointCloud<PointXYZ>::Ptr cloud;
 	// If forecast is fine.
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {
 		// If images are fine: calculate the guess for the ICP in order to get current position estimation
 		// to iterate over EKF
 		if (!(errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
-			Eigen::Quaternion<float> orientation(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
-
-			// Transform from north CS to camera's CS
-			Eigen::Transform<float, 3, Affine> pose = Eigen::Translation3f(forecastX.block<3, 1>(0, 0))*orientation;
-			pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
-
+			t5 = std::chrono::system_clock::now();
 			// Calculate new cloud from input images
 			if (stepTriangulatePoints(frame1Cropped, frame2Cropped, cloud)) {
+				t6 = std::chrono::system_clock::now();
+
+				Eigen::Quaternion<float> orientation(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+
+				// Transform from north CS to camera's CS
+				Eigen::Transform<float, 3, Affine> pose = Eigen::Translation3f(forecastX.block<3, 1>(0, 0))*orientation;
+				pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
 				// Update pose
 				Vector4f position;
 				position << pose.translation().block<3, 1>(0, 0), 1;
-
+				
 				if (!stepUpdateMap(cloud, position, Quaternionf(pose.rotation()))) {
 					errorBitList |= (1 << BIT_MAST_ERROR_MAP);
 					std::cout << "-> STEP: Error while updating map" << std::endl;
 				}
+				t7 = std::chrono::system_clock::now();
 			}
 			else {
 				errorBitList |= (1 << BIT_MAST_ERROR_TRIANGULATE);
@@ -213,7 +220,7 @@ bool MainApplication::step() {
 		mGui->drawCamera(pose.rotation(), pose.matrix().block<4, 1>(0, 3), 0, 0, 255);
 		mGui->spinOnce();
 	}
-
+	auto t8 = std::chrono::system_clock::now();
 	// Iterate EKF
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {
 		if (!stepEkf(imuData)) {
@@ -227,17 +234,17 @@ bool MainApplication::step() {
 		errorBitList |= (1<<BIT_MAST_ERROR_EKF);
 		std::cout << "-> STEP: Cannot perform EKF" << std::endl;
 	}
-
+	auto t9 = std::chrono::system_clock::now();
 	if (!stepGetCandidates()) {
 		errorBitList |= (1 << BIT_MAST_ERROR_GETCANDIDATES);
 		std::cout << "-> STEP: Error getting candidates" << std::endl;
 	}
-
+	auto t10 = std::chrono::system_clock::now();
 	if (!stepCathegorizeCandidates(mCandidates, frame1, frame2)) {
 		errorBitList |= (1 << BIT_MAST_ERROR_CATEGORIZINGCANDIDATES);
 		std::cout << "-> STEP: Error cathegorizing candidates" << std::endl;
 	}
-
+	auto t11 = std::chrono::system_clock::now();
 
 	//	Check if need to learn or relearn floor
 	if (mLearnFloor) {
@@ -316,6 +323,28 @@ bool MainApplication::step() {
 		mVelocityPlot->draw(velYekf, 0, 255, 0, BOViL::plot::Graph2d::eDrawType::Lines);
 		mVelocityPlot->draw(velZekf, 0, 0, 255, BOViL::plot::Graph2d::eDrawType::Lines);
 		mVelocityPlot->show();
+
+		mTiming[0].push_back(std::chrono::duration<double>(t1-t0).count());
+		mTiming[1].push_back(std::chrono::duration<double>(t2-t1).count());
+		mTiming[2].push_back(std::chrono::duration<double>(t4-t3).count());
+		mTiming[3].push_back(std::chrono::duration<double>(t6-t5).count());
+		mTiming[4].push_back(std::chrono::duration<double>(t7-t6).count());
+		mTiming[5].push_back(std::chrono::duration<double>(t9-t8).count());
+		mTiming[6].push_back(std::chrono::duration<double>(t10-t9).count());
+		mTiming[7].push_back(std::chrono::duration<double>(t11-t10).count());
+
+		
+
+		std::vector<double> accumTime(mTiming[0].size());
+		mTimePlot->clean();
+		for (unsigned i = 0; i < mTiming.size(); i++) {
+			for (unsigned j = 0; j < mTiming[i].size(); j++) {
+				accumTime[j] += mTiming[i][j];
+			}
+			mTimePlot->draw(accumTime, i%2 * 255/2, i%3 * 255/3, i%4 * 255/4, BOViL::plot::Graph2d::eDrawType::Lines);
+		}
+		mTimePlot->show();
+
 		// <----------->
 	}
 

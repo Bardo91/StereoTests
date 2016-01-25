@@ -78,7 +78,7 @@ private:
 	pcl::ModelCoefficients				mLastGoodFloor;
 
 	BOViL::plot::Graph2d *mTimePlot;
-	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates, tCathegorize;
+	std::vector<std::vector<double>> mTiming;
 	BOViL::plot::Graph2d *mPositionPlot, *mVelocityPlot, *mThresholdPlot;
 	std::vector<double> posXekf, posYekf, posZekf, velXekf, velYekf, velZekf;
 	std::vector<double> posXicp, posYicp, posZicp;
