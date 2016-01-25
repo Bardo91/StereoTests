@@ -44,7 +44,7 @@ const int BIT_MAST_ERROR_GETCANDIDATES = 6;
 const int BIT_MAST_ERROR_CATEGORIZINGCANDIDATES = 7;
 
 //---------------------------------------------------------------------------------------------------------------------
-MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Time"), mPositionPlot("Drone position"), mVelocityPlot("Drone Velocity"), mThresholdPlot("ICP error") {
+MainApplication::MainApplication(int _argc, char ** _argv){
 	bool result = true;
 	result &= loadArguments(_argc, _argv);
 	result &= initCameras();
@@ -72,9 +72,10 @@ MainApplication::MainApplication(int _argc, char ** _argv):mTimePlot("Global Tim
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::step() {
-	mGui->clearMap();
-	mGui->clearPcViewer();
-
+	if (mUseGui) {
+		mGui->clearMap();
+		mGui->clearPcViewer();
+	}
 	long errorBitList = 0;	// This variable store in each bit if each step was fine or not.
 
 	// --> Get Imu Data
@@ -102,12 +103,13 @@ bool MainApplication::step() {
 		frame1 = mCameras->camera(0).undistort(frame1);
 		frame2 = mCameras->camera(1).undistort(frame2);
 
-		mGui->updateStereoImages(frame1, frame2);
-		Rect leftRoi = mCameras->roi(true);
-		Rect rightRoi = mCameras->roi(false);
-		mGui->drawBox(leftRoi, true, 0,255,0);
-		mGui->drawBox(rightRoi, false, 0,255,0);
-		
+		if (mUseGui) {
+			mGui->updateStereoImages(frame1, frame2);
+			Rect leftRoi = mCameras->roi(true);
+			Rect rightRoi = mCameras->roi(false);
+			mGui->drawBox(leftRoi, true, 0, 255, 0);
+			mGui->drawBox(rightRoi, false, 0, 255, 0);
+		}
 		cvtColor(frame1Cropped, frame1Cropped, CV_BGR2GRAY);
 		cvtColor(frame2Cropped, frame2Cropped, CV_BGR2GRAY);
 	}
@@ -201,14 +203,16 @@ bool MainApplication::step() {
 			//mMap.updateSensorPose(pose.matrix().block<4, 1>(0, 3), mMap.cloud().sensor_orientation_);
 		}
 	}
-	Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
-	Eigen::Translation3f sensorPos(forecastX.block<3, 1>(0, 0));
 
-	Eigen::Transform<float, 3, Affine> pose = sensorPos*q;
-	pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
-	mGui->drawCamera(pose.rotation(), pose.matrix().block<4, 1>(0, 3), 0, 0, 255);
-	// Draw camera pose for display purpose.
-	mGui->spinOnce();
+	if (mUseGui) {
+		Eigen::Quaternion<float> q(imuData.mQuaternion[3], imuData.mQuaternion[0], imuData.mQuaternion[1], imuData.mQuaternion[2]);
+		Eigen::Translation3f sensorPos(forecastX.block<3, 1>(0, 0));
+
+		Eigen::Transform<float, 3, Affine> pose = sensorPos*q;
+		pose = mCam2Imu*mInitialRot.inverse()*pose*mCam2Imu.inverse();
+		mGui->drawCamera(pose.rotation(), pose.matrix().block<4, 1>(0, 3), 0, 0, 255);
+		mGui->spinOnce();
+	}
 
 	// Iterate EKF
 	if (!(errorBitList & (1 << BIT_MAST_ERROR_FORECAST))) {
@@ -255,63 +259,66 @@ bool MainApplication::step() {
 	}
 
 	// Drawing candidates if necessary
-	if (!(errorBitList & (1 << BIT_MAST_ERROR_MAP)) && !(errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
-		for(ObjectCandidate candidate:mCandidates)
-			mGui->drawCandidate(candidate, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_);
+	if (mUseGui) {
+		if (!(errorBitList & (1 << BIT_MAST_ERROR_MAP)) && !(errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
+			for (ObjectCandidate candidate : mCandidates)
+				mGui->drawCandidate(candidate, mMap.cloud().sensor_origin_, mMap.cloud().sensor_orientation_);
+		}
+
+		// Adding text messages over all the things
+		if (mFloorSubstractor->isTrained())
+			mGui->addText("Floor is learned", 0, 255, 0);
+		else
+			mGui->addText("Floor is not learned", 255, 0, 0);
+
+		if (errorBitList & (1 << BIT_MAST_ERROR_MAP))
+			mGui->addText("Bad result in cloud alignment", 255, 0, 0);
+
+		// <----------->
+		// Store and plot positions data 666 debug
+		auto xEkf = mEkf.getStateVector();
+		auto xIcp = (mInitialRot*mCam2Imu.inverse()*
+			(Translation3f(mMap.cloud().sensor_origin_.block<3, 1>(0, 0))*mMap.cloud().sensor_orientation_)
+			*mCam2Imu).translation();
+
+
+		posXekf.push_back(xEkf(0, 0));
+		posYekf.push_back(xEkf(1, 0));
+		posZekf.push_back(xEkf(2, 0));
+		velXekf.push_back(xEkf(3, 0));
+		velYekf.push_back(xEkf(4, 0));
+		velZekf.push_back(xEkf(5, 0));
+		posXicp.push_back(xIcp(0, 0));
+		posYicp.push_back(xIcp(1, 0));
+		posZicp.push_back(xIcp(2, 0));
+		posXfore.push_back(forecastX(0, 0));
+		posYfore.push_back(forecastX(1, 0));
+		posZfore.push_back(forecastX(2, 0));
+		threshold.push_back(mMap.fittingScore());
+		mThresholdPlot->clean();
+		mThresholdPlot->draw(threshold, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Lines);
+		mThresholdPlot->show();
+
+		mPositionPlot->clean();
+		mPositionPlot->draw(posXekf, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Lines);
+		mPositionPlot->draw(posYekf, 0, 255, 0, BOViL::plot::Graph2d::eDrawType::Lines);
+		mPositionPlot->draw(posZekf, 0, 0, 255, BOViL::plot::Graph2d::eDrawType::Lines);
+		mPositionPlot->draw(posXicp, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+		mPositionPlot->draw(posYicp, 0, 255, 0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+		mPositionPlot->draw(posZicp, 0, 0, 255, BOViL::plot::Graph2d::eDrawType::FilledCircles);
+		mPositionPlot->draw(posXfore, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Circles);
+		mPositionPlot->draw(posYfore, 0, 255, 0, BOViL::plot::Graph2d::eDrawType::Circles);
+		mPositionPlot->draw(posZfore, 0, 0, 255, BOViL::plot::Graph2d::eDrawType::Circles);
+		mPositionPlot->show();
+
+		mVelocityPlot->clean();
+		mVelocityPlot->draw(velXekf, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Lines);
+		mVelocityPlot->draw(velYekf, 0, 255, 0, BOViL::plot::Graph2d::eDrawType::Lines);
+		mVelocityPlot->draw(velZekf, 0, 0, 255, BOViL::plot::Graph2d::eDrawType::Lines);
+		mVelocityPlot->show();
+		// <----------->
 	}
 
-	// Adding text messages over all the things
-	if(mFloorSubstractor->isTrained())
-		mGui->addText("Floor is learned", 0, 255, 0);
-	else
-		mGui->addText("Floor is not learned", 255, 0, 0);
-
-	if(errorBitList & (1 << BIT_MAST_ERROR_MAP))
-		mGui->addText("Bad result in cloud alignment", 255, 0, 0);
-
-	// <----------->
-	// Store and plot positions data 666 debug
-	auto xEkf = mEkf.getStateVector();
-	auto xIcp = (mInitialRot*mCam2Imu.inverse()*
-				(Translation3f(mMap.cloud().sensor_origin_.block<3,1>(0,0))*mMap.cloud().sensor_orientation_)
-				*mCam2Imu).translation();
-
-
-	posXekf.push_back(xEkf(0,0));
-	posYekf.push_back(xEkf(1,0));
-	posZekf.push_back(xEkf(2,0));
-	velXekf.push_back(xEkf(3,0));
-	velYekf.push_back(xEkf(4,0));
-	velZekf.push_back(xEkf(5,0));
-	posXicp.push_back(xIcp(0,0));
-	posYicp.push_back(xIcp(1,0));
-	posZicp.push_back(xIcp(2,0));
-	posXfore.push_back(forecastX(0,0));
-	posYfore.push_back(forecastX(1,0));
-	posZfore.push_back(forecastX(2,0));
-	threshold.push_back(mMap.fittingScore());
-	mThresholdPlot.clean();
-	mThresholdPlot.draw(threshold, 255, 0, 0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mThresholdPlot.show();
-
-	mPositionPlot.clean();
-	mPositionPlot.draw(posXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mPositionPlot.draw(posYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mPositionPlot.draw(posZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
-	mPositionPlot.draw(posXicp, 255,0,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
-	mPositionPlot.draw(posYicp, 0,255,0, BOViL::plot::Graph2d::eDrawType::FilledCircles);
-	mPositionPlot.draw(posZicp, 0,0,255, BOViL::plot::Graph2d::eDrawType::FilledCircles);
-	mPositionPlot.draw(posXfore, 255,0,0, BOViL::plot::Graph2d::eDrawType::Circles);
-	mPositionPlot.draw(posYfore, 0,255,0, BOViL::plot::Graph2d::eDrawType::Circles);
-	mPositionPlot.draw(posZfore, 0,0,255, BOViL::plot::Graph2d::eDrawType::Circles);
-	mPositionPlot.show();
-
-	mVelocityPlot.clean();
-	mVelocityPlot.draw(velXekf, 255,0,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mVelocityPlot.draw(velYekf, 0,255,0, BOViL::plot::Graph2d::eDrawType::Lines);
-	mVelocityPlot.draw(velZekf, 0,0,255, BOViL::plot::Graph2d::eDrawType::Lines);
-	mVelocityPlot.show();
-	// <----------->
 	if (!mLearnFloor) {
 		save2Log();
 	}
@@ -361,8 +368,18 @@ bool MainApplication::initCameras(){
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::initGui() {
-	Gui::init(mConfig["gui"]["name"], *mCameras);
-	mGui = Gui::get();
+	mUseGui = bool(mConfig["gui"]["use"]);
+	if (mUseGui) {
+		Gui::init(mConfig["gui"]["name"], *mCameras);
+		mGui = Gui::get();
+		
+		mTimePlot		= new BOViL::plot::Graph2d("Global Time");
+		mPositionPlot	= new BOViL::plot::Graph2d("Drone position");
+		mVelocityPlot	= new BOViL::plot::Graph2d("Drone Velocity");
+		mThresholdPlot	= new BOViL::plot::Graph2d("ICP error");
+
+
+	}
 	return mGui != nullptr ? true: false;
 }
 
@@ -558,7 +575,9 @@ bool MainApplication::learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::Model
 		return false;
 	}
 	
-	mGui->drawPlaneMap(*_planeCoeff);
+	if (mUseGui) {
+		mGui->drawPlaneMap(*_planeCoeff);
+	}
 	Vector3f planeNormal = Vector3f(-_planeCoeff->values[0], -_planeCoeff->values[1], -_planeCoeff->values[2]);
 
 	float angle = acos(_verticalCCS.dot(planeNormal) / (_verticalCCS.norm()*planeNormal.norm()));
@@ -616,19 +635,20 @@ bool MainApplication::stepGetImages(Mat & _frame1, Mat & _frame2) {
 	cout << endl;
 
 	if (isBlurry1 || isBlurry2) {
-		mGui->updateStereoImages(_frame1, _frame2);
+		if (mUseGui) {
+			mGui->updateStereoImages(_frame1, _frame2);
 
-		if(isBlurry1)
-			mGui->putBlurry(true);
-		if(isBlurry2) 
-			mGui->putBlurry(false);
+			if (isBlurry1)
+				mGui->putBlurry(true);
+			if (isBlurry2)
+				mGui->putBlurry(false);
 
-		Rect leftRoi = mCameras->roi(true);
-		Rect rightRoi = mCameras->roi(false);
-		mGui->drawBox(leftRoi, true, 0,255,0);
-		mGui->drawBox(rightRoi, false, 0,255,0);
+			Rect leftRoi = mCameras->roi(true);
+			Rect rightRoi = mCameras->roi(false);
+			mGui->drawBox(leftRoi, true, 0, 255, 0);
+			mGui->drawBox(rightRoi, false, 0, 255, 0);
 
-		
+		}
 		return false;
 	} else {		
 		return true;
@@ -694,20 +714,26 @@ bool MainApplication::stepEkf(const ImuData & _imuData) {
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, const Vector4f &_translationPrediction, const Quaternionf &_qRotationPrediction){
 	// Clear Gui
-	mGui->clearMap();
-	mGui->clearPcViewer();
-
+	if (mUseGui) {
+		mGui->clearMap();
+		mGui->clearPcViewer();
+	}
 	// Look for floor in new cloud
 	ModelCoefficients plane = mMap.extractFloor(_cloud);
-	mGui->drawPlanePcViewer(plane);
-
+	
+	if (mUseGui) {
+		mGui->drawPlanePcViewer(plane);
+	}
 	// Calculate angle between estimated floor and real one using imu information.
 	Vector3f verticalCCS = (mCam2Imu*mInitialRot.inverse()*Vector4f::UnitZ()).block<3,1>(0,0);
 	Vector3f planeNormal = Vector3f(-plane.values[0], -plane.values[1], -plane.values[2]);
 	float angle = (acos(verticalCCS.dot(planeNormal) / (verticalCCS.norm()*planeNormal.norm())))*180.0/M_PI;
 	std::cout << "--> Main: Angle between detected floor (input cloud) and reference from imu data: " << angle << endl;
 
-	mGui->addCloudToPcViewer(_cloud);
+	if (mUseGui) {
+		mGui->addCloudToPcViewer(_cloud);
+	}
+
 	PointCloud<PointXYZ>::Ptr addedCloudCameraCS;
 
 	bool hasConverged = false;
@@ -715,7 +741,9 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 		cout << "--> Main: Allowed detected floor, cropping cloud" << endl;
 		auto croppedCloud(*_cloud);
 		mMap.cropCloud(croppedCloud, plane, float(mConfig["mapParams"]["floorOffsetAllowedBeyondFloor"]));
-		mGui->addCloudToPcViewer(croppedCloud.makeShared(), 2, 0, 255, 0);
+		if (mUseGui) {
+			mGui->addCloudToPcViewer(croppedCloud.makeShared(), 2, 0, 255, 0);
+		}
 		hasConverged = mMap.addPoints(croppedCloud.makeShared(), _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
 	}
 	else {
@@ -723,29 +751,31 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 		hasConverged = mMap.addPoints(_cloud, _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
 	}
 
-	// Update Gui
-	if(addedCloudCameraCS->size() != 0)
-		Gui::get()->addCloudToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
 
-	mGui->drawMap(mMap.cloud().makeShared());
-	mGui->addCloudToMapViewer(mMap.GuessCloud(), 2, 0, 0, 255, "guess");
-	mGui->addCloudToMapViewer(mMap.AlignedCloud(), 3,255,255,255, "icpResult");
+	if (mUseGui) {
+		if(addedCloudCameraCS->size() != 0)
+			Gui::get()->addCloudToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
 
-	if (!hasConverged) {
-		mGui->drawCamera(mMap.ICPres().block<3, 3>(0, 0), mMap.ICPres().col(3), 255, 0, 0);
+		mGui->drawMap(mMap.cloud().makeShared());
+		mGui->addCloudToMapViewer(mMap.GuessCloud(), 2, 0, 0, 255, "guess");
+		mGui->addCloudToMapViewer(mMap.AlignedCloud(), 3, 255, 255, 255, "icpResult");
+
+		if (!hasConverged) {
+			mGui->drawCamera(mMap.ICPres().block<3, 3>(0, 0), mMap.ICPres().col(3), 255, 0, 0);
+		}
+		else {
+			mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_, 0, 255, 0);
+		}
+		//mGui->spinOnce();
 	}
-	else {
-		mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_,0,255,0);
-	}
-
-	//mGui->spinOnce();
 	return hasConverged;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 bool MainApplication::stepUpdateCameraPose() {
-	mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
-
+	if (mUseGui) {
+		mGui->drawCamera(mMap.cloud().sensor_orientation_.matrix(), mMap.cloud().sensor_origin_);
+	}
 	return true;
 }
 
@@ -764,7 +794,9 @@ bool MainApplication::stepGetCandidates(){
 	
 	PointCloud<PointXYZ> cropedCloud(mMap.cloud());
 	if (angle < float(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])) {
-		mGui->drawPlaneMap(plane);
+		if (mUseGui) {
+			mGui->drawPlaneMap(plane);
+		}
 		mLastGoodFloor = plane;
 	}
 
@@ -773,7 +805,10 @@ bool MainApplication::stepGetCandidates(){
 
 
 	mMap.cropCloud(cropedCloud, mLastGoodFloor, float(mConfig["mapParams"]["floorOffsetToEraseFloor"]));
-	mGui->addCloudToMapViewer(cropedCloud.makeShared(), 3, 0,255,0);
+	
+	if (mUseGui) {
+		mGui->addCloudToMapViewer(cropedCloud.makeShared(), 3, 0, 255, 0);
+	}
 
 	vector<PointIndices> mClusterIndices;
 	mClusterIndices = mMap.clusterCloud(cropedCloud.makeShared());

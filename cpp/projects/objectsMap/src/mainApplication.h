@@ -63,6 +63,7 @@ private:
 	StereoCameras					*mCameras;
 	EnvironmentMap					mMap;
 	Gui								*mGui;
+	bool							mUseGui = false;
 	RecognitionSystem				*mRecognitionSystem;
 	std::vector<ObjectCandidate>	mCandidates;
 
@@ -76,9 +77,9 @@ private:
 	
 	pcl::ModelCoefficients				mLastGoodFloor;
 
-	BOViL::plot::Graph2d mTimePlot;
+	BOViL::plot::Graph2d *mTimePlot;
 	std::vector<double> tGetImages, tTriangulate, tUpdateMap, tUpdCam, tCandidates, tCathegorize;
-	BOViL::plot::Graph2d mPositionPlot, mVelocityPlot, mThresholdPlot;
+	BOViL::plot::Graph2d *mPositionPlot, *mVelocityPlot, *mThresholdPlot;
 	std::vector<double> posXekf, posYekf, posZekf, velXekf, velYekf, velZekf;
 	std::vector<double> posXicp, posYicp, posZicp;
 	std::vector<double> posXfore, posYfore, posZfore;

@@ -1,7 +1,8 @@
 {
 	"gui":
 	{
-		"name":"Stereo Detector"
+		"name":"Stereo Detector",
+		"use":false
 	},
 	"groundTruth":
 	{
@@ -45,25 +46,24 @@
 	"mapParams":
 	{
 		"voxelSize":0.02,
-		"outlierMeanK":10,
-		"outlierStdDev":0.05,
+		"outlierMeanK":20,
+		"outlierStdDev":0.03,
 		"outlierSetNegative":false,
 		"icpMaxTransformationEpsilon":0.00000001,
 		"icpEuclideanEpsilon":0.000000001,
 		"icpMaxIcpIterations":30,
-		"icpMaxCorrespondenceDistance":0.15,
-		"historySize":2,
+		"icpMaxCorrespondenceDistance":0.2,
+		"historySize":4,
 		"clusterAffiliationMaxDistance":0.035,
-		"minClusterSize":20,
+		"minClusterSize":100,
 		"maxClusterSize":5000,
+		"floorDistanceThreshold":0.01,
+		"floorMaxIters": 1000,
 		"consecutiveClusterCentroidMatchingThreshold": 0.05,
 		"maxFittingScore":0.05,
-		"floorMaxAllowedRotationToDrone":5.0,
-		"floorMaxDistanceToFloor":0.05,
-		"floorOffsetAllowedBeyondFloor": 0.05,
-		"floorOffsetToEraseFloor": -0.015,
-		"icpMaxTranslationChangeCompared2ProvidedGuess": 0.1,
-		"icpMaxAngleChangeCompared2ProvidedGuess": 10.0
+		"floorMaxAllowedRotationToDrone":5.0
+		"icpMaxTranslationChangeCompared2ProvidedGuess": 0.25,
+		"icpMaxAngleChangeCompared2ProvidedGuess": 6.0
 	},
 	"floorSubstractor":
 	{
