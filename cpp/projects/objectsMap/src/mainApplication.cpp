@@ -265,6 +265,21 @@ bool MainApplication::step() {
 		}
 	}
 
+	// Store timing
+	mTiming[0].push_back(std::chrono::duration<double>(t1-t0).count());
+	mTiming[1].push_back(std::chrono::duration<double>(t2-t1).count());
+	mTiming[2].push_back(std::chrono::duration<double>(t4-t3).count());
+	mTiming[3].push_back(std::chrono::duration<double>(t6-t5).count());
+	mTiming[4].push_back(std::chrono::duration<double>(t7-t6).count());
+	mTiming[5].push_back(std::chrono::duration<double>(t9-t8).count());
+	mTiming[6].push_back(std::chrono::duration<double>(t10-t9).count());
+	mTiming[7].push_back(std::chrono::duration<double>(t11-t10).count());
+
+	for (unsigned i = 0; i < mTiming.size(); i++) {
+		(*LogManager::get())["timing.txt"] << mTiming[i].back() << "\t";
+	}
+	(*LogManager::get())["timing.txt"] << std::endl;
+
 	// Drawing candidates if necessary
 	if (mUseGui) {
 		if (!(errorBitList & (1 << BIT_MAST_ERROR_MAP)) && !(errorBitList & (1 << BIT_MAST_ERROR_IMAGES))) {
@@ -324,16 +339,6 @@ bool MainApplication::step() {
 		mVelocityPlot->draw(velZekf, 0, 0, 255, BOViL::plot::Graph2d::eDrawType::Lines);
 		mVelocityPlot->show();
 
-		mTiming[0].push_back(std::chrono::duration<double>(t1-t0).count());
-		mTiming[1].push_back(std::chrono::duration<double>(t2-t1).count());
-		mTiming[2].push_back(std::chrono::duration<double>(t4-t3).count());
-		mTiming[3].push_back(std::chrono::duration<double>(t6-t5).count());
-		mTiming[4].push_back(std::chrono::duration<double>(t7-t6).count());
-		mTiming[5].push_back(std::chrono::duration<double>(t9-t8).count());
-		mTiming[6].push_back(std::chrono::duration<double>(t10-t9).count());
-		mTiming[7].push_back(std::chrono::duration<double>(t11-t10).count());
-
-		
 
 		std::vector<double> accumTime(mTiming[0].size());
 		mTimePlot->clean();
