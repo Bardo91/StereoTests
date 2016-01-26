@@ -746,39 +746,37 @@ bool MainApplication::stepEkf(const ImuData & _imuData) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, const Vector4f &_translationPrediction, const Quaternionf &_qRotationPrediction){
+bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, const Vector4f &_translationPrediction, const Quaternionf &_qRotationPrediction) {
 	// Clear Gui
 	if (mUseGui) {
 		mGui->clearMap();
 		mGui->clearPcViewer();
 	}
-	// Look for floor in new cloud
-	ModelCoefficients plane = mMap.extractFloor(_cloud);
-	
-	if (mUseGui) {
-		mGui->drawPlanePcViewer(plane);
-	}
-	// Calculate angle between estimated floor and real one using imu information.
-	Vector3f verticalCCS = (mCam2Imu*mInitialRot.inverse()*Vector4f::UnitZ()).block<3,1>(0,0);
-	Vector3f planeNormal = Vector3f(-plane.values[0], -plane.values[1], -plane.values[2]);
-	float angle = (acos(verticalCCS.dot(planeNormal) / (verticalCCS.norm()*planeNormal.norm())))*180.0/M_PI;
-	std::cout << "--> Main: Angle between detected floor (input cloud) and reference from imu data: " << angle << endl;
-
-	if (mUseGui) {
-		mGui->addCloudToPcViewer(_cloud);
-	}
 
 	PointCloud<PointXYZ>::Ptr addedCloudCameraCS;
-
 	bool hasConverged = false;
-	if (angle < float(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])) {
-		cout << "--> Main: Allowed detected floor, cropping cloud" << endl;
-		auto croppedCloud(*_cloud);
-		mMap.cropCloud(croppedCloud, plane, float(mConfig["mapParams"]["floorOffsetAllowedBeyondFloor"]));
+	if (bool(mConfig["mapParams"]["floorUse"])){
+			// Look for floor in new cloud
+			ModelCoefficients plane = mMap.extractFloor(_cloud);
+
 		if (mUseGui) {
-			mGui->addCloudToPcViewer(croppedCloud.makeShared(), 2, 0, 255, 0);
+			mGui->drawPlanePcViewer(plane);
 		}
-		hasConverged = mMap.addPoints(croppedCloud.makeShared(), _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
+		// Calculate angle between estimated floor and real one using imu information.
+		Vector3f verticalCCS = (mCam2Imu*mInitialRot.inverse()*Vector4f::UnitZ()).block<3, 1>(0, 0);
+		Vector3f planeNormal = Vector3f(-plane.values[0], -plane.values[1], -plane.values[2]);
+		float angle = (acos(verticalCCS.dot(planeNormal) / (verticalCCS.norm()*planeNormal.norm())))*180.0 / M_PI;
+		std::cout << "--> Main: Angle between detected floor (input cloud) and reference from imu data: " << angle << endl;
+		
+		if (angle < float(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])) {
+			cout << "--> Main: Allowed detected floor, cropping cloud" << endl;
+			auto croppedCloud(*_cloud);
+			mMap.cropCloud(croppedCloud, plane, float(mConfig["mapParams"]["floorOffsetAllowedBeyondFloor"]));
+			if (mUseGui) {
+				mGui->addCloudToPcViewer(croppedCloud.makeShared(), 2, 0, 255, 0);
+			}
+			hasConverged = mMap.addPoints(croppedCloud.makeShared(), _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
+		}
 	}
 	else {
 		// Add point cloud to map
@@ -787,7 +785,8 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 
 
 	if (mUseGui) {
-		if(addedCloudCameraCS->size() != 0)
+		mGui->addCloudToPcViewer(_cloud);
+		if(addedCloudCameraCS && addedCloudCameraCS->size() != 0)
 			Gui::get()->addCloudToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
 
 		mGui->drawMap(mMap.cloud().makeShared());
@@ -818,28 +817,33 @@ bool MainApplication::stepGetCandidates(){
 	if (mMap.cloud().size() < 4) {	 // Minimum amount of points to calculate a plane
 		return false;
 	}
-	
-	auto plane = mMap.extractFloor(mMap.cloud().makeShared());
-	// Calculate angle between estimated floor and real one using imu information.
-	Vector3f verticalCCS = (mCam2Imu*mInitialRot.inverse()*Vector4f::UnitZ()).block<3,1>(0,0);
-	Vector3f planeNormal = Vector3f(-plane.values[0], -plane.values[1], -plane.values[2]);
-	float angle = (acos(verticalCCS.dot(planeNormal) / (verticalCCS.norm()*planeNormal.norm())))*180.0/M_PI;
-	std::cout << "--> Main: Angle between detected floor (in map) and reference from imu data: " << angle << endl;
-	
 	PointCloud<PointXYZ> cropedCloud(mMap.cloud());
-	if (angle < float(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])) {
-		if (mUseGui) {
-			mGui->drawPlaneMap(plane);
+
+	if (bool(mConfig["mapParams"]["floorUse"])) {
+		auto plane = mMap.extractFloor(mMap.cloud().makeShared());
+		// Calculate angle between estimated floor and real one using imu information.
+		Vector3f verticalCCS = (mCam2Imu*mInitialRot.inverse()*Vector4f::UnitZ()).block<3, 1>(0, 0);
+		Vector3f planeNormal = Vector3f(-plane.values[0], -plane.values[1], -plane.values[2]);
+		float angle = (acos(verticalCCS.dot(planeNormal) / (verticalCCS.norm()*planeNormal.norm())))*180.0 / M_PI;
+		std::cout << "--> Main: Angle between detected floor (in map) and reference from imu data: " << angle << endl;
+
+		if (angle < float(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])) {
+			if (mUseGui) {
+				mGui->drawPlaneMap(plane);
+			}
+			mLastGoodFloor = plane;
 		}
-		mLastGoodFloor = plane;
+
+		if (mLastGoodFloor.values.size() == 0)
+			return false;
+
+
+		mMap.cropCloud(cropedCloud, mLastGoodFloor, float(mConfig["mapParams"]["floorOffsetToEraseFloor"]));
+	}
+	else {
+
 	}
 
-	if(mLastGoodFloor.values.size() == 0)
-		return false;
-
-
-	mMap.cropCloud(cropedCloud, mLastGoodFloor, float(mConfig["mapParams"]["floorOffsetToEraseFloor"]));
-	
 	if (mUseGui) {
 		mGui->addCloudToMapViewer(cropedCloud.makeShared(), 3, 0, 255, 0);
 	}
@@ -851,8 +855,13 @@ bool MainApplication::stepGetCandidates(){
 	//create candidates from indices
 	for (PointIndices indices : mClusterIndices) {
 		ObjectCandidate candidate(indices, cropedCloud.makeShared());
-		if(mMap.distanceToPlane(candidate.cloud(), plane) < float(mConfig["mapParams"]["floorMaxDistanceToFloor"]))
+		if (bool(mConfig["mapParams"]["floorUse"])) {
+			if (mMap.distanceToPlane(candidate.cloud(), mLastGoodFloor) < float(mConfig["mapParams"]["floorMaxDistanceToFloor"]))
+				newCandidates.push_back(candidate);
+		}
+		else {
 			newCandidates.push_back(candidate);
+		}
 	}
 	ObjectCandidate::matchSequentialCandidates(mCandidates, newCandidates, mConfig["mapParams"]["consecutiveClusterCentroidMatchingThreshold"]);
 	
@@ -879,6 +888,7 @@ Rect boundBox(vector<Point2f> _points2d) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+unsigned candidateSize = 0;
 bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _candidates, const cv::Mat &_frame1,const  cv::Mat &_frame2) {
 	if(_candidates.size() == 0)
 		return false;
@@ -894,7 +904,8 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 
 		Rect validFrame(0,0,_frame1.cols, _frame1.rows);
 		Mat view = _frame1(boundBox(reprojection1)&validFrame);
-		if (view.rows > 20 && view.cols > 20) {
+		const unsigned cMinSize = 5;
+		if (view.rows > cMinSize && view.cols > cMinSize) {
 			Mat grayView;
 			cvtColor(view, grayView, CV_BGR2GRAY);
 			std::vector<double> probs1 = mRecognitionSystem->categorize(grayView);
@@ -902,7 +913,7 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 		}
 
 		Mat view2 = _frame2(boundBox(reprojection2)&validFrame);
-		if (view2.rows > 20 && view2.cols > 20) {
+		if (view2.rows > cMinSize && view2.cols > cMinSize) {
 			Mat grayView;
 			cvtColor(view2, grayView, CV_BGR2GRAY);
 			std::vector<double> probs2 = mRecognitionSystem->categorize(grayView);
@@ -915,7 +926,16 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 		imshow("view2", view2);
 		waitKey();*/
 	}
-
+	/* To save candidate labels introduced manually*/
+	if (mCandidates.size() > candidateSize) {
+		imshow("debugger", mCandidates[candidateSize].views()[0]);
+		waitKey(30);
+		string name;
+		cin >> name;
+		(*LogManager::get())["ObjectsOrder.txt"] << name << std::endl;
+		candidateSize++;
+	}
+	
 	return true;
 }
 
