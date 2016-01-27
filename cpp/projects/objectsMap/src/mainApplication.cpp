@@ -746,37 +746,39 @@ bool MainApplication::stepEkf(const ImuData & _imuData) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, const Vector4f &_translationPrediction, const Quaternionf &_qRotationPrediction) {
+bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, const Vector4f &_translationPrediction, const Quaternionf &_qRotationPrediction){
 	// Clear Gui
 	if (mUseGui) {
 		mGui->clearMap();
 		mGui->clearPcViewer();
 	}
+	// Look for floor in new cloud
+	ModelCoefficients plane = mMap.extractFloor(_cloud);
+	
+	if (mUseGui) {
+		mGui->drawPlanePcViewer(plane);
+	}
+	// Calculate angle between estimated floor and real one using imu information.
+	Vector3f verticalCCS = (mCam2Imu*mInitialRot.inverse()*Vector4f::UnitZ()).block<3,1>(0,0);
+	Vector3f planeNormal = Vector3f(-plane.values[0], -plane.values[1], -plane.values[2]);
+	float angle = (acos(verticalCCS.dot(planeNormal) / (verticalCCS.norm()*planeNormal.norm())))*180.0/M_PI;
+	std::cout << "--> Main: Angle between detected floor (input cloud) and reference from imu data: " << angle << endl;
+
+	if (mUseGui) {
+		mGui->addCloudToPcViewer(_cloud);
+	}
 
 	PointCloud<PointXYZ>::Ptr addedCloudCameraCS;
-	bool hasConverged = false;
-	if (bool(mConfig["mapParams"]["floorUse"])){
-			// Look for floor in new cloud
-			ModelCoefficients plane = mMap.extractFloor(_cloud);
 
+	bool hasConverged = false;
+	if (angle < float(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])) {
+		cout << "--> Main: Allowed detected floor, cropping cloud" << endl;
+		auto croppedCloud(*_cloud);
+		mMap.cropCloud(croppedCloud, plane, float(mConfig["mapParams"]["floorOffsetAllowedBeyondFloor"]));
 		if (mUseGui) {
-			mGui->drawPlanePcViewer(plane);
+			mGui->addCloudToPcViewer(croppedCloud.makeShared(), 2, 0, 255, 0);
 		}
-		// Calculate angle between estimated floor and real one using imu information.
-		Vector3f verticalCCS = (mCam2Imu*mInitialRot.inverse()*Vector4f::UnitZ()).block<3, 1>(0, 0);
-		Vector3f planeNormal = Vector3f(-plane.values[0], -plane.values[1], -plane.values[2]);
-		float angle = (acos(verticalCCS.dot(planeNormal) / (verticalCCS.norm()*planeNormal.norm())))*180.0 / M_PI;
-		std::cout << "--> Main: Angle between detected floor (input cloud) and reference from imu data: " << angle << endl;
-		
-		if (angle < float(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])) {
-			cout << "--> Main: Allowed detected floor, cropping cloud" << endl;
-			auto croppedCloud(*_cloud);
-			mMap.cropCloud(croppedCloud, plane, float(mConfig["mapParams"]["floorOffsetAllowedBeyondFloor"]));
-			if (mUseGui) {
-				mGui->addCloudToPcViewer(croppedCloud.makeShared(), 2, 0, 255, 0);
-			}
-			hasConverged = mMap.addPoints(croppedCloud.makeShared(), _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
-		}
+		hasConverged = mMap.addPoints(croppedCloud.makeShared(), _translationPrediction, _qRotationPrediction, mMap.Simple,double(mConfig["mapParams"]["maxFittingScore"]), addedCloudCameraCS);
 	}
 	else {
 		// Add point cloud to map
@@ -785,8 +787,7 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 
 
 	if (mUseGui) {
-		mGui->addCloudToPcViewer(_cloud);
-		if(addedCloudCameraCS && addedCloudCameraCS->size() != 0)
+		if(addedCloudCameraCS->size() != 0)
 			Gui::get()->addCloudToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
 
 		mGui->drawMap(mMap.cloud().makeShared());
@@ -817,33 +818,28 @@ bool MainApplication::stepGetCandidates(){
 	if (mMap.cloud().size() < 4) {	 // Minimum amount of points to calculate a plane
 		return false;
 	}
+	
+	auto plane = mMap.extractFloor(mMap.cloud().makeShared());
+	// Calculate angle between estimated floor and real one using imu information.
+	Vector3f verticalCCS = (mCam2Imu*mInitialRot.inverse()*Vector4f::UnitZ()).block<3,1>(0,0);
+	Vector3f planeNormal = Vector3f(-plane.values[0], -plane.values[1], -plane.values[2]);
+	float angle = (acos(verticalCCS.dot(planeNormal) / (verticalCCS.norm()*planeNormal.norm())))*180.0/M_PI;
+	std::cout << "--> Main: Angle between detected floor (in map) and reference from imu data: " << angle << endl;
+	
 	PointCloud<PointXYZ> cropedCloud(mMap.cloud());
-
-	if (bool(mConfig["mapParams"]["floorUse"])) {
-		auto plane = mMap.extractFloor(mMap.cloud().makeShared());
-		// Calculate angle between estimated floor and real one using imu information.
-		Vector3f verticalCCS = (mCam2Imu*mInitialRot.inverse()*Vector4f::UnitZ()).block<3, 1>(0, 0);
-		Vector3f planeNormal = Vector3f(-plane.values[0], -plane.values[1], -plane.values[2]);
-		float angle = (acos(verticalCCS.dot(planeNormal) / (verticalCCS.norm()*planeNormal.norm())))*180.0 / M_PI;
-		std::cout << "--> Main: Angle between detected floor (in map) and reference from imu data: " << angle << endl;
-
-		if (angle < float(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])) {
-			if (mUseGui) {
-				mGui->drawPlaneMap(plane);
-			}
-			mLastGoodFloor = plane;
+	if (angle < float(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])) {
+		if (mUseGui) {
+			mGui->drawPlaneMap(plane);
 		}
-
-		if (mLastGoodFloor.values.size() == 0)
-			return false;
-
-
-		mMap.cropCloud(cropedCloud, mLastGoodFloor, float(mConfig["mapParams"]["floorOffsetToEraseFloor"]));
-	}
-	else {
-
+		mLastGoodFloor = plane;
 	}
 
+	if(mLastGoodFloor.values.size() == 0)
+		return false;
+
+
+	mMap.cropCloud(cropedCloud, mLastGoodFloor, float(mConfig["mapParams"]["floorOffsetToEraseFloor"]));
+	
 	if (mUseGui) {
 		mGui->addCloudToMapViewer(cropedCloud.makeShared(), 3, 0, 255, 0);
 	}
@@ -855,13 +851,8 @@ bool MainApplication::stepGetCandidates(){
 	//create candidates from indices
 	for (PointIndices indices : mClusterIndices) {
 		ObjectCandidate candidate(indices, cropedCloud.makeShared());
-		if (bool(mConfig["mapParams"]["floorUse"])) {
-			if (mMap.distanceToPlane(candidate.cloud(), mLastGoodFloor) < float(mConfig["mapParams"]["floorMaxDistanceToFloor"]))
-				newCandidates.push_back(candidate);
-		}
-		else {
+		if(mMap.distanceToPlane(candidate.cloud(), plane) < float(mConfig["mapParams"]["floorMaxDistanceToFloor"]))
 			newCandidates.push_back(candidate);
-		}
 	}
 	ObjectCandidate::matchSequentialCandidates(mCandidates, newCandidates, mConfig["mapParams"]["consecutiveClusterCentroidMatchingThreshold"]);
 	
@@ -904,7 +895,7 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 
 		Rect validFrame(0,0,_frame1.cols, _frame1.rows);
 		Mat view = _frame1(boundBox(reprojection1)&validFrame);
-		const unsigned cMinSize = 5;
+		const unsigned cMinSize = 20;
 		if (view.rows > cMinSize && view.cols > cMinSize) {
 			Mat grayView;
 			cvtColor(view, grayView, CV_BGR2GRAY);
@@ -926,15 +917,18 @@ bool MainApplication::stepCathegorizeCandidates(std::vector<ObjectCandidate>& _c
 		imshow("view2", view2);
 		waitKey();*/
 	}
-	/* To save candidate labels introduced manually*/
-	if (mCandidates.size() > candidateSize) {
-		imshow("debugger", mCandidates[candidateSize].views()[0]);
-		waitKey(30);
-		string name;
-		cin >> name;
-		(*LogManager::get())["ObjectsOrder.txt"] << name << std::endl;
-		candidateSize++;
-	}
+	
+	/*if (mCandidates.size() > candidateSize) {
+		if (mCandidates[candidateSize].views().size() != 0) {
+			imshow("debugger", mCandidates[candidateSize].views()[mCandidates[candidateSize].views().size()-1]);
+			waitKey(50);
+			string name;
+			cin >> name;
+			(*LogManager::get())["ObjectsOrder.txt"] << name << "\n";
+			(*LogManager::get())["ObjectsOrder.txt"].flush();
+			candidateSize++;
+		}
+	}*/
 	
 	return true;
 }
