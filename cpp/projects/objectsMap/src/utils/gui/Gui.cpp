@@ -435,15 +435,17 @@ void Gui::keyboardEventOccurred(const pcl::visualization::KeyboardEvent &_event,
 	if ((_event.getKeySym() == "1") && _event.keyUp()) {
 		std::cout << " => guess visualization toggled" << std::endl;
 		mShowGuess = !mShowGuess;
-	}
-	if ((_event.getKeySym() == "2") && _event.keyUp()) {
+	}else if ((_event.getKeySym() == "2") && _event.keyUp()) {
 		std::cout << " => icp result visualization toggled" << std::endl;
 		mShowIcpResult = !mShowIcpResult;
-	}
-	if ((_event.getKeySym() == "3") && _event.keyUp()) {
+	}else if ((_event.getKeySym() == "3") && _event.keyUp()) {
 		std::cout << " => candidate visualization toggled" << std::endl;
 		mShowCandidates = !mShowCandidates;
-	} else {
+	}else if ((_event.getKeySym() == "0") && _event.keyUp()) {
+		string name = "screenshot_"+to_string(time(NULL))+".png";
+		m3dViewer->saveScreenshot(name);
+		std::cout << " => Saved screenshot. name: " << name << std::endl;
+	}else {
 		std::cout << std::endl;
 	}
 }
