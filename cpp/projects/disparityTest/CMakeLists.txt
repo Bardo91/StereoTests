@@ -28,13 +28,28 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 # Loading 3rd party libraries.
-find_package(OpenCV 3 REQUIRED core imgproc ml highgui features2d xfeatures2d ximgproc calib3d)
+find_package(OpenCV 3 REQUIRED core imgproc ml highgui features2d xfeatures2d calib3d objdetect)
 set_target_properties(${OpenCV_LIBS} PROPERTIES MAP_IMPORTED_CONFIG_RELWITHDEBINFO RELEASE)
 LINK_DIRECTORIES(${OpenCV_LIB_DIR})
+
+find_package(PCL 1.2 REQUIRED common io kdtree filters visualization segmentation)
+if(${PCL_FOUND} AND ${VTK_FOUND} AND ${Boost_FOUND} AND ${FLANN_FOUND} STREQUAL "TRUE")
+	MESSAGE( STATUS " --> Adding properly PCL and its dependencies")
+	add_definitions(-DENABLE_PCL)
+	include_directories(${PCL_INCLUDE_DIRS})
+	link_directories(${PCL_LIBRARY_DIRS})
+	add_definitions(${PCL_DEFINITIONS})
+else()
+	MESSAGE( FATAL_ERROR " --> Couldnt Add PCL and/or it's dependencies")
+endif()
+
 # Add Executable
 add_executable(DisparityTest ${BAR_TASK_SOURCE_FILES})
 
 target_include_directories(DisparityTest PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(DisparityTest PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_include_directories(DisparityTest PUBLIC ${PROJECT_SOURCE_DIR}/../../lib/StereoLib/src)
 target_link_libraries(DisparityTest LINK_PUBLIC ${OpenCV_LIBS})
+target_link_libraries(DisparityTest LINK_PUBLIC StereoLib)
+target_link_libraries(DisparityTest LINK_PUBLIC ${PCL_LIBRARIES})
 
