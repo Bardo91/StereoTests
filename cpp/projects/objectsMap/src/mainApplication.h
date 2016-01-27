@@ -42,7 +42,7 @@ private:
 	Eigen::Vector3f calculateGravityOffset	();
 	bool initLoadGt							();	// 666 Debug.
 
-	bool learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::ModelCoefficients::Ptr &_planeCoeff, const double &_maxAngle);
+	bool learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::ModelCoefficients::Ptr &_planeCoeff, const double &_maxAngle, const cv::Mat &_frame1,const  cv::Mat &_frame2);
 
 	bool stepGetImages(cv::Mat &_frame1, cv::Mat &_frame2);
 	bool stepGetImuData(ImuData &_imuData);
