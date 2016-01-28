@@ -95,6 +95,9 @@ bool MainApplication::step() {
 		t2 = std::chrono::system_clock::now();
 	}
 	else {
+		frame1 = mCameras->camera(0).undistort(frame1);
+		frame2 = mCameras->camera(1).undistort(frame2);
+
 		frame1.copyTo(frame1Cropped);
 		frame2.copyTo(frame2Cropped);
 		if (mFloorSubstractor->isTrained()) {
@@ -102,9 +105,6 @@ bool MainApplication::step() {
 			mFloorSubstractor->substract(frame1, frame1Cropped, mask);
 			mFloorSubstractor->substract(frame2, frame2Cropped, mask);
 		}
-
-		frame1 = mCameras->camera(0).undistort(frame1);
-		frame2 = mCameras->camera(1).undistort(frame2);
 		t2 = std::chrono::system_clock::now();
 
 		if (mUseGui) {
@@ -635,12 +635,7 @@ bool MainApplication::learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::Model
 
 	float angle = acos(_verticalCCS.dot(planeNormal) / (_verticalCCS.norm()*planeNormal.norm()));
 	cout << angle*180/M_PI << "deg Angle" << endl;
-	//cout << "............." << endl;
-	//cout << _verticalCCS.transpose() << endl;
-	//cout << planeNormal.transpose() << endl;
-	//cout << angle*180/M_PI << endl;
-	//cout << "............." << endl;
-	
+
 	// Extract patches
 
 	if (angle < _maxAngle) {
@@ -667,16 +662,12 @@ bool MainApplication::learnFloor(const Eigen::Vector3f &_verticalCCS, pcl::Model
 			Rect validFrame(0,0,_frame1.cols, _frame1.rows);
 			Mat view1 = _frame1(boundBox(reprojection1)&validFrame);
 			Mat view2 = _frame1(boundBox(reprojection1)&validFrame);
-			if (view1.rows > 100 && view1.cols > 100) {
+			if (view1.rows > 75 && view1.cols > 75) {
 				patches.push_back(view1);
 			}
-			if (view2.rows > 100 && view2.cols > 100) {
+			if (view2.rows > 75 && view2.cols > 75) {
 				patches.push_back(view2);
 			}
-			imshow("v1", view1);
-			imshow("v2", view2);
-			waitKey();
-
 		}
 
 		if (patches.size() != 0) {
@@ -816,10 +807,6 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 		float angle = (acos(verticalCCS.dot(planeNormal) / (verticalCCS.norm()*planeNormal.norm())))*180.0 / M_PI;
 		std::cout << "--> Main: Angle between detected floor (input cloud) and reference from imu data: " << angle << endl;
 
-		if (mUseGui) {
-			mGui->addCloudToPcViewer(_cloud);
-		}
-
 		if (angle < float(mConfig["mapParams"]["floorMaxAllowedRotationToDrone"])) {	// If floor is good
 			cout << "--> Main: Allowed detected floor, cropping cloud" << endl;
 			auto croppedCloud(*_cloud);
@@ -836,6 +823,8 @@ bool MainApplication::stepUpdateMap(const PointCloud<PointXYZ>::Ptr &_cloud, con
 	}
 
 	if (mUseGui) {
+		mGui->addCloudToPcViewer(_cloud);
+
 		if(addedCloudCameraCS->size() != 0)
 			Gui::get()->addCloudToPcViewer(addedCloudCameraCS, 3, 255, 10, 10);
 
