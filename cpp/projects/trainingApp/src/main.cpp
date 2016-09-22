@@ -121,7 +121,7 @@ int main(int _argc, char ** _argv) {
 			if(frame.rows == 0)
 				break;
 			else {
-				algorithm::SlidingWindow::Params params = { 400, 300, 40, 40, 1, 0.5 };
+				algorithm::SlidingWindow::Params params = { 100, 200, 40, 30, 2, 0.75 };
 				algorithm::SlidingWindow window(params);
 
 
@@ -133,13 +133,17 @@ int main(int _argc, char ** _argv) {
 						rectangle(ori, slices[i], Scalar(0, 255, 0), 2);
 					}
 				}
-				/*std::stringstream ss;
+
+				/*std::vector<double> probs = bow.evaluate(frame(slices[i]));
+				double maxLabel = max_element(probs.begin(), probs.end()) - probs.begin();
+				std::stringstream ss;
 				ss << "Image " << i << ". Label " << maxLabel << ". Prob: ";
 				for (unsigned n = 0; n < probs.size(); n++) {
 					ss << probs[n] << ", ";
 				}
 				ss << endl;
 				putText(ori, ss.str(), Point(20, 20), CV_FONT_HERSHEY_PLAIN, 1, Scalar(0, 255, 0), 2);*/
+
 				cv::imshow("display", ori);
 				cv::waitKey(3);
 			}
