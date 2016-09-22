@@ -20,6 +20,7 @@
 #include <StereoLib/ml/BoW.h>
 #include <StereoLib/StereoCameras.h>
 #include <StereoLib/ImageFilteringTools.h>
+#include "SlidingWindow.h"
 
 //---------------------------------------------------------------------------------------------------------------------
 #ifdef _WIN32
@@ -68,31 +69,32 @@ int main(int _argc, char ** _argv) {
 	vector<double> groundTruth;
 	if (config["train"]) {
 		vector<Mat> images;
+		namedWindow("display1", CV_WINDOW_FREERATIO);
 		if (config["generateTrainSet"]) {
 			createTrainingSet(cameras, config, images, config["gtFile"], groundTruth);
 		}
 		else {
-			int index = 0;
+			int index = 1;
 			string leftPattern = string(config["cameras"]["left1"]);
-			string rightPattern = string(config["cameras"]["right1"]);
+			//string rightPattern = string(config["cameras"]["right1"]);
 			ifstream gtFile(leftPattern.substr(0,leftPattern.find_last_of("/"))+"/gt.txt");
 			for (;;) {
 				string left = leftPattern.substr(0,leftPattern.find("%d")) +to_string(index)+ leftPattern.substr(leftPattern.find("%d")+2);
-				string right = rightPattern.substr(0,rightPattern.find("%d")) +to_string(index)+ rightPattern.substr(rightPattern.find("%d")+2);
+				//string right = rightPattern.substr(0,rightPattern.find("%d")) +to_string(index)+ rightPattern.substr(rightPattern.find("%d")+2);
 				index++;
 				Mat frame1 = imread(left);	//cameras->camera(0).frame();
-				Mat frame2 = imread(right);	//cameras->camera(1).frame();
+				//Mat frame2 = imread(right);	//cameras->camera(1).frame();
 				int gtVal;
 				gtFile >> gtVal;
-				if (frame1.rows != 0 && frame2.rows != 0) {
+				if (frame1.rows != 0 ){//&& frame2.rows != 0) {
 					//resize(frame1, frame1, Size(150,150));
 					//resize(frame2, frame2, Size(150,150));
 					images.push_back(frame1);
-					images.push_back(frame2);
+					//images.push_back(frame2);
 					groundTruth.push_back(gtVal);
 					Mat display;
 					imshow("display1", frame1);
-					imshow("display2", frame2);
+					//imshow("display2", frame2);
 					waitKey(3);
 				}
 				else {
@@ -109,27 +111,38 @@ int main(int _argc, char ** _argv) {
 
 		vector<Mat> cvImages;
 		string path = string(config["cameras"]["left1"]);
+		namedWindow("display", CV_WINDOW_FREERATIO); 
+
+		VideoCapture camera(1);
 		for (unsigned i = 1; i < 9999;i++) {
-			Mat frame = imread(path.substr(0,path.find("%d")) +to_string(i)+ path.substr(path.find("%d")+2));
+			Mat frame;// = imread(path.substr(0, path.find("%d")) + to_string(i) + path.substr(path.find("%d") + 2));
+			camera >> frame;
+			Mat ori = frame.clone();
 			if(frame.rows == 0)
 				break;
 			else {
-				//resize(frame, frame, Size(150, 150));
-				cvImages.push_back(frame);
-			}
-		}
+				algorithm::SlidingWindow::Params params = { 400, 300, 40, 40, 1, 0.5 };
+				algorithm::SlidingWindow window(params);
 
-		for (int i = 0; i < cvImages.size(); i++) {
 
-			std::vector<double> probs = bow.evaluate(cvImages[i]);
-			double maxLabel = max_element(probs.begin(), probs.end()) - probs.begin();
-			cout << "Image " << i << ". Label " << maxLabel << ". Prob: ";
-			for (unsigned n = 0; n < probs.size(); n++) {
-				cout << probs[n] << ", ";
+				auto slices = window.grid(frame);
+				for (unsigned i = 0; i < slices.size(); i++) {
+					std::vector<double> probs = bow.evaluate(frame(slices[i]));
+					double maxLabel = max_element(probs.begin(), probs.end()) - probs.begin();
+					if (maxLabel == 0) {
+						rectangle(ori, slices[i], Scalar(0, 255, 0), 2);
+					}
+				}
+				/*std::stringstream ss;
+				ss << "Image " << i << ". Label " << maxLabel << ". Prob: ";
+				for (unsigned n = 0; n < probs.size(); n++) {
+					ss << probs[n] << ", ";
+				}
+				ss << endl;
+				putText(ori, ss.str(), Point(20, 20), CV_FONT_HERSHEY_PLAIN, 1, Scalar(0, 255, 0), 2);*/
+				cv::imshow("display", ori);
+				cv::waitKey(3);
 			}
-			cout << endl;
-			cv::imshow("display", cvImages[i]);
-			cv::waitKey();
 		}
 	}
 }
